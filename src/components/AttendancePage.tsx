@@ -1,13 +1,10 @@
 import { useState } from "react";
-<<<<<<< HEAD
 import {
 
   Pencil,
   Trash2,
 
 } from "lucide-react";
-=======
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
 
 type Status = "present" | "absent" | "late" | "leave";
 
@@ -330,7 +327,6 @@ export default function AttendancePage() {
                       <td>{person.name}</td>
                       <td>{person.father}</td>
                       <td>
-<<<<<<< HEAD
 <td>
   <div className="flex overflow-hidden rounded-xl border border-white/20 w-fit">
     {[
@@ -378,36 +374,6 @@ export default function AttendancePage() {
     })}
   </div>
 </td>
-=======
-                        <select
-  className="bg-green-900/40 backdrop-blur-xl border border-white/20 rounded-lg px-3 py-2 text-white
-             focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
-  value={
-    tab === "teacher"
-      ? teacherAttendance[person.id] || "present"
-      : studentAttendance[person.id] || "present"
-  }
-  onChange={(e) => {
-    const value = e.target.value as Status;
-
-    if (tab === "teacher") {
-      setTeacherAttendance({
-        ...teacherAttendance,
-        [person.id]: value,
-      });
-    } else {
-      setStudentAttendance({
-        ...studentAttendance,
-        [person.id]: value,
-      });
-    }
-  }}
->
-  <option className="bg-green-900 text-white" value="present">Present</option>
-  <option className="bg-green-900 text-white" value="absent">Absent</option>
-  <option className="bg-green-900 text-white" value="leave">On Leave</option>
-</select>
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
                       </td>
                     </tr>
                   )
@@ -416,7 +382,6 @@ export default function AttendancePage() {
             </table>
           )}
 
-<<<<<<< HEAD
 {/* RECORD TABLE (SPLIT VIEW) */}
 {(tab === "teacherRecord" || tab === "studentRecord") && (
   <div className="flex overflow-x-auto border border-white/20 rounded-2xl bg-white/5">
@@ -511,75 +476,6 @@ export default function AttendancePage() {
     </div>
 
   </div>
-=======
-        {/* RECORD TABLE */}
-{(tab === "teacherRecord" || tab === "studentRecord") && (
-  <table className="w-full min-w-max">
-    <thead className="text-left text-yellow-300 bg-white/5">
-      <tr>
-        <th className="p-4">ID</th>
-        <th className="p-4">Name</th>
-
-        {dateColumns.map((date) => (
-          <th
-            key={date.toISOString()}
-            className="px-4 py-3 text-center whitespace-nowrap"
-          >
-            {date.toLocaleDateString("en-GB", {
-              day: "2-digit",
-              month: "short",
-            })}
-          </th>
-        ))}
-      </tr>
-    </thead>
-
-    <tbody>
-      {(tab === "teacherRecord" ? teachers : sectionStudents).map(
-        (person) => (
-          <tr
-            key={person.id}
-            className="border-t border-white/10 hover:bg-white/5"
-          >
-            <td className="p-4">{person.id}</td>
-
-            <td className="p-4 whitespace-nowrap">
-              {person.name}
-            </td>
-
-            {dateColumns.map((_, index) => {
-              const status =
-                index % 3 === 0
-                  ? "P"
-                  : index % 3 === 1
-                  ? "A"
-                  : "L";
-
-              return (
-                <td
-                  key={index}
-                  className="px-4 py-3 text-center"
-                >
-                  <span
-                    className={`px-2 py-1 rounded-md text-xs font-semibold ${
-                      status === "P"
-                        ? "bg-green-500/20 text-green-300"
-                        : status === "A"
-                        ? "bg-red-500/20 text-red-300"
-                        : "bg-yellow-500/20 text-yellow-300"
-                    }`}
-                  >
-                    {status}
-                  </span>
-                </td>
-              );
-            })}
-          </tr>
-        )
-      )}
-    </tbody>
-  </table>
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
 )}
         </div>
       </div>

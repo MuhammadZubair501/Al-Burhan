@@ -5,11 +5,11 @@ import TeacherContent from "./Teacher/TeacherContent";
 import StudentContent from "./Student/StudentPage";
 import LibraryContent from ".//LibraryContent";
 import BackgroundRings from ".//BackgroundRings";
-<<<<<<< HEAD
+
 import SectionPage from "../Section/SectionPage";
-=======
-import SectionPage from "./SectionPage";
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
+
+
+
 import AttendancePage from "./AttendancePage";
 import ProfileButton from "./ProfileButton";
 

@@ -26,7 +26,7 @@
     #fde047,
     #f59e0b
   );
-<<<<<<< HEAD
+
 }
 
 @keyframes modalPop {
@@ -73,6 +73,5 @@
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: rgba(34, 197, 94, 0.4);
   border-radius: 10px;
-=======
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
+
 }

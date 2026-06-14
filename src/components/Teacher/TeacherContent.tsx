@@ -1,10 +1,8 @@
 import { Plus } from "lucide-react";
 import TeacherAndStudentCard from "./TeacherCard";
-<<<<<<< HEAD
+
 import TeacherModal from "./TeacherModal";
 import { useState } from "react";
-=======
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
 
 const teachers = [
   {
@@ -67,10 +65,9 @@ const Heading = "Teacher Management";
 const Description = "Manage all teachers of Al-Burhan Academy";
 
 export default function TeacherPage() {
-<<<<<<< HEAD
+
     const [openTeacherModal, setOpenTeacherModal] = useState(false);
-=======
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
+
   return (
     <div className="relative h-full overflow-y-auto">
       <div className="relative z-10 p-8">
@@ -101,11 +98,9 @@ export default function TeacherPage() {
 
         {/* Floating Add Button */}
         <button
-<<<<<<< HEAD
+
           onClick={() =>setOpenTeacherModal(true)}
-=======
-          onClick={() => alert("Add New Teacher Form Coming Soon!")}
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
+
           className="
             fixed
             bottom-8
@@ -130,7 +125,7 @@ export default function TeacherPage() {
           <Plus size={28} />
         </button>
       </div>
-<<<<<<< HEAD
+
         {/* MODAL OPEN HERE */}
       <TeacherModal
         isOpen={openTeacherModal}
@@ -139,8 +134,7 @@ export default function TeacherPage() {
           console.log("Teacher Data:", data);
         }}
       />
-=======
->>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
+
     </div>
   );
 }
