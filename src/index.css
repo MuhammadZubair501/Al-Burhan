@@ -1,0 +1,75 @@
+@import "tailwindcss";
+/* Width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    to bottom,
+    #facc15,
+    #f59e0b
+  );
+  border-radius: 999px;
+}
+
+/* Hover */
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    to bottom,
+    #fde047,
+    #f59e0b
+  );
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.input {
+  @apply w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white outline-none focus:ring-2 focus:ring-yellow-400;
+}
+
+.btn {
+  @apply px-4 py-2 bg-white/10 text-white rounded-xl;
+}
+
+.btn-primary {
+  @apply px-6 py-3 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 text-green-950 font-bold;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 rounded-2xl bg-white/10 text-white;
+}
+
+/* Thin modern scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(34, 197, 94, 0.4);
+  border-radius: 10px;
+}
