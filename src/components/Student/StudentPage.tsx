@@ -1,7 +1,10 @@
 import { Plus } from "lucide-react";
 import StudentAndStudentCard from "./StudentCard";
+<<<<<<< HEAD
 import { useState } from "react";
 import StudentModel from "./StudentModel";
+=======
+>>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
 const avatarUrl = "https://png.pngtree.com/recommend-works/png-clipart/20241021/ourmid/pngtree-students-reciting-the-koran-png-image_14133625.png";
 const Students = [
   {
@@ -64,6 +67,7 @@ const Heading = "Student Management";
 const Description = "Manage all Students of Al-Burhan Academy";
 
 export default function StudentPage() {
+<<<<<<< HEAD
 
   const [isStudentFormOpen, setIsStudentFormOpen] = useState(false);
   
@@ -83,6 +87,8 @@ export default function StudentPage() {
 
 
 
+=======
+>>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
   return (
     <div className="relative h-full overflow-y-auto">
       <div className="relative z-10 p-8">
@@ -110,6 +116,7 @@ export default function StudentPage() {
             />
           ))}
         </div>
+<<<<<<< HEAD
  {/* Student Form Modal */}
       <StudentModel
         isOpen={isStudentFormOpen}
@@ -120,6 +127,12 @@ export default function StudentPage() {
         {/* Floating Add Button */}
         <button
           onClick={() =>  setIsStudentFormOpen(true)}
+=======
+
+        {/* Floating Add Button */}
+        <button
+          onClick={() => alert("Add New Student Form Coming Soon!")}
+>>>>>>> 87e4fae1d57893fb48bd547abb54780f8bfd22d5
           className="
             fixed
             bottom-8
