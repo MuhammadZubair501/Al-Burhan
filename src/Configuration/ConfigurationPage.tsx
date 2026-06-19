@@ -53,7 +53,10 @@ export default function ConfigurationPage() {
 
   const loadDepartments = async () => {
     try {
-      const res = await fetch(ApiRoutes.DEPARTMENT);
+      // const res = await fetch(ApiRoutes.DEPARTMENT);
+      const campusId = Number(window.CampusID);
+      console.log("Campus ID:", campusId);
+      const res = await fetch(ApiRoutes.departmentByCampusId(campusId));
       const data = await res.json();
       console.log("Departments:", data);
       setDepartments(

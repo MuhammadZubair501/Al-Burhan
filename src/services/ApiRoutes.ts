@@ -30,6 +30,9 @@ static CAMPUS = `${API_BASE_URL}/campus`;
     return `${API_BASE_URL}/department/${id}`;
   }
 
-
+ // New: Fetch departments filtered by a campus ID
+  static departmentByCampusId(campusId: number | string) {
+    return `${API_BASE_URL}/department/campus/${campusId}`;
+  }
 
 }

@@ -119,6 +119,7 @@ const deleteRecord = async (id: number) => {
       text: "permanently delete ho jae ga agr such ma tujay delete krna ha tu qasam kah kr delete kr",
       icon: "warning",
       showCancelButton: true,
+      cancelButtonText: "Nahe Qasam Nahe Kah Sakta",
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
       // confirmButtonText: "Yes, delete it!",
