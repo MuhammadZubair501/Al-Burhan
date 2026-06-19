@@ -6,10 +6,12 @@ import {
   Pencil,
   Trash2,
   Plus,
+  SquareDashedText,
 } from "lucide-react";
 
 import { useState } from "react";
 import SectionModal from "./SectionModal";
+import PageHeader from "../components/PageHeader";
 
 type Section = {
   id: number;
@@ -49,17 +51,14 @@ export default function SectionPage() {
 
   return (
     <div className="relative h-full overflow-y-auto">
+       {/* Header */}
+           <PageHeader
+            title= "Section Management"
+            description=" Manage all academic sections"
+            Icon={SquareDashedText}
+        />
       <div className="relative z-10 p-8">
 
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white">
-            Section Management
-          </h1>
-          <p className="text-green-100 mt-2">
-            Manage all academic sections
-          </p>
-        </div>
 
         {/* Grid */}
         <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">

@@ -8,12 +8,12 @@ import {
   ChevronsLeft,
   ChevronsRight,
   SquareDashedText,
-
+  Cog,
 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export type TabType = "dashboard" | "section" | "teacher" | "student" | "library" | "Attendance";
+export type TabType = "dashboard" | "Attendance" | "library" |  "section" | "teacher" | "student" | "configuration" ;
 
 
 type Props = {
@@ -31,6 +31,7 @@ export default function Sidebar({ activeTab, setActiveTab }: Props) {
     { id: "section", label: "Sections", icon: SquareDashedText },
     { id: "teacher", label: "Teacher", icon: GraduationCap },
     { id: "student", label: "Student", icon: Users },
+    { id: "configuration", label: "Configuration", icon: Cog },
   ];
   const navigate = useNavigate();
 

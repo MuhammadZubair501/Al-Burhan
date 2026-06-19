@@ -3,8 +3,10 @@ import {
 
   Pencil,
   Trash2,
+  Users,
 
 } from "lucide-react";
+import PageHeader from "./PageHeader";
 
 type Status = "present" | "absent" | "late" | "leave";
 
@@ -217,19 +219,12 @@ export default function AttendancePage() {
 
   return (
     <div className="text-white">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10">
-
-        {/* HEADER */}
-        <div className="mb-6">
-          <h1 className="text-3xl sm:text-4xl font-bold">
-            Attendance Management
-          </h1>
-          <p className="text-green-100 mt-2 text-sm sm:text-base">
-            Manage teacher and student attendance system
-          </p>
-        </div>
-
-        {/* TABS */}
+         <PageHeader
+            title= " Attendance Management"
+            description="Manage teacher and student attendance system"
+            Icon={Users}
+        />
+           {/* TABS */}
         <div className="sticky top-0 z-20 backdrop-blur-xl rounded-2xl mb-6 flex flex-wrap gap-2">
           {tabs.map((t) => (
             <button
@@ -248,6 +243,7 @@ export default function AttendancePage() {
             </button>
           ))}
         </div>
+      <div className="max-w-7xl ">
 
         {/* TOP BAR */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-6">

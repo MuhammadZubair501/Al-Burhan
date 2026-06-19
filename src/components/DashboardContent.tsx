@@ -1,3 +1,6 @@
+import { LayoutDashboard } from "lucide-react";
+import PageHeader from "./PageHeader";
+
 export default function DashboardContent() {
   const attendance = [
     { class: "Grade 5", present: 45, absent: 3 },
@@ -7,10 +10,12 @@ export default function DashboardContent() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-white">
-        Dashboard
-      </h1>
-
+    
+            <PageHeader
+            title= "Dashboard"
+            description="Overview of key metrics and recent activity"
+            Icon={LayoutDashboard}
+        />
       {/* Cards */}
       <div className="grid md:grid-cols-3 gap-5">
         <div className="bg-white/10 p-5 rounded-2xl border border-white/20">

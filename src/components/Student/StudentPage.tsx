@@ -1,8 +1,9 @@
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import StudentAndStudentCard from "./StudentCard";
 
 import { useState } from "react";
 import StudentModel from "./StudentModel";
+import PageHeader from "../PageHeader";
 
 const avatarUrl = "https://png.pngtree.com/recommend-works/png-clipart/20241021/ourmid/pngtree-students-reciting-the-koran-png-image_14133625.png";
 const Students = [
@@ -85,13 +86,16 @@ export default function StudentPage() {
 
 
   return (
-    <div className="relative h-full overflow-y-auto">
-      <div className="relative z-10 p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white">{Heading}</h1>
-          <p className="text-green-100 mt-2">{Description}</p>
-        </div>
+    <div className="">
+      {/* Header */}
+       <PageHeader
+            title= {Heading}
+            description={Description}
+            Icon={Users}
+        />
+      <div className="relative z-10 p-8 ">
+        
+    
 
         {/* Student Grid using reusable card */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

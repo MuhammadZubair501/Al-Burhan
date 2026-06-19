@@ -96,7 +96,7 @@ export default function ProfileButton() {
            type="button"
           onClick={() => goToLogin()}
 
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 rounded-xl transition-colors duration-200 font-medium group"
+            className="cursor-pointer w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 rounded-xl transition-colors duration-200 font-medium group"
  >
             <svg 
               className="w-4 h-4 text-red-500 group-hover:translate-x-0.5 transition-transform" 

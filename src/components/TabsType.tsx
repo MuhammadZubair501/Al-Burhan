@@ -1,1 +1,1 @@
-export type TabType = "dashboard" | "teacher" | "student" | "library";
+export type TabType = "dashboard" | "Attendance" | "library" |  "section" | "teacher" | "student" | "configuration" ;

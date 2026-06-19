@@ -8,16 +8,14 @@ import BackgroundRings from ".//BackgroundRings";
 
 import SectionPage from "../Section/SectionPage";
 
-
-
 import AttendancePage from "./AttendancePage";
-import ProfileButton from "./ProfileButton";
+import ConfigurationPage from "../Configuration/ConfigurationPage";
 
 
 
 export default function MianDeshboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
-  const [openProfile, setOpenProfile] = useState(false);
+
 
   const renderContent = () => {
     switch (activeTab) {
@@ -31,6 +29,8 @@ export default function MianDeshboard() {
         return <LibraryContent />;
         case "Attendance":
         return <AttendancePage />;
+      case "configuration":
+        return <ConfigurationPage />;
       default:
         return <DashboardContent />;
     }
@@ -51,9 +51,9 @@ export default function MianDeshboard() {
 <div className="flex-1 flex flex-col relative z-10">
 
   {/* Top Bar (ONLY PROFILE) */}
-  <div className="flex justify-end items-center px-8 py-5">
+  {/* <div className="flex justify-end items-center px-8 py-5">
     <ProfileButton />
-  </div>
+  </div> */}
 
   {/* Page Content */}
   <main className="flex-1 overflow-auto p-6">

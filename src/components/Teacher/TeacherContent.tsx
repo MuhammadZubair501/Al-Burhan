@@ -1,8 +1,9 @@
-import { Plus } from "lucide-react";
+import { GraduationCap, Plus } from "lucide-react";
 import TeacherAndStudentCard from "./TeacherCard";
 
 import TeacherModal from "./TeacherModal";
 import { useState } from "react";
+import PageHeader from "../PageHeader";
 
 const teachers = [
   {
@@ -69,13 +70,15 @@ export default function TeacherPage() {
     const [openTeacherModal, setOpenTeacherModal] = useState(false);
 
   return (
-    <div className="relative h-full overflow-y-auto">
+    <div className="relative h-full">
+          {/* Header */}
+        <PageHeader
+            title= {Heading}
+            description={Description}
+            Icon={GraduationCap}
+        />
       <div className="relative z-10 p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white">{Heading}</h1>
-          <p className="text-green-100 mt-2">{Description}</p>
-        </div>
+    
 
         {/* Teacher Grid using reusable card */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

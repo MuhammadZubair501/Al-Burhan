@@ -245,41 +245,43 @@ export default function StudentForm({ isOpen, onClose, onSave, initialData, last
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl my-8">
+      <div className="relative w-full max-w-6xl pt-30  my-8 sm:my-8">
+      {/* <div className="relative w-full max-w-3xl max-h-[95vh]"> */}
         {/* Modal - Matching Teacher Theme */}
-        <div className="relative rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden">
+        <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden">
           
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-20 w-10 h-10 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
           >
-            <X size={18} />
+            <X size={16} className="sm:hidden" />
+            <X size={18} className="hidden sm:block" />
           </button>
 
           {/* Header */}
-          <div className="px-8 pt-8 pb-6 text-center border-b border-white/10">
-            <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-xl">
-              <GraduationCap size={40} className="text-emerald-900" />
+          <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 text-center border-b border-white/10">
+            <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-xl">
+              <GraduationCap size={28} className="sm:size-[40px] text-emerald-900" />
             </div>
-            <h2 className="mt-4 text-3xl font-bold text-white">Student Enrollment</h2>
-            <p className="text-emerald-100 mt-1">Register new student with complete details</p>
+            <h2 className="mt-3 sm:mt-4 text-2xl sm:text-3xl font-bold text-white">Student Enrollment</h2>
+            <p className="text-emerald-100 mt-1 text-sm sm:text-base">Register new student with complete details</p>
           </div>
 
           {/* Form Content */}
-          <div className="px-8 py-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="px-4 sm:px-8 py-4 sm:py-6 max-h-[75vh] sm:max-h-[70vh] overflow-y-auto custom-scrollbar">
             
             {/* 1. Personal Details */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-yellow-300 mb-4 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-yellow-400/20 flex items-center justify-center text-sm">1</span>
+            <div className="mb-6 sm:mb-8">
+              <h3 className="text-base sm:text-lg font-semibold text-yellow-300 mb-3 sm:mb-4 flex items-center gap-2">
+                <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-yellow-400/20 flex items-center justify-center text-xs sm:text-sm">1</span>
                 Personal Details
               </h3>
               
               {/* Student Picture - Circular Drag & Drop */}
-              <div className="flex justify-center mb-6">
+              <div className="flex justify-center mb-4 sm:mb-6">
                 <div
-                  className={`relative w-32 h-32 rounded-full border-2 border-dashed transition-all cursor-pointer overflow-hidden ${
+                  className={`relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-dashed transition-all cursor-pointer overflow-hidden ${
                     dragActive ? 'border-yellow-400 bg-yellow-400/20' : 'border-white/40 bg-white/5'
                   }`}
                   onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
