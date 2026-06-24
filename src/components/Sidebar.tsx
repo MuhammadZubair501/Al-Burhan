@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export type TabType = "dashboard" | "Attendance" | "library" |  "section" | "teacher" | "student" | "configuration" ;
+export type TabType = "dashboard" | "Attendance" | "library" |  "section" | "teacher" | "student" | "configuration" | "class";
 
 
 type Props = {
@@ -28,7 +28,8 @@ export default function Sidebar({ activeTab, setActiveTab }: Props) {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "Attendance", label: "Attendance", icon: Users },
     { id: "library", label: "Library", icon: BookOpen },
-    { id: "section", label: "Sections", icon: SquareDashedText },
+
+    { id: "class", label: "Classes", icon: SquareDashedText },
     { id: "teacher", label: "Teacher", icon: GraduationCap },
     { id: "student", label: "Student", icon: Users },
     { id: "configuration", label: "Configuration", icon: Cog },

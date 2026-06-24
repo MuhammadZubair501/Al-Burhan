@@ -1,155 +1,234 @@
-import { Plus, Users } from "lucide-react";
+// StudentPage.tsx
+import { Plus, Users, Loader2 } from "lucide-react";
 import StudentAndStudentCard from "./StudentCard";
-
-import { useState } from "react";
+import StudentDetailModal from "./StudentDetailModal";
 import StudentModel from "./StudentModel";
 import PageHeader from "../PageHeader";
-
-const avatarUrl = "https://png.pngtree.com/recommend-works/png-clipart/20241021/ourmid/pngtree-students-reciting-the-koran-png-image_14133625.png";
-const Students = [
-  {
-    id: "S-1001",
-    name: "Muhammad Ahmed",
-    address: "North Nazimabad, Karachi",
-    image: avatarUrl,
-  },
-  {
-    id: "S-1002",
-    name: "Abdul Rehman",
-    address: "Gulshan-e-Iqbal, Karachi",
-    image: avatarUrl,
-  },
-  {
-    id: "S-1003",
-    name: "Usman Khan",
-    address: "DHA Phase 6, Karachi",
-    image: avatarUrl,
-  },
-   {
-    id: "S-1004",
-    name: "Muhammad Ahmed",
-    address: "North Nazimabad, Karachi",
-    image: avatarUrl,
-  },
-  {
-    id: "S-1005",
-    name: "Abdul Rehman",
-    address: "Gulshan-e-Iqbal, Karachi",
-    image: avatarUrl,
-  },
-  {
-    id: "S-1006",
-    name: "Usman Khan",
-    address: "DHA Phase 6, Karachi",
-    image: avatarUrl,
-  },
-   {
-    id: "S-1007",
-    name: "Muhammad Ahmed",
-    address: "North Nazimabad, Karachi",
-    image: avatarUrl,
-  },
-  {
-    id: "S-1008",
-    name: "Abdul Rehman",
-    address: "Gulshan-e-Iqbal, Karachi",
-    image: avatarUrl,
-  },
-  {
-    id: "S-1009",
-    name: "Usman Khan",
-    address: "DHA Phase 6, Karachi",
-    image: avatarUrl,
-  },
-];
+import { studentService, type StudentResponse } from "../../services/studentService";
+import { useState, useEffect } from "react";
 
 const Heading = "Student Management";
 const Description = "Manage all Students of Al-Burhan Academy";
 
 export default function StudentPage() {
-
   const [isStudentFormOpen, setIsStudentFormOpen] = useState(false);
-  
-  // Optional: Track last admission number for auto-increment
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<StudentResponse | null>(null);
+  const [students, setStudents] = useState<StudentResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastAdmissionNumber, setLastAdmissionNumber] = useState(24001);
+  const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
 
-  const handleSaveStudent = (studentData: any) => {
-    console.log('Student saved:', studentData);
-    // Here you can:
-    // - Send data to your backend API
-    // - Update local state
-    // - Increment admission number for next student
-    setLastAdmissionNumber(prev => prev + 1);
+  const campusId = Number(window.CampusID) || 1;
+
+  // Fetch students on component mount
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await studentService.getStudentsByCampus(campusId);
+      if (response.success) {
+        setStudents(response.data);
+        // Update last admission number based on max roll number
+        if (response.data.length > 0) {
+          const maxRoll = Math.max(
+            ...response.data.map(s => parseInt(s.roll_number || '0') || 0)
+          );
+          if (maxRoll > 0) {
+            setLastAdmissionNumber(maxRoll + 1);
+          }
+        }
+      } else {
+        setError('Failed to load students');
+      }
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setError('An error occurred while loading students');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleViewDetails = (student: StudentResponse) => {
+    setSelectedStudent(student);
+    setIsDetailModalOpen(true);
+  };
 
+  const handleEditStudent = (student: StudentResponse) => {
+    setEditingStudent(student);
+    setIsStudentFormOpen(true);
+  };
 
+  const handleDeleteStudent = async (student: StudentResponse) => {
+    if (!confirm(`Are you sure you want to delete student ${student.first_name} ${student.last_name}?`)) {
+      return;
+    }
+
+    try {
+      const response = await studentService.deleteStudent(student.student_id);
+      if (response.success) {
+        await fetchStudents(); // Refresh the list
+        setIsDetailModalOpen(false);
+      } else {
+        alert('Failed to delete student: ' + response.message);
+      }
+    } catch (err) {
+      console.error('Error deleting student:', err);
+      alert('An error occurred while deleting the student');
+    }
+  };
+
+  const handleSaveStudent = async (studentData: any) => {
+    try {
+      await fetchStudents(); // Refresh the list
+      setLastAdmissionNumber(prev => prev + 1);
+      setEditingStudent(null);
+    } catch (err) {
+      console.error('Error saving student:', err);
+    }
+  };
+
+  const handleCloseForm = () => {
+    setIsStudentFormOpen(false);
+    setEditingStudent(null);
+  };
+
+  // Transform student data for the card
+  const transformStudentForCard = (student: StudentResponse) => {
+    const fullName = `${student.first_name} ${student.last_name}`;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://192.9.210.50:5000';
+    const imageUrl = student.profile_image_path 
+      ? `${baseUrl}${student.profile_image_path}` 
+      : '/avatar.png';
+
+    return {
+      id: student.roll_number || `STU-${student.student_id}`,
+      name: fullName,
+      address: student.campus_name || `Campus ${student.campus_id}`,
+      image: imageUrl,
+      rawData: student // Keep raw data for detail modal
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 size={48} className="text-yellow-400 animate-spin" />
+          <p className="text-white/70">Loading students...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="bg-red-500/20 p-6 rounded-2xl border border-red-500/50">
+          <p className="text-red-300">{error}</p>
+          <button
+            onClick={fetchStudents}
+            className="mt-4 px-4 py-2 rounded-xl bg-yellow-400 text-emerald-950 font-semibold hover:bg-yellow-300 transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="">
       {/* Header */}
-       <PageHeader
-            title= {Heading}
-            description={Description}
-            Icon={Users}
+      <PageHeader title={Heading} description={Description} Icon={Users} />
+
+      <div className="relative z-10 p-8">
+        {/* Student Grid */}
+        {students.length === 0 ? (
+          <div className="text-center py-12">
+            <Users size={64} className="mx-auto text-white/20 mb-4" />
+            <p className="text-white/70 text-lg">No students enrolled yet</p>
+            <p className="text-white/50 text-sm mt-2">Click the + button to add your first student</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {students.map((student) => {
+              const cardData = transformStudentForCard(student);
+              return (
+                <StudentAndStudentCard
+                  key={student.student_id}
+                  id={cardData.id}
+                  image={cardData.image}
+                  name={cardData.name}
+                  address={cardData.address}
+                  rawData={student}
+                  onViewDetails={() => handleViewDetails(student)}
+                  onEdit={() => handleEditStudent(student)}
+                  onDelete={() => handleDeleteStudent(student)}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {/* Student Form Modal */}
+        <StudentModel
+          isOpen={isStudentFormOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveStudent}
+          lastAdmissionNumber={lastAdmissionNumber}
+          initialData={editingStudent ? {
+            firstName: editingStudent.first_name,
+            lastName: editingStudent.last_name,
+            dateOfBirth: editingStudent.date_of_birth,
+            gender: editingStudent.gender as any,
+            cnic: editingStudent.cnic,
+            phone: editingStudent.phone_number,
+            email: editingStudent.email_address,
+            emergencyContact: editingStudent.emergency_contact_number,
+            admissionNumber: editingStudent.roll_number || '',
+            enrollmentClass: editingStudent.class_name || '',
+            batch: editingStudent.batch_name || '',
+            highestQualification: editingStudent.last_previous_highest_qualification || '',
+            shift: editingStudent.shift as any,
+            joiningDate: editingStudent.joining_date,
+            extraDetails: editingStudent.extra_details || '',
+            studentPreview: editingStudent.profile_image_path ? 
+              `${import.meta.env.VITE_API_URL || 'http://192.9.210.50:5000'}${editingStudent.profile_image_path}` : '',
+          } : undefined}
+          campusId={campusId}
         />
-      <div className="relative z-10 p-8 ">
-        
-    
 
-        {/* Student Grid using reusable card */}
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {Students.map((Student) => (
-            <StudentAndStudentCard
-              key={Student.id}
-              id={Student.id}
-              image={Student.image}
-              name={Student.name}
-              address={Student.address}
-              onViewDetails={(data) =>
-                alert(`Viewing details for:\n${data.name}\n${data.id}\n${data.address}`)
-              }
-              onEdit={(data) => alert(`Edit: ${data.name}`)}
-              onDelete={(data) => alert(`Delete: ${data.name}`)}
-              onAdd={() => alert("Add New Student Form Coming Soon!")}
-            />
-          ))}
-        </div>
+        {/* Student Detail Modal */}
+        <StudentDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={() => {
+            setIsDetailModalOpen(false);
+            setSelectedStudent(null);
+          }}
+          student={selectedStudent}
+          onEdit={() => {
+            if (selectedStudent) {
+              handleEditStudent(selectedStudent);
+              setIsDetailModalOpen(false);
+            }
+          }}
+          onDelete={() => {
+            if (selectedStudent) {
+              handleDeleteStudent(selectedStudent);
+            }
+          }}
+        />
 
- {/* Student Form Modal */}
-      <StudentModel
-        isOpen={isStudentFormOpen}
-        onClose={() => setIsStudentFormOpen(false)}
-        onSave={handleSaveStudent}
-        lastAdmissionNumber={lastAdmissionNumber}
-      />
         {/* Floating Add Button */}
         <button
-          onClick={() =>  setIsStudentFormOpen(true)}
-
-
-       
-    
-          className="
-            fixed
-            bottom-8
-            right-8
-            w-16
-            h-16
-            rounded-full
-            bg-gradient-to-r
-            from-yellow-400
-            to-amber-500
-            text-green-950
-            shadow-2xl
-            flex
-            items-center
-            justify-center
-            hover:scale-110
-            transition-all
-            duration-300
-            z-50
-          "
+          onClick={() => setIsStudentFormOpen(true)}
+          className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-green-950 shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 z-50"
         >
           <Plus size={28} />
         </button>

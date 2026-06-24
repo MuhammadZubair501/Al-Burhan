@@ -1,57 +1,13 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { 
-  X, Upload, Calendar, ChevronDown, Check, Search, 
-  Plus, Trash2, User, Mail, Phone, Heart, BookOpen,
-  FileText, Award, Clock, Users, BookMarked, AlertCircle,
-  Briefcase, GraduationCap, Activity, PhoneCall, UserCheck
-} from 'lucide-react';
-
-// ==================== Types ====================
-interface StudentFormData {
-  // Personal Details
-  studentPicture: File | null;
-  studentPreview: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  gender: 'male' | 'female' | 'other' | '';
-  phone: string;
-  email: string;
-  
-  // Academic Enrollment
-  admissionNumber: string;
-  enrollmentClass: string;
-  section: string;
-  extraCurriculars: string[];
-  
-  // Guardian & Emergency Information
-  primaryGuardianName: string;
-  relationship: string;
-  emergencyPhone: string;
-  medicalDisclosures: string;
-  
-  // Qualifications & Files
-  highestDegree: string;
-}
-
-// Available options
-const CLASSES = [
-  'Pre-KG', 'LKG', 'UKG', 'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5',
-  'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'
-];
-
-const SECTIONS = ['A', 'B', 'C', 'D', 'E'];
-
-const EXTRA_CURRICULARS = [
-  'Sports (Cricket)', 'Sports (Football)', 'Sports (Basketball)', 'Swimming',
-  'Music (Vocal)', 'Music (Instrumental)', 'Dance', 'Drama / Theatre',
-  'Art & Painting', 'Debate Club', 'Science Club', 'Robotics Club',
-  'Chess Club', 'Quiz Club', 'Environmental Club', 'Student Council'
-];
-
-const RELATIONSHIPS = ['Father', 'Mother', 'Guardian', 'Grandfather', 'Grandmother', 'Uncle', 'Aunt', 'Sibling'];
-
-const DEGREES = ['Nursery', 'Kindergarten', 'Primary School', 'Middle School', 'High School', 'Bachelor\'s', 'Master\'s', 'PhD', 'Diploma'];
+// StudentModel.tsx
+import { useState, useEffect } from 'react';
+import { X, GraduationCap } from 'lucide-react';
+import { PersonalDetails } from './components/PersonalDetails';
+import { AcademicDetails } from './components/AcademicDetails';
+import { AdditionalDetails } from './components/AdditionalDetails';
+import type { StudentFormData } from './types/student';
+import { validateEmail, validatePhone, validateCNIC } from './utils/validation';
+import { studentService } from '../../services/studentService';
+import ApiRoutes from '../../services/ApiRoutes';
 
 interface StudentFormProps {
   isOpen: boolean;
@@ -59,525 +15,305 @@ interface StudentFormProps {
   onSave: (data: StudentFormData) => void;
   initialData?: Partial<StudentFormData>;
   lastAdmissionNumber?: number;
+  campusId?: number;
 }
 
-// ==================== Helper Functions ====================
-const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
-  return emailRegex.test(email);
+const initialFormData: StudentFormData = {
+  studentPicture: null,
+  studentPreview: '',
+  firstName: '',
+  lastName: '',
+  dateOfBirth: '',
+  gender: '',
+  cnic: '',
+  phone: '',
+  email: '',
+  emergencyContact: '',
+  admissionNumber: '',
+  enrollmentClass: '',
+  batch: '',
+  highestQualification: '',
+  shift: '',
+  joiningDate: '',
+  extraDetails: ''
 };
 
-const validatePhone = (phone: string): boolean => {
-  const phoneRegex = /^(\+92|0)[0-9]{10}$|^\+92 [0-9]{3} [0-9]{7}$/;
-  return phoneRegex.test(phone.replace(/\s/g, ''));
-};
-
-const formatPhoneInput = (value: string): string => {
-  const digits = value.replace(/\D/g, '');
-  if (digits.startsWith('92') && digits.length > 2) {
-    if (digits.length <= 5) return `+${digits}`;
-    if (digits.length <= 8) return `+${digits.slice(0, 3)} ${digits.slice(3)}`;
-    return `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)}`;
-  }
-  if (digits.startsWith('0') && digits.length > 1) {
-    if (digits.length <= 5) return digits;
-    if (digits.length <= 8) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
-    return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 11)}`;
-  }
-  return digits;
-};
-
-const formatPakPhone = (value: string) => {
-  let digits = value.replace(/\D/g, "");
-  if (!digits.startsWith("92")) {
-    if (digits.startsWith("0")) {
-      digits = "92" + digits.slice(1);
-    }
-  }
-  digits = digits.slice(0, 12);
-  let formatted = "+";
-  if (digits.length > 0) {
-    formatted += digits.slice(0, 2);
-  }
-  if (digits.length > 2) {
-    formatted += " " + digits.slice(2, 5);
-  }
-  if (digits.length > 5) {
-    formatted += " " + digits.slice(5);
-  }
-  return formatted;
-};
-
-const formatDateForPicker = (date: Date): string => {
-  return date.toISOString().split('T')[0];
-};
-
-// ==================== Main Component ====================
-export default function StudentForm({ isOpen, onClose, onSave, initialData, lastAdmissionNumber = 24001 }: StudentFormProps) {
-  // Form State
+export default function StudentForm({
+  isOpen,
+  onClose,
+  onSave,
+  initialData,
+  lastAdmissionNumber = 24001,
+  campusId
+}: StudentFormProps) {
   const [formData, setFormData] = useState<StudentFormData>({
-    studentPicture: null,
-    studentPreview: '',
-    firstName: initialData?.firstName || '',
-    lastName: initialData?.lastName || '',
-    dateOfBirth: initialData?.dateOfBirth || '',
-    gender: initialData?.gender || '',
-    phone: initialData?.phone || '',
-    email: initialData?.email || '',
-    admissionNumber: initialData?.admissionNumber || String(lastAdmissionNumber),
-    enrollmentClass: initialData?.enrollmentClass || '',
-    section: initialData?.section || '',
-    extraCurriculars: initialData?.extraCurriculars || [],
-    primaryGuardianName: initialData?.primaryGuardianName || '',
-    relationship: initialData?.relationship || '',
-    emergencyPhone: initialData?.emergencyPhone || '',
-    medicalDisclosures: initialData?.medicalDisclosures || '',
-    highestDegree: initialData?.highestDegree || ''
+    ...initialFormData,
+    ...initialData,
+    admissionNumber: initialData?.admissionNumber || String(lastAdmissionNumber)
   });
 
-  // UI State
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [extraCurricularSearch, setExtraCurricularSearch] = useState('');
-  const [openExtraDropdown, setOpenExtraDropdown] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [countryCode, setCountryCode] = useState('+92');
-  const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("");
-  const [emergencyPhoneError, setEmergencyPhoneError] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [batches, setBatches] = useState<{ id: number; name: string }[]>([]);
+  const [loadingBatches, setLoadingBatches] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
 
-  // Refs
-  const pictureInputRef = useRef<HTMLInputElement>(null);
+  // Get campus ID from props or window
+  const currentCampusId = campusId || Number(window.CampusID) || 1;
 
-  // Filtered extra-curriculars
-  const filteredExtras = useMemo(() => {
-    return EXTRA_CURRICULARS.filter(e => 
-      e.toLowerCase().includes(extraCurricularSearch.toLowerCase()) &&
-      !formData.extraCurriculars.includes(e)
-    );
-  }, [extraCurricularSearch, formData.extraCurriculars]);
+  // Load batches and classes when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
 
-  // Handlers
-  const updateField = <K extends keyof StudentFormData>(field: K, value: StudentFormData[K]) => {
+    const loadData = async () => {
+      // Load Batches
+      setLoadingBatches(true);
+      try {
+        const response = await fetch(ApiRoutes.BATCH);
+        const data = await response.json();
+        console.log("Batches loaded:", data);
+        const mappedBatches = data.map((item: any) => ({
+          id: Number(item.batch_id || item.id),
+          name: String(item.batch_name || item.name),
+        }));
+        setBatches(mappedBatches);
+      } catch (err) {
+        console.error("Error loading batches:", err);
+      } finally {
+        setLoadingBatches(false);
+      }
+
+      // Load Classes
+      setLoadingClasses(true);
+      try {
+        console.log(`Fetching sections/classes for Campus ID: ${currentCampusId}...`);
+        const response = await fetch(ApiRoutes.sectionByCampusId(currentCampusId));
+        const data = await response.json();
+        console.log('Classes fetched:', data);
+        
+        const mappedClasses = data.map((item: any) => ({
+          id: Number(item.section_id || item.id),
+          name: `${item.class_name}${item.section_name ? ` - ${item.section_name}` : ''}`,
+        }));
+        setClasses(mappedClasses);
+      } catch (err) {
+        console.error("Error loading classes:", err);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+
+    loadData();
+  }, [isOpen, currentCampusId]);
+
+  if (!isOpen) return null;
+
+  const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
-  };
-
-  // Student Picture Handler
-  const handlePictureDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragActive(false);
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      if (file.size > 2 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, studentPicture: 'Image must be less than 2MB' }));
-        return;
-      }
-      const preview = URL.createObjectURL(file);
-      updateField('studentPicture', file);
-      updateField('studentPreview', preview);
-      setErrors(prev => ({ ...prev, studentPicture: '' }));
-    } else {
-      setErrors(prev => ({ ...prev, studentPicture: 'Please upload an image file' }));
-    }
-  }, []);
-
-  const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, studentPicture: 'Image must be less than 2MB' }));
-        return;
-      }
-      const preview = URL.createObjectURL(file);
-      updateField('studentPicture', file);
-      updateField('studentPreview', preview);
-      setErrors(prev => ({ ...prev, studentPicture: '' }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  const addExtraCurricular = (activity: string) => {
-    if (!formData.extraCurriculars.includes(activity)) {
-      updateField('extraCurriculars', [...formData.extraCurriculars, activity]);
-    }
-    setExtraCurricularSearch('');
+  const handleDropdownToggle = (dropdown: string) => {
+    setOpenDropdown(openDropdown === dropdown ? null : dropdown);
   };
 
-  const removeExtraCurricular = (activity: string) => {
-    updateField('extraCurriculars', formData.extraCurriculars.filter(a => a !== activity));
+  const handleDropdownClose = () => {
+    setOpenDropdown(null);
   };
 
-  // Validation
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     
+    // Personal Details Validation
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
     if (!formData.gender) newErrors.gender = 'Please select gender';
+    if (!formData.cnic) newErrors.cnic = 'CNIC is required';
+    else if (!validateCNIC(formData.cnic)) newErrors.cnic = 'Invalid CNIC format (e.g., 42000-1234567-1)';
+    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    else if (!validatePhone(formData.phone)) newErrors.phone = 'Invalid phone format (e.g., +92 300 1234567)';
     if (!formData.email) newErrors.email = 'Email is required';
     else if (!validateEmail(formData.email)) newErrors.email = 'Invalid email format';
-    if (!formData.phone) newErrors.phone = 'Phone number is required';
-    else if (!validatePhone(formData.phone)) newErrors.phone = 'Use format: +92 300 1234567 or 03001234567';
+    if (!formData.emergencyContact) newErrors.emergencyContact = 'Emergency contact is required';
+    else if (!validatePhone(formData.emergencyContact)) newErrors.emergencyContact = 'Invalid phone format';
+    
+    // Academic Details Validation
     if (!formData.admissionNumber) newErrors.admissionNumber = 'Admission number is required';
     if (!formData.enrollmentClass) newErrors.enrollmentClass = 'Please select enrollment class';
-    if (!formData.section) newErrors.section = 'Please select section';
-    if (!formData.primaryGuardianName) newErrors.primaryGuardianName = 'Guardian name is required';
-    if (!formData.relationship) newErrors.relationship = 'Please select relationship';
-    if (!formData.emergencyPhone) newErrors.emergencyPhone = 'Emergency contact is required';
-    else if (!validatePhone(formData.emergencyPhone)) newErrors.emergencyPhone = 'Use valid phone format';
-    if (!formData.highestDegree) newErrors.highestDegree = 'Please select highest qualification';
+    if (!formData.batch) newErrors.batch = 'Please select batch';
+    if (!formData.highestQualification) newErrors.highestQualification = 'Please select qualification';
+    
+    // Additional Details Validation
+    if (!formData.shift) newErrors.shift = 'Please select shift';
+    if (!formData.joiningDate) newErrors.joiningDate = 'Joining date is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const todayDate = formatDateForPicker(new Date());
+  // Helper to get section_id from class name
+  const getSectionIdFromClassName = (className: string): number | null => {
+    const classItem = classes.find(c => c.name === className);
+    return classItem ? classItem.id : null;
+  };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSave(formData);
-      onClose();
+  // Helper to get batch_id from batch name
+  const getBatchIdFromName = (batchName: string): number | null => {
+    const batchItem = batches.find(b => b.name === batchName);
+    return batchItem ? batchItem.id : null;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Get section_id from the selected class name
+      const sectionId = getSectionIdFromClassName(formData.enrollmentClass);
+      if (!sectionId) {
+        setSubmitError('Please select a valid class');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get batch_id from the selected batch name
+      const batchId = getBatchIdFromName(formData.batch);
+      if (!batchId) {
+        setSubmitError('Please select a valid batch');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Map form data to API expected format
+      const apiData = {
+        section_id: sectionId,
+        batch_id: batchId,
+        roll_number: formData.admissionNumber,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        date_of_birth: formData.dateOfBirth,
+        gender: formData.gender,
+        cnic: formData.cnic,
+        phone_number: formData.phone.replace(/\s/g, ''),
+        email_address: formData.email,
+        emergency_contact_number: formData.emergencyContact.replace(/\s/g, ''),
+        last_previous_highest_qualification: formData.highestQualification,
+        shift: formData.shift,
+        joining_date: formData.joiningDate,
+        extra_details: formData.extraDetails || '',
+        campus_id: currentCampusId,
+        password: '123456',
+        role: 'student'
+      };
+
+      console.log('Sending data to API:', apiData);
+
+      const response = await studentService.createStudent(apiData);
+      console.log('API Response:', response);
+      
+      if (response.success) {
+        onSave(formData);
+        onClose();
+      } else {
+        setSubmitError(response.message || 'Failed to enroll student. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Error enrolling student:', error);
+      setSubmitError(error.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-6xl pt-30  my-8 sm:my-8">
-      {/* <div className="relative w-full max-w-3xl max-h-[95vh]"> */}
-        {/* Modal - Matching Teacher Theme */}
+      <div className="relative w-full max-w-4xl my-8">
         <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden">
           
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
+            className="absolute top-3 right-3 z-20 w-9 h-9 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
           >
-            <X size={16} className="sm:hidden" />
-            <X size={18} className="hidden sm:block" />
+            <X size={18} />
           </button>
 
           {/* Header */}
-          <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 text-center border-b border-white/10">
-            <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-xl">
-              <GraduationCap size={28} className="sm:size-[40px] text-emerald-900" />
+          <div className="px-4 sm:px-8 pt-6 pb-4 text-center border-b border-white/10">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-xl">
+              <GraduationCap size={28} className="text-emerald-900" />
             </div>
-            <h2 className="mt-3 sm:mt-4 text-2xl sm:text-3xl font-bold text-white">Student Enrollment</h2>
-            <p className="text-emerald-100 mt-1 text-sm sm:text-base">Register new student with complete details</p>
+            <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white">Student Enrollment</h2>
+            <p className="text-emerald-100 mt-1 text-sm">Register new student with complete details</p>
           </div>
 
           {/* Form Content */}
-          <div className="px-4 sm:px-8 py-4 sm:py-6 max-h-[75vh] sm:max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="px-4 sm:px-8 py-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            {submitError && (
+              <div className="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-200">
+                <p className="font-semibold">Error Enrolling Student</p>
+                <p className="text-sm">{submitError}</p>
+              </div>
+            )}
+
+            <PersonalDetails
+              formData={formData}
+              updateField={updateField}
+              errors={errors}
+              setErrors={setErrors}
+            />
             
-            {/* 1. Personal Details */}
-            <div className="mb-6 sm:mb-8">
-              <h3 className="text-base sm:text-lg font-semibold text-yellow-300 mb-3 sm:mb-4 flex items-center gap-2">
-                <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-yellow-400/20 flex items-center justify-center text-xs sm:text-sm">1</span>
-                Personal Details
-              </h3>
-              
-              {/* Student Picture - Circular Drag & Drop */}
-              <div className="flex justify-center mb-4 sm:mb-6">
-                <div
-                  className={`relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-dashed transition-all cursor-pointer overflow-hidden ${
-                    dragActive ? 'border-yellow-400 bg-yellow-400/20' : 'border-white/40 bg-white/5'
-                  }`}
-                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-                  onDragLeave={() => setDragActive(false)}
-                  onDrop={handlePictureDrop}
-                  onClick={() => pictureInputRef.current?.click()}
-                >
-                  {formData.studentPreview ? (
-                    <img src={formData.studentPreview} alt="Student" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-white/60">
-                      <Upload size={28} />
-                      <span className="text-[10px] mt-1">Upload</span>
-                    </div>
-                  )}
-                </div>
-                <input ref={pictureInputRef} type="file" accept="image/*" className="hidden" onChange={handlePictureUpload} />
-              </div>
-              {errors.studentPicture && <p className="text-red-300 text-xs text-center">{errors.studentPicture}</p>}
-              <p className="text-white/50 text-xs text-center mb-4">Student photo (PNG, JPG up to 2MB)</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">First Name *</label>
-                  <input
-                    value={formData.firstName}
-                    onChange={(e) => updateField('firstName', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none"
-                    placeholder="John"
-                  />
-                  {errors.firstName && <p className="text-red-300 text-xs mt-1">{errors.firstName}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Last Name *</label>
-                  <input
-                    value={formData.lastName}
-                    onChange={(e) => updateField('lastName', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none"
-                    placeholder="Doe"
-                  />
-                  {errors.lastName && <p className="text-red-300 text-xs mt-1">{errors.lastName}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Date of Birth *</label>
-                  <input
-                    type="date"
-                    max={todayDate}
-                    value={formData.dateOfBirth}
-                    onChange={(e) => updateField('dateOfBirth', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-yellow-400 outline-none"
-                  />
-                  {errors.dateOfBirth && <p className="text-red-300 text-xs mt-1">{errors.dateOfBirth}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Gender *</label>
-                  <div className="flex gap-3 mt-1">
-                    {['male', 'female', 'other'].map((g) => (
-                      <label key={g} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="gender"
-                          value={g}
-                          checked={formData.gender === g}
-                          onChange={(e) => updateField('gender', e.target.value as any)}
-                          className="w-4 h-4 accent-yellow-400"
-                        />
-                        <span className="text-white capitalize">{g}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.gender && <p className="text-red-300 text-xs mt-1">{errors.gender}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Phone Number *</label>
-                  <div className="relative">
-                    <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-300" />
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) => {
-                        const formatted = formatPakPhone(e.target.value);
-                        setPhone(formatted);
-                        updateField('phone', formatted);
-                        const digits = formatted.replace(/\D/g, "");
-                        if (digits.length < 12) {
-                          setPhoneError("Invalid phone number (format: +92 300 1234567)");
-                        } else {
-                          setPhoneError("");
-                        }
-                      }}
-                      placeholder="+92 300 1234567"
-                      className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none"
-                    />
-                  </div>
-                  {(phoneError || errors.phone) && <p className="text-red-300 text-xs mt-1">{phoneError || errors.phone}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Email Address *</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => updateField('email', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none"
-                    placeholder="student@school.edu"
-                  />
-                  {errors.email && <p className="text-red-300 text-xs mt-1">{errors.email}</p>}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Academic Enrollment */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-yellow-300 mb-4 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-yellow-400/20 flex items-center justify-center text-sm">2</span>
-                Academic Enrollment
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Roll / Admission Number *</label>
-                  <input
-                    value={formData.admissionNumber}
-                    onChange={(e) => updateField('admissionNumber', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-yellow-400 outline-none"
-                    placeholder="Auto-generated or manual"
-                  />
-                  {errors.admissionNumber && <p className="text-red-300 text-xs mt-1">{errors.admissionNumber}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Enrollment Class *</label>
-                  <select
-                    value={formData.enrollmentClass}
-                    onChange={(e) => updateField('enrollmentClass', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-yellow-400 outline-none"
-                  >
-                    <option value="" className="bg-emerald-900">Select Class</option>
-                    {CLASSES.map(cls => <option key={cls} value={cls} className="bg-emerald-900">{cls}</option>)}
-                  </select>
-                  {errors.enrollmentClass && <p className="text-red-300 text-xs mt-1">{errors.enrollmentClass}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Section / Batch *</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {SECTIONS.map(sec => (
-                      <button
-                        key={sec}
-                        type="button"
-                        onClick={() => updateField('section', sec)}
-                        className={`px-4 py-2 rounded-lg transition-all ${
-                          formData.section === sec
-                            ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-950 font-semibold shadow-lg'
-                            : 'bg-white/10 text-white/70 hover:bg-white/20'
-                        }`}
-                      >
-                        Section {sec}
-                      </button>
-                    ))}
-                  </div>
-                  {errors.section && <p className="text-red-300 text-xs mt-1">{errors.section}</p>}
-                </div>
-              </div>
-
-              {/* Extra-Curriculars - Multi-select chips */}
-              <div className="mt-4">
-                <label className="text-emerald-100 text-sm mb-1 block">Extra-Curricular Activities</label>
-                <div className="relative">
-                  <div className="flex flex-wrap gap-2 mb-2 min-h-[50px] p-2 rounded-xl bg-white/5 border border-white/20">
-                    {formData.extraCurriculars.map(activity => (
-                      <span key={activity} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-400/20 text-yellow-200 text-sm">
-                        {activity}
-                        <button onClick={() => removeExtraCurricular(activity)} className="hover:text-red-300"><X size={14} /></button>
-                      </span>
-                    ))}
-                    <button
-                      onClick={() => setOpenExtraDropdown(!openExtraDropdown)}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 text-white/70 text-sm hover:bg-white/20"
-                    >
-                      <Plus size={14} /> Add Activity
-                    </button>
-                  </div>
-                  {openExtraDropdown && (
-                    <div className="absolute z-10 w-full mt-1 rounded-xl bg-emerald-800 border border-white/20 shadow-lg overflow-hidden">
-                      <div className="p-2 border-b border-white/10">
-                        <input
-                          value={extraCurricularSearch}
-                          onChange={(e) => setExtraCurricularSearch(e.target.value)}
-                          placeholder="Search activities..."
-                          className="w-full px-3 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-yellow-400"
-                        />
-                      </div>
-                      <div className="max-h-40 overflow-y-auto">
-                        {filteredExtras.map(activity => (
-                          <div key={activity} onClick={() => addExtraCurricular(activity)} className="px-4 py-2 text-white hover:bg-yellow-400/20 cursor-pointer">
-                            {activity}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Guardian & Emergency Information */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-yellow-300 mb-4 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-yellow-400/20 flex items-center justify-center text-sm">3</span>
-                Guardian & Emergency Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Primary Guardian Name *</label>
-                  <input
-                    value={formData.primaryGuardianName}
-                    onChange={(e) => updateField('primaryGuardianName', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none"
-                    placeholder="Full name of parent/guardian"
-                  />
-                  {errors.primaryGuardianName && <p className="text-red-300 text-xs mt-1">{errors.primaryGuardianName}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Relationship *</label>
-                  <select
-                    value={formData.relationship}
-                    onChange={(e) => updateField('relationship', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-yellow-400 outline-none"
-                  >
-                    <option value="" className="bg-emerald-900">Select Relationship</option>
-                    {RELATIONSHIPS.map(rel => <option key={rel} value={rel} className="bg-emerald-900">{rel}</option>)}
-                  </select>
-                  {errors.relationship && <p className="text-red-300 text-xs mt-1">{errors.relationship}</p>}
-                </div>
-                <div>
-                  <label className="text-emerald-100 text-sm mb-1 block">Emergency Contact Phone *</label>
-                  <div className="relative">
-                    <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-300" />
-                    <input
-                      type="text"
-                      value={emergencyPhone}
-                      onChange={(e) => {
-                        const formatted = formatPakPhone(e.target.value);
-                        setEmergencyPhone(formatted);
-                        updateField('emergencyPhone', formatted);
-                        const digits = formatted.replace(/\D/g, "");
-                        if (digits.length < 12) {
-                          setEmergencyPhoneError("Invalid phone number (format: +92 300 1234567)");
-                        } else {
-                          setEmergencyPhoneError("");
-                        }
-                      }}
-                      placeholder="+92 300 1234567"
-                      className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none"
-                    />
-                  </div>
-                  {(emergencyPhoneError || errors.emergencyPhone) && <p className="text-red-300 text-xs mt-1">{emergencyPhoneError || errors.emergencyPhone}</p>}
-                </div>
-              </div>
-              <div className="mt-4">
-                <label className="text-emerald-100 text-sm mb-1 block">Medical Disclosures (Allergies/Conditions)</label>
-                <textarea
-                  value={formData.medicalDisclosures}
-                  onChange={(e) => updateField('medicalDisclosures', e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none resize-none"
-                  placeholder="List any allergies, medical conditions, or special requirements..."
-                />
-              </div>
-            </div>
-
-            {/* 4. Qualifications & Files */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-yellow-300 mb-4 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-yellow-400/20 flex items-center justify-center text-sm">4</span>
-                Previous Qualifications
-              </h3>
-              <div>
-                <label className="text-emerald-100 text-sm mb-1 block">Highest Qualification *</label>
-                <select
-                  value={formData.highestDegree}
-                  onChange={(e) => updateField('highestDegree', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-yellow-400 outline-none"
-                >
-                  <option value="" className="bg-emerald-900">Select Qualification</option>
-                  {DEGREES.map(deg => <option key={deg} value={deg} className="bg-emerald-900">{deg}</option>)}
-                </select>
-                {errors.highestDegree && <p className="text-red-300 text-xs mt-1">{errors.highestDegree}</p>}
-              </div>
-            </div>
+            <AcademicDetails
+              formData={formData}
+              updateField={updateField}
+              errors={errors}
+              batches={batches}
+              loadingBatches={loadingBatches}
+              classes={classes}
+              loadingClasses={loadingClasses}
+              openDropdown={openDropdown}
+              onDropdownToggle={handleDropdownToggle}
+              onDropdownClose={handleDropdownClose}
+              campusId={currentCampusId}
+            />
+            
+            <AdditionalDetails
+              formData={formData}
+              updateField={updateField}
+              errors={errors}
+            />
           </div>
 
-          {/* Footer Buttons */}
-          <div className="px-8 py-6 bg-black/20 flex justify-end gap-3 border-t border-white/10">
-            <button onClick={onClose} className="px-6 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition">
+          {/* Footer */}
+          <div className="px-4 sm:px-8 py-4 bg-black/20 flex flex-col sm:flex-row justify-end gap-3 border-t border-white/10">
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-6 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Cancel
             </button>
-            <button onClick={handleSubmit} className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-950 font-bold hover:scale-105 transition shadow-lg">
-              Enroll Student
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-950 font-bold hover:scale-105 transition shadow-lg disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-emerald-950 border-t-transparent"></span>
+                  Enrolling...
+                </>
+              ) : (
+                'Enroll Student'
+              )}
             </button>
           </div>
         </div>
