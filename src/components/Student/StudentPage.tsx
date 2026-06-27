@@ -1,4 +1,4 @@
-// StudentPage.tsx
+// StudentPage.tsx - Updated with null handling
 import { Plus, Users, Loader2 } from "lucide-react";
 import StudentAndStudentCard from "./StudentCard";
 import StudentDetailModal from "./StudentDetailModal";
@@ -6,6 +6,7 @@ import StudentModel from "./StudentModel";
 import PageHeader from "../PageHeader";
 import { studentService, type StudentResponse } from "../../services/studentService";
 import { useState, useEffect } from "react";
+import { BASE_URL } from '../../config/api';
 
 const Heading = "Student Management";
 const Description = "Manage all Students of Al-Burhan Academy";
@@ -22,7 +23,6 @@ export default function StudentPage() {
 
   const campusId = Number(window.CampusID) || 1;
 
-  // Fetch students on component mount
   useEffect(() => {
     fetchStudents();
   }, []);
@@ -34,7 +34,6 @@ export default function StudentPage() {
       const response = await studentService.getStudentsByCampus(campusId);
       if (response.success) {
         setStudents(response.data);
-        // Update last admission number based on max roll number
         if (response.data.length > 0) {
           const maxRoll = Math.max(
             ...response.data.map(s => parseInt(s.roll_number || '0') || 0)
@@ -60,6 +59,18 @@ export default function StudentPage() {
   };
 
   const handleEditStudent = (student: StudentResponse) => {
+    console.log('Editing student:', student);
+    
+    // Build the enrollment class display name
+    const enrollmentClass = student.class_name ? 
+      `${student.class_name}${student.section_name ? ` - ${student.section_name}` : ''}` : '';
+    
+    // Build the image URL
+    const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
+    const imageUrl = student.profile_image_path ? 
+      `${baseUrl}${student.profile_image_path}` : '';
+    
+    // Set the editing student with all data
     setEditingStudent(student);
     setIsStudentFormOpen(true);
   };
@@ -72,7 +83,7 @@ export default function StudentPage() {
     try {
       const response = await studentService.deleteStudent(student.student_id);
       if (response.success) {
-        await fetchStudents(); // Refresh the list
+        await fetchStudents();
         setIsDetailModalOpen(false);
       } else {
         alert('Failed to delete student: ' + response.message);
@@ -84,13 +95,11 @@ export default function StudentPage() {
   };
 
   const handleSaveStudent = async (studentData: any) => {
-    try {
-      await fetchStudents(); // Refresh the list
+    await fetchStudents();
+    if (!editingStudent) {
       setLastAdmissionNumber(prev => prev + 1);
-      setEditingStudent(null);
-    } catch (err) {
-      console.error('Error saving student:', err);
     }
+    setEditingStudent(null);
   };
 
   const handleCloseForm = () => {
@@ -98,10 +107,9 @@ export default function StudentPage() {
     setEditingStudent(null);
   };
 
-  // Transform student data for the card
   const transformStudentForCard = (student: StudentResponse) => {
     const fullName = `${student.first_name} ${student.last_name}`;
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://192.9.210.50:5000';
+    const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
     const imageUrl = student.profile_image_path 
       ? `${baseUrl}${student.profile_image_path}` 
       : '/avatar.png';
@@ -111,7 +119,44 @@ export default function StudentPage() {
       name: fullName,
       address: student.campus_name || `Campus ${student.campus_id}`,
       image: imageUrl,
-      rawData: student // Keep raw data for detail modal
+      rawData: student
+    };
+  };
+
+  // Prepare initial data for edit mode
+  const getInitialData = () => {
+    if (!editingStudent) return undefined;
+    
+    const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
+    const enrollmentClass = editingStudent.class_name ? 
+      `${editingStudent.class_name}${editingStudent.section_name ? ` - ${editingStudent.section_name}` : ''}` : '';
+    
+    return {
+      studentId: editingStudent.student_id,
+      firstName: editingStudent.first_name,
+      lastName: editingStudent.last_name,
+      dateOfBirth: editingStudent.date_of_birth,
+      gender: editingStudent.gender as any,
+      cnic: editingStudent.cnic,
+      phone: editingStudent.phone_number,
+      email: editingStudent.email_address,
+      emergencyContact: editingStudent.emergency_contact_number,
+      admissionNumber: editingStudent.roll_number || '',
+      enrollmentClass: enrollmentClass,
+      className: editingStudent.class_name || '',
+      sectionName: editingStudent.section_name || '',
+      classId: editingStudent.class_id || undefined,
+      sectionId: editingStudent.section_id || undefined,
+      batch: editingStudent.batch_name || '',
+      batchName: editingStudent.batch_name || '',
+      batchId: editingStudent.batch_id || undefined, // Convert null to undefined
+      highestQualification: editingStudent.last_previous_highest_qualification || '',
+      shift: editingStudent.shift as any,
+      joiningDate: editingStudent.joining_date,
+      extraDetails: editingStudent.extra_details || '',
+      studentPreview: editingStudent.profile_image_path ? 
+        `${baseUrl}${editingStudent.profile_image_path}` : '',
+      studentPicture: null
     };
   };
 
@@ -144,11 +189,9 @@ export default function StudentPage() {
 
   return (
     <div className="">
-      {/* Header */}
       <PageHeader title={Heading} description={Description} Icon={Users} />
 
       <div className="relative z-10 p-8">
-        {/* Student Grid */}
         {students.length === 0 ? (
           <div className="text-center py-12">
             <Users size={64} className="mx-auto text-white/20 mb-4" />
@@ -182,25 +225,7 @@ export default function StudentPage() {
           onClose={handleCloseForm}
           onSave={handleSaveStudent}
           lastAdmissionNumber={lastAdmissionNumber}
-          initialData={editingStudent ? {
-            firstName: editingStudent.first_name,
-            lastName: editingStudent.last_name,
-            dateOfBirth: editingStudent.date_of_birth,
-            gender: editingStudent.gender as any,
-            cnic: editingStudent.cnic,
-            phone: editingStudent.phone_number,
-            email: editingStudent.email_address,
-            emergencyContact: editingStudent.emergency_contact_number,
-            admissionNumber: editingStudent.roll_number || '',
-            enrollmentClass: editingStudent.class_name || '',
-            batch: editingStudent.batch_name || '',
-            highestQualification: editingStudent.last_previous_highest_qualification || '',
-            shift: editingStudent.shift as any,
-            joiningDate: editingStudent.joining_date,
-            extraDetails: editingStudent.extra_details || '',
-            studentPreview: editingStudent.profile_image_path ? 
-              `${import.meta.env.VITE_API_URL || 'http://192.9.210.50:5000'}${editingStudent.profile_image_path}` : '',
-          } : undefined}
+          initialData={getInitialData()}
           campusId={campusId}
         />
 

@@ -6,6 +6,7 @@ import ClassCard from "./ClassCard";
 import ClassModal from "./Model/ClassModal";
 import { classService } from "../services/ClassService";
 import Swal from "sweetalert2";
+import { studentService } from "../services/studentService";
 
 // Type matching the database structure
 type Class = {
@@ -44,10 +45,14 @@ export default function ClassPage() {
 
       // Fetches filtered records via the relation table pipeline
       console.log('Fetching classes for CampusID:', window.CampusID);
-      const data = await classService.getClassesByCampus(window.CampusID);
-      
-      // Transform data to match the Class type
-      const transformedData = data.map((item: any) => ({
+     const data = await classService.getClassesByCampus(window.CampusID);
+
+const transformedData = await Promise.all(
+  data.map(async (item: any) => {
+    try {
+      const count = await studentService.getStudentCountByClass(item.class_id);
+
+      return {
         class_id: item.class_id,
         class_name: item.class_name,
         department_id: item.department_id,
@@ -55,10 +60,26 @@ export default function ClassPage() {
         batch_id: item.batch_id,
         batch_name: item.batch_name,
         shift: item.shift,
-        student_count: item.student_count || "0",
+        student_count: count.total_students.toString(),
         total_sections: item.total_sections || "0",
-      }));
-      setClasses(transformedData);
+      };
+    } catch (error) {
+      return {
+        class_id: item.class_id,
+        class_name: item.class_name,
+        department_id: item.department_id,
+        department_name: item.department_name,
+        batch_id: item.batch_id,
+        batch_name: item.batch_name,
+        shift: item.shift,
+        student_count: "0",
+        total_sections: item.total_sections || "0",
+      };
+    }
+  })
+);
+
+setClasses(transformedData);
     } catch (error) {
       console.error('Error fetching classes:', error);
       alert('Failed to fetch classes. Please try again.');

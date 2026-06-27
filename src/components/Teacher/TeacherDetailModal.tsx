@@ -1,7 +1,7 @@
 import {
   X,User,Mail,Phone,Calendar,Clock,GraduationCap,Building2,BookOpen,Users,FileUser,Pencil,Trash2,PhoneCall,Venus,Medal,
 } from 'lucide-react';
-
+import { BASE_URL }   from '../../config/api';
 interface TeacherDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -40,7 +40,7 @@ export default function TeacherDetailModal({
   if (!isOpen || !teacher) return null;
 
   const fullName = `${teacher.first_name} ${teacher.last_name}`;
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://192.9.210.50:5000';
+  const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
   const imageUrl = teacher.profile_image_path 
     ? `${baseUrl}${teacher.profile_image_path}` 
     : '/avatar.png';

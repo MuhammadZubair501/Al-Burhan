@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import PageHeader from "../PageHeader";
 import { teacherService } from "../../services/teacherService";
 import Swal from "sweetalert2";
-
+import { BASE_URL }   from '../../config/api';
 // Simple toast notification system
 const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
   const colors = {
@@ -69,7 +69,7 @@ const Description = "Manage all teachers of Al-Burhan Academy";
 const getImageUrl = (imagePath: string | null) => {
   if (!imagePath) return '';
   if (imagePath.startsWith('http')) return imagePath;
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://192.9.210.50:5000';
+  const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
   return `${baseUrl}${imagePath}`;
 };
 

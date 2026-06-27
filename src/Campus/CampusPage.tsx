@@ -7,6 +7,8 @@ import PageHeader from "../components/PageHeader";
 import CampusCard from "./CampusCard";
 import Swal from "sweetalert2";
 import ApiRoutes from "../services/ApiRoutes";
+import { studentService } from "../services/studentService";
+import { teacherService } from "../services/teacherService";
 
 export default function CampusPage() {
   const navigate = useNavigate();
@@ -16,16 +18,39 @@ export default function CampusPage() {
   const [selectedCampus, setSelectedCampus] = useState<any>(null);
 
   // ---------------- FETCH CAMPUSES ----------------
-  const fetchCampuses = async () => {
-    try {
-     const res = await fetch(ApiRoutes.CAMPUS);
-      const data = await res.json();
-      setCampuses(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+const fetchCampuses = async () => {
+  try {
+    const res = await fetch(ApiRoutes.CAMPUS);
+    const data = await res.json();
 
+    const campusesWithCounts = await Promise.all(
+      data.map(async (campus: any) => {
+        try {
+          const [studentRes, teacherRes] = await Promise.all([
+            studentService.getStudentCountByCampus(campus.campus_id),
+            teacherService.getTeacherCountByCampus(campus.campus_id),
+          ]);
+
+          return {
+            ...campus,
+            students: studentRes.total_students,
+            teachers: teacherRes.total_teachers,
+          };
+        } catch {
+          return {
+            ...campus,
+            students: 0,
+            teachers: 0,
+          };
+        }
+      })
+    );
+
+    setCampuses(campusesWithCounts);
+  } catch (error) {
+    console.error(error);
+  }
+};
   useEffect(() => {
     fetchCampuses();
   }, []);

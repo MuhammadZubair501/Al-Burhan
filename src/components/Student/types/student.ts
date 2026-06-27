@@ -1,5 +1,13 @@
 // types/student.ts
 export interface StudentFormData {
+  // For edit mode
+  studentId?: number;
+  
+  // For matching in edit mode
+  className?: string;
+  sectionName?: string;
+  batchName?: string;
+  
   // Personal Details
   studentPicture: File | null;
   studentPreview: string;

@@ -2,6 +2,7 @@
 import ApiRoutes from "./ApiRoutes";
 
 export interface StudentFormData {
+  studentId?: number;
   section_id?: number;
   batch_id?: number;
   roll_number?: string;
@@ -23,6 +24,7 @@ export interface StudentFormData {
   role?: string;
 }
 
+// services/studentService.ts
 export interface StudentResponse {
   student_id: number;
   section_id: number;
@@ -46,11 +48,15 @@ export interface StudentResponse {
   class_name?: string;
   class_id?: number;
   batch_name?: string;
+
   department_name?: string;
   department_id?: number;
   campus_name?: string;
+  // Extended for edit mode
+  className?: string;
+  sectionName?: string;
+  batchName?: string;
 }
-
 export const studentService = {
   createStudent: async (data: any): Promise<any> => {
     const formData = new FormData();
@@ -66,7 +72,7 @@ export const studentService = {
     
     formData.append('data', JSON.stringify(jsonData));
     
-    if (data.profile_image) {
+    if (data.profile_image && data.profile_image instanceof File) {
       formData.append('profile_image', data.profile_image);
     }
     
@@ -94,21 +100,22 @@ export const studentService = {
     return response.json();
   },
   
-  updateStudent: async (id: number, data: Partial<StudentFormData>): Promise<any> => {
+  updateStudent: async (id: number, data: any): Promise<any> => {
     const formData = new FormData();
     
     const jsonData: any = {};
     const excludeKeys = ['profile_image'];
     
     Object.keys(data).forEach(key => {
-      if (!excludeKeys.includes(key) && data[key as keyof StudentFormData] !== undefined) {
-        jsonData[key] = data[key as keyof StudentFormData];
+      if (!excludeKeys.includes(key) && data[key] !== undefined && data[key] !== null) {
+        jsonData[key] = data[key];
       }
     });
     
     formData.append('data', JSON.stringify(jsonData));
     
-    if (data.profile_image) {
+    // Only append if there's a new image
+    if (data.profile_image && data.profile_image instanceof File) {
       formData.append('profile_image', data.profile_image);
     }
     
@@ -125,5 +132,38 @@ export const studentService = {
       method: 'DELETE',
     });
     return response.json();
-  }
+  },
+
+getStudentCountByCampus: async (
+  campusId: number
+): Promise<{
+  success: boolean;
+  campus_id: number;
+  total_students: number;
+}> => {
+  const response = await fetch(ApiRoutes.studentCountByCampus(campusId));
+  return response.json();
+},
+
+getStudentCountByClass: async (
+  classId: number
+): Promise<{
+  success: boolean;
+  class_id: number;
+  total_students: number;
+}> => {
+  const response = await fetch(ApiRoutes.studentCountByClass(classId));
+  return response.json();
+},
+
+getStudentCountBySection: async (
+  sectionId: number
+): Promise<{
+  success: boolean;
+  section_id: number;
+  total_students: number;
+}> => {
+  const response = await fetch(ApiRoutes.studentCountBySection(sectionId));
+  return response.json();
+}
 };

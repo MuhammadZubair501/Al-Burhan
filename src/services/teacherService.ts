@@ -124,5 +124,17 @@ export const teacherService = {
       throw new Error(result.message || 'Failed to delete teacher');
     }
     return result;
+  },
+
+  async getTeacherCountByCampus(campusId: number | string) {
+  const response = await fetch(ApiRoutes.teacherCountByCampus(campusId));
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Failed to fetch teacher count");
   }
+
+  return result;
+},
 };

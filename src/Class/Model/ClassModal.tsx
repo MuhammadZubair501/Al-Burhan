@@ -167,7 +167,7 @@ export default function ClassModal({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
-        onClick={handleClose}
+        // onClick={handleClose}
       />
 
       {/* Glow - hidden on small screens */}
@@ -235,7 +235,7 @@ export default function ClassModal({
         </div>
 
         {/* Form - Scrollable */}
-        <div className="px-4 sm:px-8 pb-2 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
+        <div className="px-4 sm:px-8 pb-2 space-y-4 sm:space-y-5  flex-1">
           {/* Class Name */}
           <div>
             <label className="text-green-100 text-xs sm:text-sm mb-2 block">

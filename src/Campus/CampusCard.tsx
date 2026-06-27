@@ -229,7 +229,7 @@ export default function CampusCard({
 
           <p className="text-white text-3xl font-bold mt-2">
             {/* {campus.students} */}
-            {0}
+           {campus.students ?? 0}
           </p>
         </div>
 
@@ -256,7 +256,8 @@ export default function CampusCard({
               ) : (
              <p className="text-white text-3xl font-bold mt-2">
             {/* {campus.teachers} */}
-            {0}
+            
+             {campus.teachers ?? 0}
           </p>
               )}
          

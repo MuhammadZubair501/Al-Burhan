@@ -1,6 +1,6 @@
 // services/classService.js
 
-import API_BASE_URL from "../config/api";
+import  { API_BASE_URL }  from "../config/api";
 
 export const classService = {
   // Get all classes

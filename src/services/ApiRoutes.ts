@@ -1,4 +1,4 @@
-import API_BASE_URL from "../config/api";
+import { API_BASE_URL }  from "../config/api";
 
 export default class ApiRoutes {
   // Campus routes
@@ -58,7 +58,9 @@ export default class ApiRoutes {
     return `${API_BASE_URL}/teacher/${id}`;
   }
 
-
+static teacherCountByCampus(campusId: number | string) {
+  return `${API_BASE_URL}/teacher/count/campus/${campusId}`;
+}
 
   // Student routes
   static STUDENT = `${API_BASE_URL}/student`;
@@ -68,6 +70,17 @@ export default class ApiRoutes {
   static studentByCampusId(campusId: number | string) {
     return `${API_BASE_URL}/student/campus/${campusId}`;
   }
+// Student Count Routes
+static studentCountByCampus(campusId: number | string) {
+  return `${API_BASE_URL}/student/count/campus/${campusId}`;
+}
 
+static studentCountByClass(classId: number | string) {
+  return `${API_BASE_URL}/student/count/class/${classId}`;
+}
+
+static studentCountBySection(sectionId: number | string) {
+  return `${API_BASE_URL}/student/count/section/${sectionId}`;
+}
 
 }

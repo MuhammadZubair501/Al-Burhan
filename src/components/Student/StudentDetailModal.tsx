@@ -5,7 +5,7 @@ import {
   PhoneCall, Venus, Medal, BadgeIcon, Layers3
 } from 'lucide-react';
 import type { StudentResponse } from '../../services/studentService';
-
+import { BASE_URL }   from '../../config/api';
 interface StudentDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -24,7 +24,7 @@ export default function StudentDetailModal({
   if (!isOpen || !student) return null;
 
   const fullName = `${student.first_name} ${student.last_name}`;
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://192.9.210.50:5000';
+  const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
   const imageUrl = student.profile_image_path 
     ? `${baseUrl}${student.profile_image_path}` 
     : '/avatar.png';
