@@ -38,26 +38,32 @@ export default function ConfigColumn({
       let endpoint = "";
       let body = {};
 
-      if (title === "Batches") {
-        endpoint = ApiRoutes.BATCH;
-        body = { batch_name: newItem };
-      }
+  if (title === "Batches") {
+  endpoint = ApiRoutes.BATCH;
+  body = { batch_name: newItem };
+}
 
-      if (title === "Subjects") {
-        endpoint = ApiRoutes.SUBJECT;
-        body = { subject_name: newItem };
-      }
+          if (title === "Subjects") {
+            endpoint = ApiRoutes.SUBJECT;
+            body = { subject_name: newItem };
+          }
 
-      if (title === "Departments") {
-        endpoint = ApiRoutes.DEPARTMENT;
-        const campusId = Number(window.CampusID);
-        console.log(campusId);
-        body = {
-          campus_id: campusId,
-          department_name: newItem,
-        };
-      }
+          if (title === "Departments") {
+            endpoint = ApiRoutes.DEPARTMENT;
+            const campusId = Number(window.CampusID);
 
+            body = {
+              campus_id: campusId,
+              department_name: newItem,
+            };
+          }
+
+          if (title === "Highest Degrees") {
+            endpoint = ApiRoutes.DEGREE;
+            body = {
+              degree_name: newItem,
+            };
+          }
       await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,20 +85,27 @@ export default function ConfigColumn({
       let endpoint = "";
       let body = {};
 
-      if (title === "Batches") {
-        endpoint = ApiRoutes.batchById(id);
-        body = { batch_name: editingValue };
-      }
+     if (title === "Batches") {
+          endpoint = ApiRoutes.batchById(id);
+          body = { batch_name: editingValue };
+        }
 
-      if (title === "Subjects") {
-        endpoint = ApiRoutes.subjectById(id);
-        body = { subject_name: editingValue };
-      }
+        if (title === "Subjects") {
+          endpoint = ApiRoutes.subjectById(id);
+          body = { subject_name: editingValue };
+        }
 
-      if (title === "Departments") {
-        endpoint = ApiRoutes.departmentById(id);
-        body = { department_name: editingValue };
-      }
+        if (title === "Departments") {
+          endpoint = ApiRoutes.departmentById(id);
+          body = { department_name: editingValue };
+        }
+
+        if (title === "Highest Degrees") {
+          endpoint = ApiRoutes.degreeById(id);
+          body = {
+            degree_name: editingValue,
+          };
+        }
 
       await fetch(endpoint, {
         method: "PUT",
@@ -130,9 +143,17 @@ const deleteRecord = async (id: number) => {
 
     let endpoint = "";
 
-    if (title === "Batches") endpoint = ApiRoutes.batchById(id);
-    if (title === "Subjects") endpoint = ApiRoutes.subjectById(id);
-    if (title === "Departments") endpoint = ApiRoutes.departmentById(id);
+        if (title === "Batches")
+        endpoint = ApiRoutes.batchById(id);
+
+      if (title === "Subjects")
+        endpoint = ApiRoutes.subjectById(id);
+
+      if (title === "Departments")
+        endpoint = ApiRoutes.departmentById(id);
+
+      if (title === "Highest Degrees")
+        endpoint = ApiRoutes.degreeById(id);
 
     const response = await fetch(endpoint, {
       method: "DELETE",

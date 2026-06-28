@@ -99,3 +99,48 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 input[type="date"]::-webkit-datetime-edit {
   color: white;
 }
+/* Beautiful Attendance Dropdown */
+
+.attendance-select {
+  width: 100% !important;
+  padding: 14px 16px !important;
+
+  border-radius: 16px !important;
+
+  background: rgba(255,255,255,.08) !important;
+
+  color: white !important;
+
+  border: 1px solid rgba(255,255,255,.2) !important;
+
+  font-size: 15px !important;
+
+  transition: .3s;
+}
+
+.attendance-select:hover {
+  border-color: #facc15 !important;
+}
+
+.attendance-select:focus {
+  border-color: #facc15 !important;
+  box-shadow: 0 0 0 4px rgba(250,204,21,.25) !important;
+}
+
+.attendance-select option {
+  background: #065f46;
+  color: white;
+  padding: 12px;
+}
+
+.swal2-popup {
+  border-radius: 28px !important;
+}
+
+.swal2-confirm:hover {
+  transform: translateY(-2px);
+}
+
+.swal2-cancel:hover {
+  transform: translateY(-2px);
+}

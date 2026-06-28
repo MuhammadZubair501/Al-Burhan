@@ -1,5 +1,4 @@
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   GraduationCap,
@@ -9,11 +8,20 @@ import {
   ChevronsRight,
   SquareDashedText,
   Cog,
-
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export type TabType = "dashboard" | "Attendance" | "library" |  "section" | "teacher" | "student" | "configuration" | "class";
+export type TabType =
+  | "dashboard"
+  | "library"
+  | "class"
+  | "teacher"
+  | "student"
+  | "configuration"
+  | "teacherAttendance"
+  | "studentAttendance";
 
 
 type Props = {
@@ -22,18 +30,37 @@ type Props = {
 };
 
 export default function Sidebar({ activeTab, setActiveTab }: Props) {
+
   const [collapsed, setCollapsed] = useState(false);
+  const [attendanceOpen, setAttendanceOpen] = useState(false);
+    useEffect(() => {
+      if (
+        activeTab === "teacherAttendance" ||
+        activeTab === "studentAttendance"
+      ) {
+        setAttendanceOpen(true);
+      }
+    }, [activeTab]);
 
-  const menus = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "Attendance", label: "Attendance", icon: Users },
-    { id: "library", label: "Library", icon: BookOpen },
 
-    { id: "class", label: "Classes", icon: SquareDashedText },
-    { id: "teacher", label: "Teacher", icon: GraduationCap },
-    { id: "student", label: "Student", icon: Users },
-    { id: "configuration", label: "Configuration", icon: Cog },
-  ];
+const menus = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "library", label: "Library", icon: BookOpen },
+  { id: "class", label: "Classes", icon: SquareDashedText },
+  { id: "teacher", label: "Teacher", icon: GraduationCap },
+  { id: "student", label: "Student", icon: Users },
+  { id: "configuration", label: "Configuration", icon: Cog },
+];
+  // const menus = [
+  //   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  //   { id: "Attendance", label: "Attendance", icon: Users },
+  //   { id: "library", label: "Library", icon: BookOpen },
+
+  //   { id: "class", label: "Classes", icon: SquareDashedText },
+  //   { id: "teacher", label: "Teacher", icon: GraduationCap },
+  //   { id: "student", label: "Student", icon: Users },
+  //   { id: "configuration", label: "Configuration", icon: Cog },
+  // ];
   const navigate = useNavigate();
 
   const goToCampusPage = () => {
@@ -74,25 +101,87 @@ export default function Sidebar({ activeTab, setActiveTab }: Props) {
 
         {/* MENU */}
         <div className="px-3 space-y-2 py-10">
-          {menus.map((item) => {
-            const Icon = item.icon;
+  {menus.map((item) => {
+    const Icon = item.icon;
 
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as TabType)}
-                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition cursor-pointer ${
-                  activeTab === item.id
-                    ? "bg-yellow-400 text-green-950"
-                    : "text-white hover:bg-white/10"
-                }`}
-              >
-                <Icon size={22} />
-                {!collapsed && <span>{item.label}</span>}
-              </button>
-            );
-          })}
-        </div>
+    return (
+      <div key={item.id}>
+        {/* Normal Menu */}
+        <button
+          onClick={() => setActiveTab(item.id as TabType)}
+          className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition cursor-pointer ${
+            activeTab === item.id
+              ? "bg-yellow-400 text-green-950"
+              : "text-white hover:bg-white/10"
+          }`}
+        >
+          <Icon size={22} />
+          {!collapsed && <span>{item.label}</span>}
+        </button>
+
+        {/* Show Attendance after Dashboard */}
+        {item.id === "dashboard" && (
+          <div className="mt-2">
+            <button
+              onClick={() => {
+                if (!attendanceOpen) {
+                  setAttendanceOpen(true);
+                  setActiveTab("teacherAttendance");
+                } else {
+                  setAttendanceOpen(false);
+                }
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
+                activeTab === "teacherAttendance" ||
+                activeTab === "studentAttendance"
+                  ? "bg-yellow-400 text-green-950"
+                  : "text-white hover:bg-white/10"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <Users size={22} />
+                {!collapsed && <span>Attendance</span>}
+              </div>
+
+              {!collapsed &&
+                (attendanceOpen ? (
+                  <ChevronDown size={18} />
+                ) : (
+                  <ChevronRight size={18} />
+                ))}
+            </button>
+
+            {!collapsed && attendanceOpen && (
+              <div className="ml-8 mt-1 space-y-1">
+                <button
+                  onClick={() => setActiveTab("teacherAttendance")}
+                  className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${
+                    activeTab === "teacherAttendance"
+                      ? "bg-yellow-300 text-green-950 font-medium"
+                      : "text-gray-300 hover:bg-white/10"
+                  }`}
+                >
+                  Teacher Attendance
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("studentAttendance")}
+                  className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${
+                    activeTab === "studentAttendance"
+                      ? "bg-yellow-300 text-green-950 font-medium"
+                      : "text-gray-300 hover:bg-white/10"
+                  }`}
+                >
+                  Student Attendance
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  })}
+</div>
       </div>
 
       {/* BOTTOM COLLAPSE BUTTON */}

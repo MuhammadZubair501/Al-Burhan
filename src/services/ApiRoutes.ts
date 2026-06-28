@@ -83,4 +83,50 @@ static studentCountBySection(sectionId: number | string) {
   return `${API_BASE_URL}/student/count/section/${sectionId}`;
 }
 
+static STUDENT_ATTENDANCE = `${API_BASE_URL}/student-attendance`;
+
+static studentAttendanceByRange(campusId: number | string, startDate: string, endDate: string, sectionId?: number | string) {
+  let url = `${this.STUDENT_ATTENDANCE}/range?campusId=${campusId}&start_date=${startDate}&end_date=${endDate}`;
+  if (sectionId) url += `&sectionId=${sectionId}`;
+  return url;
+}
+
+static studentAttendanceByDateAndCampus(campusId: number | string, date: string, sectionId?: number | string) {
+  let url = `${this.STUDENT_ATTENDANCE}?campusId=${campusId}&date=${date}`;
+  if (sectionId) url += `&sectionId=${sectionId}`;
+  return url;
+}
+
+static studentAttendanceBySection(sectionId: number | string) {
+  return `${this.STUDENT_ATTENDANCE}/section/${sectionId}`;
+}
+
+static studentAttendanceById(id: number | string) {
+  return `${this.STUDENT_ATTENDANCE}/${id}`;
+}
+
+// Sections with class names (already exists? if not, add)
+static sectionsWithClassByCampus(campusId: number | string) {
+  return `${API_BASE_URL}/section/with-class-names?campusId=${campusId}`;
+}
+// ApiRoutes.ts – add this line inside the student attendance section
+
+// Student Attendance routes
+
+
+// ... other endpoints ...
+
+// Get sections with students in a campus (for attendance dropdown)
+static studentAttendanceSections(campusId: number | string) {
+  return `${this.STUDENT_ATTENDANCE}/sections/campus/${campusId}`;
+}
+
+// Degree routes
+
+static DEGREE = `${API_BASE_URL}/degree`;
+
+static degreeById(id: number | string) {
+  return `${API_BASE_URL}/degree/${id}`;
+}
+
 }

@@ -3,7 +3,9 @@ import {
   BookOpen,
   Building2,
   Cog,
+  GraduationCap,
 } from "lucide-react";
+
 import { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import ConfigColumn from "./ConfigColumn";
@@ -20,7 +22,8 @@ export default function ConfigurationPage() {
   const [batches, setBatches] = useState<Item[]>([]);
   const [subjects, setSubjects] = useState<Item[]>([]);
   const [departments, setDepartments] = useState<Item[]>([]);
-
+  const [degrees, setDegrees] = useState<Item[]>([]);
+  
   const loadBatches = async () => {
     try {
       const res = await fetch(ApiRoutes.BATCH);
@@ -70,11 +73,28 @@ export default function ConfigurationPage() {
     }
   };
 
-  useEffect(() => {
-    loadBatches();
-    loadSubjects();
-    loadDepartments();
-  }, []);
+  const loadDegrees = async () => {
+  try {
+    const res = await fetch(ApiRoutes.DEGREE);
+    const data = await res.json();
+
+    setDegrees(
+      data.map((x: any) => ({
+        id: x.degree_id,
+        name: x.degree_name,
+      }))
+    );
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+useEffect(() => {
+  loadBatches();
+  loadSubjects();
+  loadDepartments();
+  loadDegrees();
+}, []);
 
   return (
     <div className="h-full overflow-hidden">
@@ -108,6 +128,14 @@ export default function ConfigurationPage() {
           campusId={campusId}
           reload={loadDepartments}
         />
+        <ConfigColumn
+          title="Highest Degrees"
+          icon={<GraduationCap size={22} />}
+          items={degrees}
+          campusId={campusId}
+          reload={loadDegrees}
+        />
+        
       </div>
     </div>
   );

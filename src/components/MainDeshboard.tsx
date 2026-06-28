@@ -8,9 +8,11 @@ import StudentContent from "./Student/StudentPage";
 import LibraryContent from ".//LibraryContent";
 import BackgroundRings from ".//BackgroundRings";
 import SectionPage from "../Section/SectionPage";
-import AttendancePage from "./AttendancePage";
 import ConfigurationPage from "../Configuration/ConfigurationPage";
 import ClassPage from "../Class/ClassPage";
+import TeacherAttendancePage from "../Attendance/TeacherAttendance/TeacherAttendancePage";
+import StudentAttendancePage from "../Attendance/StudentAttendance/StudentAttendancePage";
+import DashboardPage from "./dashboard/DashboardPage";
 
 export default function MainDeshboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
@@ -56,16 +58,17 @@ export default function MainDeshboard() {
         return <StudentContent />;
       case "class":
         return <ClassPage />;
-      case "section":
-        return <SectionPage classId={classId} />;
       case "library":
         return <LibraryContent />;
-      case "Attendance":
-        return <AttendancePage />;
+      case "teacherAttendance":
+  return <TeacherAttendancePage />;
+
+case "studentAttendance":
+  return <StudentAttendancePage />;
       case "configuration":
         return <ConfigurationPage />;
       default:
-        return <DashboardContent />;
+        return <DashboardPage />;
     }
   };
 

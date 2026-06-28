@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Mail, Phone, PhoneCall, FileUser, Calendar, Building2 } from 'lucide-react';
+import { Mail, Phone, PhoneCall, FileUser, Calendar, Building2, GraduationCap } from 'lucide-react';
 
 // Import types
 import type { CampusType, TeacherModalData, TeacherModalProps } from './Model/TeacherModalTypes';
 
 // Import constants
-import { DEGREES, SHIFTS } from './Model/TeacherConstants';
+import { SHIFTS } from './Model/TeacherConstants';
 
 // Import validation helpers
 import {
@@ -30,6 +30,11 @@ import { ModalFooter } from './Model/ModalFooter';
 import ApiRoutes from '../../services/ApiRoutes';
 import { teacherService, type TeacherFormData } from '../../services/teacherService';
 
+// Degree loader
+import loadDegrees from '../../types/Degree';
+// SearchDropdown component
+import SearchDropdown from '../custom/SearchDropdown';
+
 // Department type
 interface Department {
   id: number;
@@ -44,6 +49,12 @@ interface Subject {
 
 // Class/Section type
 interface ClassItem {
+  id: number;
+  name: string;
+}
+
+// Degree type
+interface Degree {
   id: number;
   name: string;
 }
@@ -88,11 +99,18 @@ export default function TeacherModal({
   const [emergencyError, setEmergencyError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  
+
+  // Dropdown state for SearchDropdown
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const handleDropdownToggle = (dropdown: string) => {
+    setOpenDropdown(prev => (prev === dropdown ? null : dropdown));
+  };
+  const handleDropdownClose = () => setOpenDropdown(null);
+
   // Campus state
   const [campus, setCampus] = useState<CampusType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  
+
   // Departments state
   const [departments, setDepartments] = useState<Department[]>([]);
   const [departmentsLoading, setDepartmentsLoading] = useState<boolean>(true);
@@ -105,23 +123,15 @@ export default function TeacherModal({
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [classesLoading, setClassesLoading] = useState<boolean>(true);
 
-  // --- Reset form when modal opens with initialData ---
+  // Degrees state
+  const [degrees, setDegrees] = useState<Degree[]>([]);
+  const [degreesLoading, setDegreesLoading] = useState<boolean>(true);
+
+  // --- Reset form when modal opens ---
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    if (!isOpen) return;
 
-    console.log('🔵 Modal opened - Mode:', mode);
-    console.log('🔵 InitialData received:', initialData);
-
-    // Reset form based on mode
     if (mode === 'edit' && initialData) {
-      console.log('🟢 Populating form with edit data');
-      console.log('🟢 Gender value:', initialData.gender);
-      console.log('🟢 Joining Date:', initialData.joiningDate);
-      console.log('🟢 Assigned Classes:', initialData.assignedClasses);
-      console.log('🟢 Subjects Taught:', initialData.subjectsTaught);
-      
       setFormData({
         profilePicture: null,
         profilePreview: initialData.profilePreview || '',
@@ -143,12 +153,10 @@ export default function TeacherModal({
         highestDegree: initialData.highestDegree || '',
         extraDetail: initialData.extraDetail || '',
       });
-      
       setPhoneDisplay(initialData.phone || '');
       setCnicDisplay(initialData.cnic || '');
       setEmergencyDisplay(initialData.emergencyNumber || '');
     } else {
-      console.log('🟡 Resetting form for create mode');
       setFormData({
         profilePicture: null,
         profilePreview: '',
@@ -174,13 +182,11 @@ export default function TeacherModal({
       setCnicDisplay('');
       setEmergencyDisplay('');
     }
-
-    // Clear errors
     setErrors({});
     setSubmitError(null);
   }, [isOpen, mode, initialData]);
 
-  // --- Fetch Campus Data ---
+  // --- Fetch Campus, Departments, Subjects, Classes, Degrees ---
   useEffect(() => {
     if (!isOpen) return;
 
@@ -188,57 +194,33 @@ export default function TeacherModal({
       setLoading(true);
       try {
         const campusId = formData.campusId || Number(window.CampusID) || 1;
-        console.log('Fetching campus data for ID:', campusId);
         const response = await fetch(ApiRoutes.campusById(campusId));
         const data = await response.json();
-        console.log('Campus data fetched:', data);
         setCampus(data);
-        if (data?.campus_name) {
-          updateField('campus', data.campus_name);
-        }
+        if (data?.campus_name) updateField('campus', data.campus_name);
       } catch (err) {
-        console.error('Error fetching campus data:', err);
-        if (initialData?.campus) {
-          setCampus({ id: 0, campus_name: initialData.campus });
-          updateField('campus', initialData.campus);
-        } else {
-          setCampus({ id: 0, campus_name: 'Main Campus' });
-          updateField('campus', 'Main Campus');
-        }
+        console.error('Error fetching campus:', err);
+        setCampus({ id: 0, campus_name: 'Main Campus' });
+        updateField('campus', 'Main Campus');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCampusData();
-  }, [isOpen, formData.campusId]);
-
-  // --- Fetch Departments ---
-  useEffect(() => {
-    if (!isOpen) return;
-
     const fetchDepartments = async () => {
       setDepartmentsLoading(true);
       try {
         const campusId = formData.campusId || Number(window.CampusID) || 1;
-        console.log('Fetching departments for campus ID:', campusId);
-        const response = await fetch(ApiRoutes.departmentByCampusId(campusId));
-        const data = await response.json();
-        console.log('Departments fetched:', data);
-        
-        const mappedDepartments = data.map((dept: any) => ({
-          id: dept.department_id || dept.id,
-          name: dept.department_name || dept.name,
+        const res = await fetch(ApiRoutes.departmentByCampusId(campusId));
+        const data = await res.json();
+        const mapped = data.map((d: any) => ({
+          id: d.department_id || d.id,
+          name: d.department_name || d.name,
         }));
-        setDepartments(mappedDepartments);
-        
+        setDepartments(mapped);
         if (mode === 'edit' && initialData?.department) {
-          const exists = mappedDepartments.some(
-            (dept: Department) => dept.name === initialData.department
-          );
-          if (exists) {
-            updateField('department', initialData.department);
-          }
+          const exists = mapped.some((d: Department) => d.name === initialData.department);
+          if (exists) updateField('department', initialData.department);
         }
       } catch (err) {
         console.error('Error fetching departments:', err);
@@ -248,34 +230,21 @@ export default function TeacherModal({
       }
     };
 
-    fetchDepartments();
-  }, [isOpen, formData.campusId]);
-
-  // --- Fetch Subjects ---
-  useEffect(() => {
-    if (!isOpen) return;
-
     const fetchSubjects = async () => {
       setSubjectsLoading(true);
       try {
-        console.log('Fetching all subjects...');
-        const response = await fetch(ApiRoutes.SUBJECT);
-        const data = await response.json();
-        console.log('Subjects fetched:', data);
-        
-        const mappedSubjects = data.map((subject: any) => ({
-          id: subject.subject_id || subject.id,
-          name: subject.subject_name || subject.name,
+        const res = await fetch(ApiRoutes.SUBJECT);
+        const data = await res.json();
+        const mapped = data.map((s: any) => ({
+          id: s.subject_id || s.id,
+          name: s.subject_name || s.name,
         }));
-        setSubjects(mappedSubjects);
-        
-        if (mode === 'edit' && initialData?.subjectsTaught && initialData.subjectsTaught.length > 0) {
-          const validSubjects = initialData.subjectsTaught.filter((subjectName: string) =>
-            mappedSubjects.some((s: Subject) => s.name === subjectName)
+        setSubjects(mapped);
+        if (mode === 'edit' && initialData?.subjectsTaught?.length) {
+          const valid = initialData.subjectsTaught.filter(name =>
+            mapped.some((s: Subject) => s.name === name)
           );
-          if (validSubjects.length > 0) {
-            updateField('subjectsTaught', validSubjects);
-          }
+          if (valid.length) updateField('subjectsTaught', valid);
         }
       } catch (err) {
         console.error('Error fetching subjects:', err);
@@ -285,58 +254,23 @@ export default function TeacherModal({
       }
     };
 
-    fetchSubjects();
-  }, [isOpen, mode, initialData?.subjectsTaught]);
-
-  // --- Fetch Classes ---
-  useEffect(() => {
-    if (!isOpen) return;
-
     const fetchClasses = async () => {
-      if (!window.CampusID) {
-        setClasses([]);
-        return;
-      }
-
+      if (!window.CampusID) { setClasses([]); return; }
       setClassesLoading(true);
       try {
-        console.log(`Fetching sections/classes for Campus ID: ${window.CampusID}...`);
-        const response = await fetch(ApiRoutes.sectionByCampusId(window.CampusID));
-        const data = await response.json();
-        console.log('Classes fetched:', data);
-        
-        // Create class names with "Class - Section" format
-        const mappedClasses = data.map((item: any) => ({
+        const res = await fetch(ApiRoutes.sectionByCampusId(window.CampusID));
+        const data = await res.json();
+        const mapped = data.map((item: any) => ({
           id: item.section_id || item.id,
           name: `${item.class_name}`,
         }));
-        setClasses(mappedClasses);
-        
-        // If in edit mode and have classes, validate them
-        // FIXED: Added proper null check for initialData?.assignedClasses
-        const assignedClasses = initialData?.assignedClasses || [];
-        if (mode === 'edit' && assignedClasses.length > 0) {
-          // Check if the assigned classes exist in the fetched list
-          const validClasses = assignedClasses.filter((className: string) =>
-            mappedClasses.some((c: ClassItem) => c.name === className)
+        setClasses(mapped);
+        const assigned = initialData?.assignedClasses || [];
+        if (mode === 'edit' && assigned.length) {
+          const valid = assigned.filter(name =>
+            mapped.some((c: ClassItem) => c.name === name)
           );
-          
-          // If the assigned classes don't match the format, try to match by section
-          if (validClasses.length === 0 && assignedClasses.length > 0) {
-            // Try to match by partial name (just the section name or class name)
-            const matchedClasses = mappedClasses.filter((c: ClassItem) => {
-              return assignedClasses.some((assigned: string) => {
-                // Check if the assigned name is contained in the mapped name
-                return c.name.includes(assigned) || assigned.includes(c.name);
-              });
-            });
-            
-            if (matchedClasses.length > 0) {
-              updateField('assignedClasses', matchedClasses.map((c: ClassItem) => c.name));
-            }
-          } else if (validClasses.length > 0) {
-            updateField('assignedClasses', validClasses);
-          }
+          if (valid.length) updateField('assignedClasses', valid);
         }
       } catch (err) {
         console.error('Error fetching classes:', err);
@@ -346,58 +280,71 @@ export default function TeacherModal({
       }
     };
 
-    fetchClasses();
-  }, [isOpen, mode, initialData]);
+    const fetchDegrees = async () => {
+      setDegreesLoading(true);
+      try {
+        const degs = await loadDegrees();
+        setDegrees(degs);
+        if (mode === 'edit' && initialData?.highestDegree) {
+          const exists = degs.some(d => d.name === initialData.highestDegree);
+          if (exists) updateField('highestDegree', initialData.highestDegree);
+        }
+      } catch (err) {
+        console.error('Error loading degrees:', err);
+        setDegrees([]);
+      } finally {
+        setDegreesLoading(false);
+      }
+    };
 
-  // --- Handlers ---
+    fetchCampusData();
+    fetchDepartments();
+    fetchSubjects();
+    fetchClasses();
+    fetchDegrees();
+  }, [isOpen, formData.campusId, mode, initialData]);
+
+  // --- Handlers (updateField, profile, phone, cnic, emergency, multi-select) ---
   const updateField = <K extends keyof TeacherModalData>(
     field: K,
     value: TeacherModalData[K]
   ) => {
-    console.log(`📝 Updating field ${String(field)}:`, value);
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
-  // Profile Picture
-  const handleProfileDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setDragActive(false);
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) {
-        if (file.size > 2 * 1024 * 1024) {
-          setErrors((prev) => ({ ...prev, profilePicture: 'Image must be less than 2MB' }));
-          return;
-        }
-        const preview = URL.createObjectURL(file);
-        updateField('profilePicture', file);
-        updateField('profilePreview', preview);
-        setErrors((prev) => ({ ...prev, profilePicture: '' }));
-      } else {
-        setErrors((prev) => ({ ...prev, profilePicture: 'Please upload an image file' }));
-      }
-    },
-    []
-  );
-
-  const handleProfileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const handleProfileDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
       if (file.size > 2 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, profilePicture: 'Image must be less than 2MB' }));
+        setErrors(prev => ({ ...prev, profilePicture: 'Image must be less than 2MB' }));
         return;
       }
       const preview = URL.createObjectURL(file);
       updateField('profilePicture', file);
       updateField('profilePreview', preview);
-      setErrors((prev) => ({ ...prev, profilePicture: '' }));
+      setErrors(prev => ({ ...prev, profilePicture: '' }));
+    } else {
+      setErrors(prev => ({ ...prev, profilePicture: 'Please upload an image file' }));
+    }
+  }, []);
+
+  const handleProfileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, profilePicture: 'Image must be less than 2MB' }));
+        return;
+      }
+      const preview = URL.createObjectURL(file);
+      updateField('profilePicture', file);
+      updateField('profilePreview', preview);
+      setErrors(prev => ({ ...prev, profilePicture: '' }));
     }
   };
 
-  // Phone
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPakPhone(e.target.value);
     setPhoneDisplay(formatted);
@@ -411,7 +358,6 @@ export default function TeacherModal({
     }
   };
 
-  // CNIC
   const handleCnicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCNIC(e.target.value);
     setCnicDisplay(formatted);
@@ -423,12 +369,10 @@ export default function TeacherModal({
     }
   };
 
-  // Emergency Number
   const handleEmergencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatEmergencyNumber(e.target.value);
     setEmergencyDisplay(formatted);
     updateField('emergencyNumber', formatted);
-    
     const digits = formatted.replace(/\D/g, '');
     if (digits.length < 12) {
       setEmergencyError('Invalid emergency number (format: +92 300 1234567)');
@@ -437,73 +381,50 @@ export default function TeacherModal({
     }
   };
 
-  // Multi-select for Subjects
   const addSubject = (subject: string) => {
     if (!formData.subjectsTaught.includes(subject)) {
       updateField('subjectsTaught', [...formData.subjectsTaught, subject]);
     }
   };
-
   const removeSubject = (subject: string) => {
-    updateField(
-      'subjectsTaught',
-      formData.subjectsTaught.filter((s) => s !== subject)
-    );
+    updateField('subjectsTaught', formData.subjectsTaught.filter(s => s !== subject));
   };
 
-  // Multi-select for Classes
   const addClass = (cls: string) => {
     if (!formData.assignedClasses.includes(cls)) {
       updateField('assignedClasses', [...formData.assignedClasses, cls]);
     }
   };
-
   const removeClass = (cls: string) => {
-    updateField(
-      'assignedClasses',
-      formData.assignedClasses.filter((c) => c !== cls)
-    );
+    updateField('assignedClasses', formData.assignedClasses.filter(c => c !== cls));
   };
 
-  // Validation
+  // --- Validation and Submit ---
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.email) newErrors.email = 'Email is required';
     else if (!validateEmail(formData.email)) newErrors.email = 'Invalid email format';
     if (!formData.phone) newErrors.phone = 'Phone number is required';
-    else if (!validatePhone(formData.phone)) {
-      newErrors.phone = 'Use format: +92 300 1234567 or 03001234567';
-    }
+    else if (!validatePhone(formData.phone)) newErrors.phone = 'Use format: +92 300 1234567 or 03001234567';
     if (!formData.cnic) newErrors.cnic = 'CNIC is required';
-    else if (!validateCNIC(formData.cnic)) {
-      newErrors.cnic = 'Invalid CNIC (format: 42000-1234567-1)';
-    }
-    if (!formData.emergencyNumber) {
-      newErrors.emergencyNumber = 'Emergency number is required';
-    } else if (!validateEmergencyNumber(formData.emergencyNumber)) {
+    else if (!validateCNIC(formData.cnic)) newErrors.cnic = 'Invalid CNIC (format: 42000-1234567-1)';
+    if (!formData.emergencyNumber) newErrors.emergencyNumber = 'Emergency number is required';
+    else if (!validateEmergencyNumber(formData.emergencyNumber)) {
       newErrors.emergencyNumber = 'Use format: +92 300 1234567 or 03001234567';
     }
     if (!formData.department) newErrors.department = 'Please select a department';
     if (!formData.highestDegree) newErrors.highestDegree = 'Please select highest degree';
     if (!formData.shift) newErrors.shift = 'Please select a shift';
-    if (formData.subjectsTaught.length === 0) {
-      newErrors.subjectsTaught = 'Please select at least one subject';
-    }
-    if (formData.assignedClasses.length === 0) {
-      newErrors.assignedClasses = 'Please select at least one class';
-    }
-
+    if (formData.subjectsTaught.length === 0) newErrors.subjectsTaught = 'Please select at least one subject';
+    if (formData.assignedClasses.length === 0) newErrors.assignedClasses = 'Please select at least one class';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Submit Handler
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -511,34 +432,24 @@ export default function TeacherModal({
       const departmentObj = departments.find(d => d.name === formData.department);
       const departmentId = departmentObj?.id || '';
 
-      // Get section IDs from class names (format: "Class X - Section Y")
       const sectionIds = formData.assignedClasses
         .map(className => {
-          // Try to find the class by exact match
           let classItem = classes.find(c => c.name === className);
-          
-          // If not found, try to find by partial match
           if (!classItem) {
-            // Extract section name from the assigned class name
             const parts = className.split(' - ');
             const sectionName = parts.length > 1 ? parts[1] : className;
-            
             classItem = classes.find(c => c.name.includes(sectionName));
           }
-          
           return classItem?.id;
         })
         .filter(id => id !== undefined && id !== null) as number[];
 
-      // Get subject IDs from names
       const subjectIds = formData.subjectsTaught
         .map(subjectName => {
           const subjectItem = subjects.find(s => s.name === subjectName);
           return subjectItem?.id;
         })
         .filter(id => id !== undefined && id !== null) as number[];
-
-      console.log('Saving teacher data:', { sectionIds, subjectIds, departmentId, mode });
 
       const teacherData: TeacherFormData = {
         first_name: formData.firstName,
@@ -561,14 +472,10 @@ export default function TeacherModal({
         password: '123456'
       };
 
-      let result;
-      
       if (mode === 'edit' && formData.teacherId) {
-        console.log('Updating teacher with ID:', formData.teacherId);
-        result = await teacherService.updateTeacher(formData.teacherId, teacherData);
+        await teacherService.updateTeacher(formData.teacherId, teacherData);
       } else {
-        console.log('Creating new teacher...');
-        result = await teacherService.createTeacher(teacherData);
+        await teacherService.createTeacher(teacherData);
       }
 
       onSave(formData);
@@ -594,7 +501,7 @@ export default function TeacherModal({
 
   if (!isOpen) return null;
 
-  if (loading || departmentsLoading || subjectsLoading || classesLoading) {
+  if (loading || departmentsLoading || subjectsLoading || classesLoading || degreesLoading) {
     return (
       <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div className="flex flex-col items-center gap-4">
@@ -605,34 +512,24 @@ export default function TeacherModal({
     );
   }
 
-  const subjectNames = subjects.map((s) => s.name);
-  const classNames = classes.map((c) => c.name);
+  const subjectNames = subjects.map(s => s.name);
+  const classNames = classes.map(c => c.name);
 
   return (
-    <div
-      className="fixed inset-0 z-[999] flex items-center justify-center p-4 
-        bg-black/60 backdrop-blur-sm overflow-y-auto"
-    >
-      <div
-        className="relative w-full max-w-4xl my-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          className="relative rounded-3xl bg-gradient-to-br from-emerald-900 
-            via-teal-900 to-cyan-900 border border-white/20 shadow-2xl 
-            overflow-hidden"
-        >
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-4xl my-2 sm:my-4" onClick={e => e.stopPropagation()}>
+        <div className="relative rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden max-h-[95vh]">
           <ModalHeader onClose={handleClose} />
 
-          <div className="px-8 py-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="px-3 sm:px-4 py-2 sm:py-3 max-h-[55vh] sm:max-h-[65vh] overflow-y-auto custom-scrollbar">
             {submitError && (
-              <div className="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-200">
-                <p className="font-semibold">Error Saving Teacher</p>
-                <p className="text-sm">{submitError}</p>
+              <div className="mb-3 p-3 rounded-xl bg-red-500/20 border border-red-500/50 text-red-200">
+                <p className="font-semibold text-sm">Error Saving Teacher</p>
+                <p className="text-xs">{submitError}</p>
               </div>
             )}
 
-            {/* ===== SECTION 1: Basic Information ===== */}
+            {/* SECTION 1: Basic Information */}
             <FormSection title="Basic Information" number={1}>
               <ProfileUpload
                 preview={formData.profilePreview}
@@ -642,24 +539,23 @@ export default function TeacherModal({
                 dragActive={dragActive}
                 setDragActive={setDragActive}
               />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                 <FormInput
                   label="First Name *"
                   value={formData.firstName}
                   onChange={(e) => updateField('firstName', e.target.value)}
                   placeholder="John"
                   error={errors.firstName}
+                  className="text-sm sm:text-base"
                 />
-
                 <FormInput
                   label="Last Name *"
                   value={formData.lastName}
                   onChange={(e) => updateField('lastName', e.target.value)}
                   placeholder="Doe"
                   error={errors.lastName}
+                  className="text-sm sm:text-base"
                 />
-
                 <FormInput
                   label="Email Address *"
                   type="email"
@@ -668,198 +564,116 @@ export default function TeacherModal({
                   placeholder="teacher@school.edu"
                   error={errors.email}
                   icon={Mail}
+                  className="text-sm sm:text-base"
                 />
-
                 <div>
-                  <label className="text-emerald-100 text-sm mb-1 block font-medium">
-                    Phone Number *
-                  </label>
+                  <label className="text-emerald-100 text-xs sm:text-sm mb-0.5 block font-medium">Phone Number *</label>
                   <div className="relative">
-                    <Phone
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 
-                        text-yellow-300/70"
-                    />
+                    <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300/70" />
                     <input
                       type="text"
                       value={phoneDisplay}
                       onChange={handlePhoneChange}
                       placeholder="+92 300 1234567"
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/10 
-                        border border-white/20 text-white placeholder-white/40 
-                        focus:ring-2 focus:ring-yellow-400 outline-none"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none text-sm sm:text-base"
                     />
                   </div>
-                  {phoneError && (
-                    <p className="text-red-300 text-xs mt-1">{phoneError}</p>
-                  )}
-                  {errors.phone && (
-                    <p className="text-red-300 text-xs mt-1">{errors.phone}</p>
-                  )}
+                  {phoneError && <p className="text-red-300 text-xs mt-0.5">{phoneError}</p>}
+                  {errors.phone && <p className="text-red-300 text-xs mt-0.5">{errors.phone}</p>}
                 </div>
-
                 <div>
-                  <label className="text-emerald-100 text-sm mb-1 block font-medium">
-                    CNIC *
-                  </label>
+                  <label className="text-emerald-100 text-xs sm:text-sm mb-0.5 block font-medium">CNIC *</label>
                   <div className="relative">
-                    <FileUser
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 
-                        text-yellow-300/70"
-                    />
+                    <FileUser size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300/70" />
                     <input
                       type="text"
                       value={cnicDisplay}
                       onChange={handleCnicChange}
                       placeholder="42000-1234567-1"
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/10 
-                        border border-white/20 text-white placeholder-white/40 
-                        focus:ring-2 focus:ring-yellow-400 outline-none"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none text-sm sm:text-base"
                     />
                   </div>
-                  {cnicError && (
-                    <p className="text-red-300 text-xs mt-1">{cnicError}</p>
-                  )}
-                  {errors.cnic && (
-                    <p className="text-red-300 text-xs mt-1">{errors.cnic}</p>
-                  )}
+                  {cnicError && <p className="text-red-300 text-xs mt-0.5">{cnicError}</p>}
+                  {errors.cnic && <p className="text-red-300 text-xs mt-0.5">{errors.cnic}</p>}
                 </div>
-
                 <div>
-                  <label className="text-emerald-100 text-sm mb-1 block font-medium">
-                    Gender
-                  </label>
-                  <div className="flex gap-4 mt-1.5">
-                    {['male', 'female'].map((g) => (
-                      <label
-                        key={g}
-                        className="flex items-center gap-2 cursor-pointer 
-                          text-white capitalize"
-                      >
+                  <label className="text-emerald-100 text-xs sm:text-sm mb-0.5 block font-medium">Gender</label>
+                  <div className="flex gap-4 mt-1">
+                    {['male', 'female'].map(g => (
+                      <label key={g} className="flex items-center gap-1.5 cursor-pointer text-white capitalize text-sm sm:text-base">
                         <input
                           type="radio"
                           name="gender"
                           value={g}
                           checked={formData.gender === g}
-                          onChange={(e) => {
-                            updateField('gender', e.target.value as 'male' | 'female' | 'other' | '');
-                          }}
+                          onChange={(e) => updateField('gender', e.target.value as any)}
                           className="accent-yellow-400 w-4 h-4"
                         />
                         {g}
                       </label>
                     ))}
                   </div>
-                  {errors.gender && (
-                    <p className="text-red-300 text-xs mt-1">{errors.gender}</p>
-                  )}
+                  {errors.gender && <p className="text-red-300 text-xs mt-0.5">{errors.gender}</p>}
                 </div>
-
                 <div>
-                  <label className="text-emerald-100 text-sm mb-1 block font-medium">
-                    Emergency Number *
-                  </label>
+                  <label className="text-emerald-100 text-xs sm:text-sm mb-0.5 block font-medium">Emergency Number *</label>
                   <div className="relative">
-                    <PhoneCall
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 
-                        text-yellow-300/70"
-                    />
+                    <PhoneCall size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300/70" />
                     <input
                       type="text"
                       value={emergencyDisplay}
                       onChange={handleEmergencyChange}
                       placeholder="+92 300 1234567"
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/10 
-                        border border-white/20 text-white placeholder-white/40 
-                        focus:ring-2 focus:ring-yellow-400 outline-none"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none text-sm sm:text-base"
                     />
                   </div>
-                  {emergencyError && (
-                    <p className="text-red-300 text-xs mt-1">{emergencyError}</p>
-                  )}
-                  {errors.emergencyNumber && (
-                    <p className="text-red-300 text-xs mt-1">{errors.emergencyNumber}</p>
-                  )}
+                  {emergencyError && <p className="text-red-300 text-xs mt-0.5">{emergencyError}</p>}
+                  {errors.emergencyNumber && <p className="text-red-300 text-xs mt-0.5">{errors.emergencyNumber}</p>}
                 </div>
               </div>
             </FormSection>
 
-            {/* ===== SECTION 2: Professional Details ===== */}
+            {/* SECTION 2: Professional Details */}
             <FormSection title="Professional Details" number={2}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                 <div>
-                  <label className="text-emerald-100 text-sm mb-1 block font-medium">
-                    Joining Date
-                  </label>
+                  <label className="text-emerald-100 text-xs sm:text-sm mb-0.5 block font-medium">Joining Date</label>
                   <div className="relative">
-                    <Calendar
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 
-                        text-yellow-300/70"
-                    />
+                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300/70" />
                     <input
                       type="date"
                       value={formData.joiningDate}
-                      onChange={(e) => {
-                        updateField('joiningDate', e.target.value);
-                      }}
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/10 
-                        border border-white/20 text-white placeholder-white/40 
-                        focus:ring-2 focus:ring-yellow-400 outline-none"
+                      onChange={(e) => updateField('joiningDate', e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-yellow-400 outline-none text-sm sm:text-base"
                     />
                   </div>
-                  {errors.joiningDate && (
-                    <p className="text-red-300 text-xs mt-1">{errors.joiningDate}</p>
-                  )}
+                  {errors.joiningDate && <p className="text-red-300 text-xs mt-0.5">{errors.joiningDate}</p>}
                 </div>
-
                 <div>
-                  <label className="text-emerald-100 text-sm mb-1 block font-medium">
-                    Campus Name
-                  </label>
+                  <label className="text-emerald-100 text-xs sm:text-sm mb-0.5 block font-medium">Campus Name</label>
                   <div className="relative">
-                    <Building2
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 
-                        text-yellow-300/70"
-                    />
+                    <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300/70" />
                     <input
                       disabled
                       value={campus?.campus_name || formData.campus || 'Not Available'}
-                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/5 
-                        border border-white/10 text-white/70 cursor-not-allowed
-                        text-sm sm:text-base"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 cursor-not-allowed text-sm sm:text-base"
                     />
                   </div>
                 </div>
-
-                <div className="mb-1">
-                  <label className="text-emerald-100 text-sm mb-1 block font-medium">
-                    Department *
-                  </label>
+                <div>
+                  <label className="text-emerald-100 text-xs sm:text-sm mb-0.5 block font-medium">Department *</label>
                   <select
                     value={formData.department}
                     onChange={(e) => updateField('department', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 
-                      text-white focus:ring-2 focus:ring-yellow-400 outline-none appearance-none 
-                      cursor-pointer"
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-yellow-400 outline-none appearance-none cursor-pointer text-sm sm:text-base"
                   >
-                    <option value="" className="bg-emerald-900">
-                      Select Department
-                    </option>
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.name} className="bg-emerald-900">
-                        {dept.name}
-                      </option>
+                    <option value="" className="bg-emerald-900">Select Department</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.name} className="bg-emerald-900">{dept.name}</option>
                     ))}
                   </select>
-                  {errors.department && (
-                    <p className="text-red-300 text-xs mt-1">{errors.department}</p>
-                  )}
+                  {errors.department && <p className="text-red-300 text-xs mt-0.5">{errors.department}</p>}
                 </div>
-
                 <FormSelect
                   label="Shift *"
                   value={formData.shift}
@@ -867,10 +681,10 @@ export default function TeacherModal({
                   options={SHIFTS}
                   error={errors.shift}
                   placeholder="Select Shift"
+                  className="text-sm sm:text-base"
                 />
               </div>
 
-              {/* Classes - Dynamic from API */}
               <MultiSelectChips
                 label="Assigned Classes *"
                 items={formData.assignedClasses}
@@ -880,11 +694,8 @@ export default function TeacherModal({
                 chipColor="bg-yellow-400/20 text-yellow-200"
                 searchPlaceholder="Search classes..."
               />
-              {errors.assignedClasses && (
-                <p className="text-red-300 text-xs mt-1">{errors.assignedClasses}</p>
-              )}
+              {errors.assignedClasses && <p className="text-red-300 text-xs mt-0.5">{errors.assignedClasses}</p>}
 
-              {/* Subjects - Dynamic from API */}
               <MultiSelectChips
                 label="Subjects Taught *"
                 items={formData.subjectsTaught}
@@ -894,21 +705,33 @@ export default function TeacherModal({
                 chipColor="bg-cyan-400/20 text-cyan-200"
                 searchPlaceholder="Search subjects..."
               />
-              {errors.subjectsTaught && (
-                <p className="text-red-300 text-xs mt-1">{errors.subjectsTaught}</p>
-              )}
+              {errors.subjectsTaught && <p className="text-red-300 text-xs mt-0.5">{errors.subjectsTaught}</p>}
             </FormSection>
 
-            {/* ===== SECTION 3: Qualifications & Extra ===== */}
+            {/* SECTION 3: Qualifications & Extra */}
             <FormSection title="Qualifications & Extra" number={3}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormSelect
-                  label="Highest Degree *"
-                  value={formData.highestDegree}
-                  onChange={(e) => updateField('highestDegree', e.target.value)}
-                  options={DEGREES}
-                  error={errors.highestDegree}
-                />
+              <div className="grid grid-cols-1 gap-2 pb-2">
+                <div>
+                  <label className="text-emerald-100 text-xs sm:text-sm mb-0.5 block font-medium">Highest Degree *</label>
+                  <SearchDropdown
+                    icon={<GraduationCap size={16} className="text-yellow-300" />}
+                    label=""
+                    placeholder={degreesLoading ? "Loading degrees..." : "Select Degree"}
+                    options={degrees}
+                    value={formData.highestDegree}
+                    onChange={(value) => updateField('highestDegree', value)}
+                    isOpen={openDropdown === 'degree'}
+                    onToggle={() => handleDropdownToggle('degree')}
+                    onClose={handleDropdownClose}
+                    dropUp={false}
+                    hideSearch={false}
+                    className="w-full"
+                    triggerClassName="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
+                    inputClassName="w-full px-3 py-2 rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm sm:text-base"
+                    optionClassName="px-3 py-2 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+                  />
+                  {errors.highestDegree && <p className="text-red-300 text-xs mt-0.5">{errors.highestDegree}</p>}
+                </div>
               </div>
 
               <FormTextarea
@@ -916,17 +739,13 @@ export default function TeacherModal({
                 value={formData.extraDetail}
                 onChange={(e) => updateField('extraDetail', e.target.value)}
                 placeholder="Additional notes, achievements, certifications, etc."
-                rows={3}
+                rows={2}
+                className="text-sm sm:text-base"
               />
             </FormSection>
           </div>
 
-          <ModalFooter 
-            onClose={handleClose} 
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            mode={mode}
-          />
+          <ModalFooter onClose={handleClose} onSubmit={handleSubmit} isSubmitting={isSubmitting} mode={mode} />
         </div>
       </div>
     </div>

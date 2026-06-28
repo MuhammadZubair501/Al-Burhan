@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 
 interface Option {
   id: number;
@@ -54,39 +55,44 @@ export default function SearchDropdown({
   closeOnSelect = true,
 }: Props) {
   const [search, setSearch] = useState("");
+  const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const [shouldDropUp, setShouldDropUp] = useState(dropUp);
 
   const filtered = useMemo(() => {
-    if (hideSearch) {
-      return options;
-    }
+    if (hideSearch) return options;
     return options.filter((item) =>
       item.name.toLowerCase().includes(search.toLowerCase())
     );
   }, [search, options, hideSearch]);
 
-  // Check if there's enough space below when opening
+  // Compute position whenever isOpen changes
   useEffect(() => {
-    if (isOpen && dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect();
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      const dropdownHeight = 300; // Approximate max height
+      const dropdownHeight = 300; // approximate
+      const up = dropUp || (spaceBelow < dropdownHeight && rect.top > spaceBelow);
 
-      // If not enough space below and more space above, drop up
-      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
-        setShouldDropUp(true);
-      } else {
-        setShouldDropUp(dropUp);
-      }
+      setShouldDropUp(up);
+      setDropdownPosition({
+        top: up ? rect.top - 10 : rect.bottom + 6,
+        left: rect.left,
+        width: rect.width,
+      });
     }
   }, [isOpen, dropUp]);
 
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target as Node)
+      ) {
         if (isOpen && onClose) {
           onClose();
         }
@@ -106,61 +112,53 @@ export default function SearchDropdown({
         setSearch("");
       }
     };
-
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
   const handleToggle = () => {
-    if (onToggle) {
-      onToggle();
-    }
-    if (!isOpen) {
-      setSearch("");
-    }
+    if (onToggle) onToggle();
+    if (!isOpen) setSearch("");
   };
 
   const handleSelect = (item: Option) => {
     onChange(item.name);
-    if (closeOnSelect && onClose) {
-      onClose();
-    }
+    if (closeOnSelect && onClose) onClose();
     setSearch("");
   };
 
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
-      <label className={labelClassName}>
-        {label}
-      </label>
+    <div className={className}>
+      {label && <label className={labelClassName}>{label}</label>}
 
-      <div className="relative">
-        <div
-          onClick={handleToggle}
-          className={triggerClassName}
-        >
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <span className="flex-shrink-0">{icon}</span>
-            <span className={`truncate ${value ? "text-white" : "text-white/50"}`}>
-              {value || placeholder}
-            </span>
-          </div>
-
-          <Search size={16} className={iconClassName} />
+      <div ref={triggerRef} onClick={handleToggle} className={triggerClassName}>
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <span className="flex-shrink-0">{icon}</span>
+          <span className={`truncate ${value ? "text-white" : "text-white/50"}`}>
+            {value || placeholder}
+          </span>
         </div>
+        <Search size={16} className={iconClassName} />
+      </div>
 
-        {isOpen && (
+      {isOpen &&
+        ReactDOM.createPortal(
           <div
+            ref={dropdownRef}
+            style={{
+              position: "fixed",
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              zIndex: 99999,
+            }}
             className={`
-              absolute z-[9999]
-              w-full
               rounded-2xl
               bg-emerald-950/95
               backdrop-blur-2xl
               border border-white/20
               shadow-2xl
               overflow-hidden
-              ${shouldDropUp ? "bottom-full mb-2" : "top-full mt-2"}
               ${dropdownClassName}
             `}
           >
@@ -193,9 +191,9 @@ export default function SearchDropdown({
                 </div>
               )}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
-      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 // StudentModel.tsx
 import { useState, useEffect } from 'react';
-import { X, GraduationCap } from 'lucide-react';
+import { X, GraduationCap, Trash2 } from 'lucide-react';
+import Swal from 'sweetalert2'; // <-- ADDED
 import { PersonalDetails } from './components/PersonalDetails';
 import { AcademicDetails } from './components/AcademicDetails';
 import { AdditionalDetails } from './components/AdditionalDetails';
@@ -8,7 +9,7 @@ import type { StudentFormData } from './types/student';
 import { validateEmail, validatePhone, validateCNIC } from './utils/validation';
 import { studentService } from '../../services/studentService';
 import ApiRoutes from '../../services/ApiRoutes';
-import { BASE_URL } from '../../config/api';
+import loadDegrees from '../../types/Degree';
 
 interface BatchResponse {
   batch_id?: number;
@@ -25,19 +26,19 @@ interface SectionResponse {
   class_id?: number;
 }
 
-// StudentModel.tsx - Updated interface
 interface StudentFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: StudentFormData) => void;
-  initialData?: Partial<StudentFormData> & { 
+  onDelete?: (studentId: number) => void; // <-- ADDED optional delete callback
+  initialData?: Partial<StudentFormData> & {
     studentId?: number;
     className?: string;
     sectionName?: string;
     batchName?: string;
     classId?: number;
     sectionId?: number;
-    batchId?: number;  // Changed from number | undefined to number | undefined (removed null)
+    batchId?: number;
   };
   lastAdmissionNumber?: number;
   campusId?: number;
@@ -68,6 +69,7 @@ export default function StudentForm({
   isOpen,
   onClose,
   onSave,
+  onDelete,
   initialData,
   lastAdmissionNumber = 24001,
   campusId
@@ -85,10 +87,12 @@ export default function StudentForm({
   const [loadingBatches, setLoadingBatches] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [classes, setClasses] = useState<{ 
-    id: number; 
-    name: string; 
-    className: string; 
+  const [degrees, setDegrees] = useState<{ id: number; name: string }[]>([]);
+  const [loadingDegrees, setLoadingDegrees] = useState(false);
+  const [classes, setClasses] = useState<{
+    id: number;
+    name: string;
+    className: string;
     sectionName: string;
     classId: number;
     sectionId: number;
@@ -99,18 +103,18 @@ export default function StudentForm({
   const currentCampusId = campusId || Number(window.CampusID) || 1;
   const isEditMode = !!initialData?.studentId;
 
-  // Load batches and classes when modal opens
+  // Load batches, classes, and degrees when modal opens
   useEffect(() => {
     if (!isOpen) return;
 
     const loadData = async () => {
       setIsDataLoading(true);
-      
+
       let loadedBatches: { id: number; name: string }[] = [];
-      let loadedClasses: { 
-        id: number; 
-        name: string; 
-        className: string; 
+      let loadedClasses: {
+        id: number;
+        name: string;
+        className: string;
         sectionName: string;
         classId: number;
         sectionId: number;
@@ -121,8 +125,6 @@ export default function StudentForm({
       try {
         const response = await fetch(ApiRoutes.BATCH);
         const data = await response.json();
-        console.log("Batches loaded:", data);
-        
         loadedBatches = (data as BatchResponse[]).map((item: BatchResponse) => ({
           id: Number(item.batch_id || item.id || 0),
           name: String(item.batch_name || item.name || ''),
@@ -134,14 +136,22 @@ export default function StudentForm({
         setLoadingBatches(false);
       }
 
+      // Load Degrees
+      setLoadingDegrees(true);
+      try {
+        const degs = await loadDegrees();
+        setDegrees(degs);
+      } catch (err) {
+        console.error("Error loading degrees:", err);
+      } finally {
+        setLoadingDegrees(false);
+      }
+
       // Load Classes
       setLoadingClasses(true);
       try {
-        console.log(`Fetching sections/classes for Campus ID: ${currentCampusId}...`);
         const response = await fetch(ApiRoutes.sectionByCampusId(currentCampusId));
         const data = await response.json();
-        console.log('Classes fetched:', data);
-        
         loadedClasses = (data as SectionResponse[]).map((item: SectionResponse) => ({
           id: Number(item.section_id || item.id || 0),
           name: `${item.class_name || ''}${item.section_name ? ` - ${item.section_name}` : ''}`,
@@ -157,11 +167,8 @@ export default function StudentForm({
         setLoadingClasses(false);
       }
 
-      // After both loads complete, set the form data for edit mode
+      // After all loads complete, set form data for edit mode
       if (isEditMode && initialData) {
-        console.log('Setting edit data:', initialData);
-        
-        // First, set all the basic data
         const updatedFormData: any = {
           firstName: initialData.firstName || '',
           lastName: initialData.lastName || '',
@@ -182,91 +189,47 @@ export default function StudentForm({
 
         // Find matching class
         let matchingClassName = '';
-        
-        // Try to find by class_id first
         if (initialData.classId) {
           const classById = loadedClasses.find(c => c.classId === initialData.classId);
-          if (classById) {
-            matchingClassName = classById.name;
-            console.log('Found class by classId:', matchingClassName);
-          }
+          if (classById) matchingClassName = classById.name;
         }
-        
-        // If not found by class_id, try by section_id
         if (!matchingClassName && initialData.sectionId) {
           const classBySectionId = loadedClasses.find(c => c.sectionId === initialData.sectionId);
-          if (classBySectionId) {
-            matchingClassName = classBySectionId.name;
-            console.log('Found class by sectionId:', matchingClassName);
-          }
+          if (classBySectionId) matchingClassName = classBySectionId.name;
         }
-        
-        // If still not found, try by class name and section name
         if (!matchingClassName && initialData.className) {
-          const classByName = loadedClasses.find(c => 
-            c.className === initialData.className && 
+          const classByName = loadedClasses.find(c =>
+            c.className === initialData.className &&
             (initialData.sectionName ? c.sectionName === initialData.sectionName : true)
           );
-          if (classByName) {
-            matchingClassName = classByName.name;
-            console.log('Found class by name:', matchingClassName);
-          }
+          if (classByName) matchingClassName = classByName.name;
         }
-
-        // If still not found, try to match by the display name
         if (!matchingClassName && initialData.enrollmentClass) {
-          const classByDisplayName = loadedClasses.find(c => 
-            c.name === initialData.enrollmentClass
-          );
-          if (classByDisplayName) {
-            matchingClassName = classByDisplayName.name;
-            console.log('Found class by display name:', matchingClassName);
-          }
+          const classByDisplayName = loadedClasses.find(c => c.name === initialData.enrollmentClass);
+          if (classByDisplayName) matchingClassName = classByDisplayName.name;
         }
 
         // Find matching batch
         let matchingBatchName = '';
-        
-        // Try to find by batch_id first
         if (initialData.batchId) {
           const batchById = loadedBatches.find(b => b.id === initialData.batchId);
-          if (batchById) {
-            matchingBatchName = batchById.name;
-            console.log('Found batch by batchId:', matchingBatchName);
-          }
+          if (batchById) matchingBatchName = batchById.name;
         }
-        
-        // If not found, try by batch name
         if (!matchingBatchName && initialData.batchName) {
           const batchByName = loadedBatches.find(b => b.name === initialData.batchName);
-          if (batchByName) {
-            matchingBatchName = batchByName.name;
-            console.log('Found batch by name:', matchingBatchName);
-          }
+          if (batchByName) matchingBatchName = batchByName.name;
         }
-
-        // If still not found, try by the display name
         if (!matchingBatchName && initialData.batch) {
           const batchByDisplayName = loadedBatches.find(b => b.name === initialData.batch);
-          if (batchByDisplayName) {
-            matchingBatchName = batchByDisplayName.name;
-            console.log('Found batch by display name:', matchingBatchName);
-          }
+          if (batchByDisplayName) matchingBatchName = batchByDisplayName.name;
         }
 
-        // Update form data with matched values
         setFormData({
           ...updatedFormData,
           enrollmentClass: matchingClassName || updatedFormData.enrollmentClass || '',
           batch: matchingBatchName || updatedFormData.batch || ''
         });
-
-        console.log('Final form data set:', {
-          enrollmentClass: matchingClassName || updatedFormData.enrollmentClass || '',
-          batch: matchingBatchName || updatedFormData.batch || ''
-        });
       } else {
-        // For create mode, just set the admission number
         setFormData(prev => ({
           ...prev,
           admissionNumber: String(lastAdmissionNumber)
@@ -295,7 +258,6 @@ export default function StudentForm({
 
   if (!isOpen) return null;
 
-  // Show loading state while data is being fetched for edit mode
   if (isEditMode && isDataLoading) {
     return (
       <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -328,8 +290,6 @@ export default function StudentForm({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
-    // Personal Details Validation
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
@@ -342,17 +302,12 @@ export default function StudentForm({
     else if (!validateEmail(formData.email)) newErrors.email = 'Invalid email format';
     if (!formData.emergencyContact) newErrors.emergencyContact = 'Emergency contact is required';
     else if (!validatePhone(formData.emergencyContact)) newErrors.emergencyContact = 'Invalid phone format';
-    
-    // Academic Details Validation
     if (!formData.admissionNumber) newErrors.admissionNumber = 'Admission number is required';
     if (!formData.enrollmentClass) newErrors.enrollmentClass = 'Please select enrollment class';
     if (!formData.batch) newErrors.batch = 'Please select batch';
     if (!formData.highestQualification) newErrors.highestQualification = 'Please select qualification';
-    
-    // Additional Details Validation
     if (!formData.shift) newErrors.shift = 'Please select shift';
     if (!formData.joiningDate) newErrors.joiningDate = 'Joining date is required';
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -367,8 +322,25 @@ export default function StudentForm({
     return batchItem ? batchItem.id : null;
   };
 
+  // Show confirmation before saving
   const handleSubmit = async () => {
     if (!validateForm()) return;
+
+    // SweetAlert confirmation
+    const confirmResult = await Swal.fire({
+      title: isEditMode ? 'Update Student?' : 'Enroll Student?',
+      text: isEditMode 
+        ? 'Are you sure you want to update this student\'s information?' 
+        : 'Are you sure you want to enroll this student?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: isEditMode ? 'Yes, update' : 'Yes, enroll',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!confirmResult.isConfirmed) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
@@ -388,7 +360,6 @@ export default function StudentForm({
         return;
       }
 
-      // Prepare API data
       const apiData = {
         section_id: sectionId,
         batch_id: batchId,
@@ -411,26 +382,88 @@ export default function StudentForm({
         profile_image: formData.studentPicture
       };
 
-      console.log('Sending data to API:', apiData);
-
       let response;
       if (isEditMode && initialData?.studentId) {
         response = await studentService.updateStudent(initialData.studentId, apiData);
       } else {
         response = await studentService.createStudent(apiData);
       }
-      
-      console.log('API Response:', response);
-      
+
       if (response.success) {
+        // Success toast
+        await Swal.fire({
+          icon: 'success',
+          title: isEditMode ? 'Student Updated!' : 'Student Enrolled!',
+          text: isEditMode ? 'The student record has been updated successfully.' : 'New student has been enrolled successfully.',
+          timer: 3000,
+          showConfirmButton: false
+        });
         onSave(formData);
         onClose();
       } else {
         setSubmitError(response.message || 'Failed to save student. Please try again.');
+        // Error toast
+        await Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: response.message || 'Failed to save student. Please try again.'
+        });
       }
     } catch (error: any) {
       console.error('Error saving student:', error);
       setSubmitError(error.message || 'An unexpected error occurred. Please try again.');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'An unexpected error occurred.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle delete with SweetAlert
+  const handleDelete = async () => {
+    if (!initialData?.studentId) return;
+
+    const confirmResult = await Swal.fire({
+      title: 'Delete Student?',
+      text: 'This action cannot be undone. Are you sure you want to delete this student?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    setIsSubmitting(true);
+    try {
+      if (onDelete) {
+        // Use provided callback
+        onDelete(initialData.studentId);
+      } else {
+        // Fallback: call service directly
+        await studentService.deleteStudent(initialData.studentId);
+      }
+      // Show success
+      await Swal.fire({
+        icon: 'success',
+        title: 'Deleted!',
+        text: 'Student record has been deleted.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      onClose();
+    } catch (error: any) {
+      console.error('Error deleting student:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Failed to delete student.'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -440,7 +473,6 @@ export default function StudentForm({
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
       <div className="relative w-full max-w-4xl my-8">
         <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden">
-          
           <button
             onClick={onClose}
             className="absolute top-3 right-3 z-20 w-9 h-9 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
@@ -474,7 +506,7 @@ export default function StudentForm({
               errors={errors}
               setErrors={setErrors}
             />
-            
+
             <AcademicDetails
               formData={formData}
               updateField={updateField}
@@ -483,12 +515,14 @@ export default function StudentForm({
               loadingBatches={loadingBatches}
               classes={classes}
               loadingClasses={loadingClasses}
+              degrees={degrees}
+              loadingDegrees={loadingDegrees}
               openDropdown={openDropdown}
               onDropdownToggle={handleDropdownToggle}
               onDropdownClose={handleDropdownClose}
               campusId={currentCampusId}
             />
-            
+
             <AdditionalDetails
               formData={formData}
               updateField={updateField}
@@ -504,6 +538,16 @@ export default function StudentForm({
             >
               Cancel
             </button>
+            {isEditMode && (
+              <button
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                className="px-6 py-2.5 rounded-xl bg-red-500/20 text-red-200 hover:bg-red-500/40 transition disabled:opacity-50 flex items-center gap-2"
+              >
+                <Trash2 size={18} />
+                Delete
+              </button>
+            )}
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}

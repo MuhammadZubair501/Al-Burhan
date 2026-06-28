@@ -1,5 +1,6 @@
-// StudentPage.tsx - Updated with null handling
+// StudentPage.tsx - Updated with SweetAlert2 integration
 import { Plus, Users, Loader2 } from "lucide-react";
+import Swal from 'sweetalert2'; // <-- ADDED
 import StudentAndStudentCard from "./StudentCard";
 import StudentDetailModal from "./StudentDetailModal";
 import StudentModel from "./StudentModel";
@@ -75,22 +76,66 @@ export default function StudentPage() {
     setIsStudentFormOpen(true);
   };
 
+  // UPDATED: Delete with SweetAlert2 confirmation
   const handleDeleteStudent = async (student: StudentResponse) => {
-    if (!confirm(`Are you sure you want to delete student ${student.first_name} ${student.last_name}?`)) {
-      return;
-    }
+    // Show confirmation dialog
+    const result = await Swal.fire({
+      title: 'Delete Student?',
+      html: `Are you sure you want to delete <strong>${student.first_name} ${student.last_name}</strong>?<br/><span style="color: #ef4444; font-size: 0.9rem;">This action cannot be undone!</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Show loading state
+    Swal.fire({
+      title: 'Deleting...',
+      text: 'Please wait',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
 
     try {
       const response = await studentService.deleteStudent(student.student_id);
+      
       if (response.success) {
+        // Success toast
+        await Swal.fire({
+          icon: 'success',
+          title: 'Deleted!',
+          text: `Student ${student.first_name} ${student.last_name} has been deleted successfully.`,
+          timer: 3000,
+          showConfirmButton: false
+        });
+        
+        // Refresh the list
         await fetchStudents();
         setIsDetailModalOpen(false);
       } else {
-        alert('Failed to delete student: ' + response.message);
+        // Error from API
+        await Swal.fire({
+          icon: 'error',
+          title: 'Delete Failed',
+          text: response.message || 'Failed to delete student. Please try again.'
+        });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting student:', err);
-      alert('An error occurred while deleting the student');
+      // Unexpected error
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message || 'An unexpected error occurred while deleting the student.'
+      });
     }
   };
 
@@ -149,7 +194,7 @@ export default function StudentPage() {
       sectionId: editingStudent.section_id || undefined,
       batch: editingStudent.batch_name || '',
       batchName: editingStudent.batch_name || '',
-      batchId: editingStudent.batch_id || undefined, // Convert null to undefined
+      batchId: editingStudent.batch_id || undefined,
       highestQualification: editingStudent.last_previous_highest_qualification || '',
       shift: editingStudent.shift as any,
       joiningDate: editingStudent.joining_date,
