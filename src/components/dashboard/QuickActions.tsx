@@ -1,4 +1,4 @@
-import { Plus, Users, UserPlus, FileText, Printer } from 'lucide-react';
+import { Users, UserPlus, FileText, Printer } from 'lucide-react';
 
 export function QuickActions() {
   const actions = [
