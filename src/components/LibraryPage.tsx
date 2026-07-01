@@ -112,11 +112,9 @@ export default function LibraryPage() {
     
     for (const { file, relativePath } of files) {
       let folderPath = '';
-      let fileName = file.name;
       
       if (relativePath && relativePath.includes('/')) {
         const pathParts = relativePath.split('/');
-        fileName = pathParts.pop() || file.name;
         folderPath = pathParts.join('/');
       }
       
@@ -163,26 +161,6 @@ export default function LibraryPage() {
   }, [currentPath]);
 
   // Process dropped files
-  const processDroppedFiles = useCallback((files: FileList) => {
-    const fileQueue: { file: File; relativePath: string }[] = [];
-    
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      // Check if it has a webkitRelativePath (from folder upload)
-      const relativePath = (file as any).webkitRelativePath || '';
-      
-      // Filter out system files
-      if (file.name.startsWith('.')) continue;
-      if (file.name === 'Thumbs.db') continue;
-      
-      fileQueue.push({ file, relativePath });
-    }
-    
-    if (fileQueue.length > 0) {
-      setUploadQueue(fileQueue);
-      processUploadQueue(fileQueue);
-    }
-  }, [processUploadQueue]);
 
   // Drag and drop handlers
   const handleDragEnter = useCallback((e: React.DragEvent) => {

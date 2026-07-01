@@ -22,8 +22,8 @@ export function useClassModal({ isOpen, onSave, onClose, editData, mode = 'creat
   const [shift, setShift] = useState("");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [campus, setCampus] = useState<any>(null);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [batches, setBatches] = useState<any[]>([]);
+  const [departments] = useState<any[]>([]);
+  const [batches] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const isValid = className && department && batch && shift;

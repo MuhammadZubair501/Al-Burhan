@@ -19,13 +19,6 @@ type AttendanceRecord = {
   campus_id?: number;
 };
 
-type Student = {
-  student_id: number;
-  first_name: string;
-  last_name: string;
-  roll_number?: string;
-  section_id?: number;
-};
 
 type FilterState = {
   startDate: string;
@@ -43,7 +36,7 @@ export default function StudentAttendancePage() {
   const [sections, setSections] = useState<any[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<AttendanceRecord[]>([]);
-  const [campusName, setCampusName] = useState<string>('');
+  const [campusName] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(15);
   const [showStatusModal, setShowStatusModal] = useState(false);

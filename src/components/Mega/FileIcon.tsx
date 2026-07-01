@@ -9,7 +9,6 @@ import {
   FileVideo,
   FileAudio,
   Folder,
-  FolderOpen,
   FileCode,
   FileJson,
   FileAxis3d,

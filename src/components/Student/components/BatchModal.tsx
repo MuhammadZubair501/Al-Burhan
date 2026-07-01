@@ -40,7 +40,7 @@ export default function BatchModal({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   const [campus, setCampus] = useState<CampusType | null>(null);
-  const [batches, setBatches] = useState<{ id: number; name: string }[]>([]);
+  const [, setBatches] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const campusId = Number(window.CampusID);

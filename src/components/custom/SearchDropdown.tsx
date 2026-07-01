@@ -58,7 +58,7 @@ export default function SearchDropdown({
   const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
-  const [shouldDropUp, setShouldDropUp] = useState(dropUp);
+  const [, setShouldDropUp] = useState(dropUp);
 
   const filtered = useMemo(() => {
     if (hideSearch) return options;

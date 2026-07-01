@@ -63,13 +63,8 @@ export default function StudentPage() {
     console.log('Editing student:', student);
     
     // Build the enrollment class display name
-    const enrollmentClass = student.class_name ? 
-      `${student.class_name}${student.section_name ? ` - ${student.section_name}` : ''}` : '';
     
     // Build the image URL
-    const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
-    const imageUrl = student.profile_image_path ? 
-      `${baseUrl}${student.profile_image_path}` : '';
     
     // Set the editing student with all data
     setEditingStudent(student);
@@ -139,7 +134,7 @@ export default function StudentPage() {
     }
   };
 
-  const handleSaveStudent = async (studentData: any) => {
+  const handleSaveStudent = async () => {
     await fetchStudents();
     if (!editingStudent) {
       setLastAdmissionNumber(prev => prev + 1);

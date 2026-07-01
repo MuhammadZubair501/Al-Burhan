@@ -1,7 +1,6 @@
 // SectionPage.tsx
 import {
   Users,
-  GraduationCap,
   School,
   Pencil,
   Trash2,
