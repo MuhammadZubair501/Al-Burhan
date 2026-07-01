@@ -5,7 +5,7 @@ const mockData: DashboardData = {
   teacherSummary: { total: 35, present: 28, absent: 4, leave: 3, percentage: 80.0, newTeachers: 2 },
   studentAttendanceTable: [
     { className: 'Grade 10', sectionName: 'A', total: 40, present: 30, absent: 6, leave: 4, percentage: 75 },
-    { className: 'Grade 10', sectionName: 'B', total: 38, present: 28, absent: 8, leave: 2, percentage: 73.7 },
+    // { className: 'Grade 10', sectionName: 'B', total: 38, present: 28, absent: 8, leave: 2, percentage: 73.7 },
     { className: 'Grade 9', sectionName: 'A', total: 45, present: 40, absent: 3, leave: 2, percentage: 88.9 },
   ],
   teacherAttendanceTable: [

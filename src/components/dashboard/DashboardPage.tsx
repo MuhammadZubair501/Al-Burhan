@@ -101,7 +101,7 @@ export default function DashboardPage() {
 
             <Insights insights={data!.insights} />
 
-            <QuickActions />
+            {/* <QuickActions /> */}
           </>
         )}
       </div>

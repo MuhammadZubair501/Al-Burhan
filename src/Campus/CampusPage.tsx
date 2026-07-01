@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import BackgroundRings from "../components/BackgroundRings";
+import BackgroundRings from "../components/common/BackgroundRings";
 import CampusModal from "./CampusModal";
 import { Plus, University } from "lucide-react";
 import { useEffect, useState } from "react";

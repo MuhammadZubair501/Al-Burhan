@@ -2,11 +2,10 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import Sidebar, { type TabType } from "./Sidebar";
-import DashboardContent from "./DashboardContent";
 import TeacherContent from "./Teacher/TeacherContent";
 import StudentContent from "./Student/StudentPage";
-import LibraryContent from ".//LibraryContent";
-import BackgroundRings from ".//BackgroundRings";
+import LibraryPage from "./LibraryPage";
+import BackgroundRings from "./common/BackgroundRings";
 import SectionPage from "../Section/SectionPage";
 import ConfigurationPage from "../Configuration/ConfigurationPage";
 import ClassPage from "../Class/ClassPage";
@@ -59,7 +58,7 @@ export default function MainDeshboard() {
       case "class":
         return <ClassPage />;
       case "library":
-        return <LibraryContent />;
+        return <LibraryPage />;
       case "teacherAttendance":
   return <TeacherAttendancePage />;
 

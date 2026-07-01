@@ -129,4 +129,93 @@ static degreeById(id: number | string) {
   return `${API_BASE_URL}/degree/${id}`;
 }
 
+
+ // ============================================
+  // MEGA File Management Routes
+  // ============================================
+  static MEGA_FILES = `${API_BASE_URL}/files`;
+  static MEGA_FOLDERS = `${API_BASE_URL}/folders`;
+  static MEGA_PROGRESS = `${API_BASE_URL}/progress`;
+  
+  static megaUploadFile() {
+    return `${this.MEGA_FILES}/upload`;
+  }
+  
+  static megaDeleteFile() {
+    return `${this.MEGA_FILES}/delete`;
+  }
+  
+  static megaDownloadFile(path: string, name: string) {
+    // Properly encode the path and name for URL
+    const encodedPath = encodeURIComponent(path);
+    const encodedName = encodeURIComponent(name);
+    return `${this.MEGA_FILES}/download?path=${encodedPath}&name=${encodedName}`;
+  }
+  
+  static megaDownloadFolder(path: string) {
+    const encodedPath = encodeURIComponent(path);
+    return `${this.MEGA_FILES}/download-folder?path=${encodedPath}`;
+  }
+  
+  static megaDownloadZip(jobId: string) {
+    return `${this.MEGA_FILES}/download-zip/${jobId}`;
+  }
+  
+  static megaProgress(jobId: string) {
+    return `${this.MEGA_PROGRESS}/${jobId}`;
+  }
+  
+  static megaGetFolder(path: string = '') {
+    const encodedPath = encodeURIComponent(path);
+    return `${this.MEGA_FOLDERS}?path=${encodedPath}`;
+  }
+  
+  static megaCreateFolder() {
+    return `${this.MEGA_FOLDERS}`;
+  }
+  
+  static megaDeleteFolder() {
+    return `${this.MEGA_FOLDERS}`;
+  }
+
+
+ // ============================================
+  // AUTH ROUTES
+  // ============================================
+  static AUTH = `${API_BASE_URL}/auth`;
+  
+  static login() {
+    return `${this.AUTH}/login`;
+  }
+  
+  static profile() {
+    return `${this.AUTH}/profile`;
+  }
+  
+  static changePassword() {
+    return `${this.AUTH}/change-password`;
+  }
+  
+  static getUserByEmail() {
+    return `${this.AUTH}/get-user-by-email`;
+  }
+  
+  static resetPassword() {
+    return `${this.AUTH}/reset-password`;
+  }
+
+  // ============================================
+  // OTP ROUTES
+  // ============================================
+  static OTP = `${API_BASE_URL}/otp`;
+  
+  static sendOTP() {
+    return `${this.OTP}/send`;
+  }
+  
+  static verifyOTP() {
+    return `${this.OTP}/verify`;
+  }
+
+
 }
