@@ -15,6 +15,7 @@ import { RecentActivity } from '../dashboard/RecentActivity';
 import { AbsentList } from '../dashboard/AbsentList';
 import { LateArrivals } from '../dashboard/LateArrivals';
 import { Insights } from '../dashboard/Insights';
+import { QuickActions } from '../dashboard/QuickActions';
 import { SkeletonLoader } from '../common/SkeletonLoader';
 import type { DashboardFilters } from '../../types/dashboard';
 
@@ -100,7 +101,7 @@ export default function DashboardPage() {
 
             <Insights insights={data!.insights} />
 
-            {/* <QuickActions /> */}
+            <QuickActions />
           </>
         )}
       </div>
