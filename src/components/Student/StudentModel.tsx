@@ -1,7 +1,7 @@
 // StudentModel.tsx
 import { useState, useEffect } from 'react';
 import { X, GraduationCap, Trash2 } from 'lucide-react';
-import Swal from 'sweetalert2'; // <-- ADDED
+import Swal from 'sweetalert2';
 import { PersonalDetails } from './components/PersonalDetails';
 import { AcademicDetails } from './components/AcademicDetails';
 import { AdditionalDetails } from './components/AdditionalDetails';
@@ -10,6 +10,9 @@ import { validateEmail, validatePhone, validateCNIC } from './utils/validation';
 import { studentService } from '../../services/studentService';
 import ApiRoutes from '../../services/ApiRoutes';
 import loadDegrees from '../../types/Degree';
+import Portal from '../../components/common/Portal';
+import SearchDropdown from '../custom/SearchDropdown';
+import { formatDateForInput } from '../../utils/dateUtils';
 
 interface BatchResponse {
   batch_id?: number;
@@ -30,7 +33,7 @@ interface StudentFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: StudentFormData) => void;
-  onDelete?: (studentId: number) => void; // <-- ADDED optional delete callback
+  onDelete?: (studentId: number) => void;
   initialData?: Partial<StudentFormData> & {
     studentId?: number;
     className?: string;
@@ -64,6 +67,12 @@ const initialFormData: StudentFormData = {
   joiningDate: '',
   extraDetails: ''
 };
+
+// Shift options with number ids (to match Option type)
+const SHIFT_OPTIONS = [
+  { id: 1, name: 'Morning' },
+  { id: 2, name: 'Evening' }
+];
 
 export default function StudentForm({
   isOpen,
@@ -100,8 +109,35 @@ export default function StudentForm({
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
 
+  // Shift dropdown state
+  const [isShiftDropdownOpen, setIsShiftDropdownOpen] = useState(false);
+
   const currentCampusId = campusId || Number(window.CampusID) || 1;
   const isEditMode = !!initialData?.studentId;
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Keyboard shortcut - Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !isSubmitting) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isSubmitting, onClose]);
 
   // Load batches, classes, and degrees when modal opens
   useEffect(() => {
@@ -172,16 +208,16 @@ export default function StudentForm({
         const updatedFormData: any = {
           firstName: initialData.firstName || '',
           lastName: initialData.lastName || '',
-          dateOfBirth: initialData.dateOfBirth || '',
-          gender: initialData.gender || '',
+          dateOfBirth: formatDateForInput(initialData.dateOfBirth),
+          gender: initialData.gender ? initialData.gender.toLowerCase() : '', // ✅ Fixed: Normalize gender
           cnic: initialData.cnic || '',
           phone: initialData.phone || '',
           email: initialData.email || '',
           emergencyContact: initialData.emergencyContact || '',
           admissionNumber: initialData.admissionNumber || String(lastAdmissionNumber),
           highestQualification: initialData.highestQualification || '',
-          shift: initialData.shift || '',
-          joiningDate: initialData.joiningDate || '',
+          shift: initialData.shift ? initialData.shift.toLowerCase() : '', // ✅ Fixed: Normalize shift
+          joiningDate: formatDateForInput(initialData.joiningDate),
           extraDetails: initialData.extraDetails || '',
           studentPreview: initialData.studentPreview || '',
           studentId: initialData.studentId
@@ -260,16 +296,18 @@ export default function StudentForm({
 
   if (isEditMode && isDataLoading) {
     return (
-      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        <div className="relative w-full max-w-4xl my-8">
-          <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden p-12">
-            <div className="flex flex-col items-center justify-center text-white">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent mb-4"></div>
-              <p className="text-white/70">Loading student data...</p>
+      <Portal>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl my-4 sm:my-8">
+            <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden p-8 sm:p-12">
+              <div className="flex flex-col items-center justify-center text-white">
+                <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-yellow-400 border-t-transparent mb-4"></div>
+                <p className="text-white/70 text-sm sm:text-base">Loading student data...</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Portal>
     );
   }
 
@@ -287,6 +325,21 @@ export default function StudentForm({
   const handleDropdownClose = () => {
     setOpenDropdown(null);
   };
+
+  // Shift dropdown handlers
+  const handleShiftSelect = (value: string) => {
+    // Find the shift by name
+    const shift = SHIFT_OPTIONS.find(s => s.name === value);
+    if (shift) {
+      updateField('shift', shift.name.toLowerCase());
+    }
+    setIsShiftDropdownOpen(false);
+  };
+
+  // Get display name for selected shift
+  const selectedShiftName = formData.shift
+    ? SHIFT_OPTIONS.find(s => s.name.toLowerCase() === formData.shift.toLowerCase())?.name || ''
+    : '';
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -337,7 +390,14 @@ export default function StudentForm({
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
       confirmButtonText: isEditMode ? 'Yes, update' : 'Yes, enroll',
-      cancelButtonText: 'Cancel'
+      cancelButtonText: 'Cancel',
+      customClass: {
+        popup: 'rounded-2xl p-4 sm:p-6',
+        title: 'text-base sm:text-lg',
+        htmlContainer: 'text-sm sm:text-base',
+        confirmButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+        cancelButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+      }
     });
 
     if (!confirmResult.isConfirmed) return;
@@ -369,7 +429,7 @@ export default function StudentForm({
         date_of_birth: formData.dateOfBirth,
         gender: formData.gender,
         cnic: formData.cnic,
-        phone_number: formData.phone.replace(/\s/g, ''),
+        phone: formData.phone.replace(/\s/g, ''),
         email_address: formData.email,
         emergency_contact_number: formData.emergencyContact.replace(/\s/g, ''),
         last_previous_highest_qualification: formData.highestQualification,
@@ -390,23 +450,32 @@ export default function StudentForm({
       }
 
       if (response.success) {
-        // Success toast
         await Swal.fire({
           icon: 'success',
           title: isEditMode ? 'Student Updated!' : 'Student Enrolled!',
           text: isEditMode ? 'The student record has been updated successfully.' : 'New student has been enrolled successfully.',
           timer: 3000,
-          showConfirmButton: false
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rounded-2xl p-4 sm:p-6',
+            title: 'text-base sm:text-lg',
+            htmlContainer: 'text-sm sm:text-base',
+          }
         });
         onSave(formData);
         onClose();
       } else {
         setSubmitError(response.message || 'Failed to save student. Please try again.');
-        // Error toast
         await Swal.fire({
           icon: 'error',
           title: 'Oops...',
-          text: response.message || 'Failed to save student. Please try again.'
+          text: response.message || 'Failed to save student. Please try again.',
+          customClass: {
+            popup: 'rounded-2xl p-4 sm:p-6',
+            title: 'text-base sm:text-lg',
+            htmlContainer: 'text-sm sm:text-base',
+            confirmButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+          }
         });
       }
     } catch (error: any) {
@@ -415,7 +484,13 @@ export default function StudentForm({
       await Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error.message || 'An unexpected error occurred.'
+        text: error.message || 'An unexpected error occurred.',
+        customClass: {
+          popup: 'rounded-2xl p-4 sm:p-6',
+          title: 'text-base sm:text-lg',
+          htmlContainer: 'text-sm sm:text-base',
+          confirmButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+        }
       });
     } finally {
       setIsSubmitting(false);
@@ -434,7 +509,14 @@ export default function StudentForm({
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Yes, delete',
-      cancelButtonText: 'Cancel'
+      cancelButtonText: 'Cancel',
+      customClass: {
+        popup: 'rounded-2xl p-4 sm:p-6',
+        title: 'text-base sm:text-lg',
+        htmlContainer: 'text-sm sm:text-base',
+        confirmButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+        cancelButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+      }
     });
 
     if (!confirmResult.isConfirmed) return;
@@ -442,19 +524,21 @@ export default function StudentForm({
     setIsSubmitting(true);
     try {
       if (onDelete) {
-        // Use provided callback
         onDelete(initialData.studentId);
       } else {
-        // Fallback: call service directly
         await studentService.deleteStudent(initialData.studentId);
       }
-      // Show success
       await Swal.fire({
         icon: 'success',
         title: 'Deleted!',
         text: 'Student record has been deleted.',
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        customClass: {
+          popup: 'rounded-2xl p-4 sm:p-6',
+          title: 'text-base sm:text-lg',
+          htmlContainer: 'text-sm sm:text-base',
+        }
       });
       onClose();
     } catch (error: any) {
@@ -462,7 +546,13 @@ export default function StudentForm({
       await Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error.message || 'Failed to delete student.'
+        text: error.message || 'Failed to delete student.',
+        customClass: {
+          popup: 'rounded-2xl p-4 sm:p-6',
+          title: 'text-base sm:text-lg',
+          htmlContainer: 'text-sm sm:text-base',
+          confirmButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+        }
       });
     } finally {
       setIsSubmitting(false);
@@ -470,107 +560,137 @@ export default function StudentForm({
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl my-8">
-        <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden">
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 z-20 w-9 h-9 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
-          >
-            <X size={18} />
-          </button>
-
-          <div className="px-4 sm:px-8 pt-6 pb-4 text-center border-b border-white/10">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-xl">
-              <GraduationCap size={28} className="text-emerald-900" />
-            </div>
-            <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-white">
-              {isEditMode ? 'Edit Student' : 'Student Enrollment'}
-            </h2>
-            <p className="text-emerald-100 mt-1 text-sm">
-              {isEditMode ? 'Update student information' : 'Register new student with complete details'}
-            </p>
-          </div>
-
-          <div className="px-4 sm:px-8 py-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            {submitError && (
-              <div className="mb-4 p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-200">
-                <p className="font-semibold">Error Saving Student</p>
-                <p className="text-sm">{submitError}</p>
-              </div>
-            )}
-
-            <PersonalDetails
-              formData={formData}
-              updateField={updateField}
-              errors={errors}
-              setErrors={setErrors}
-            />
-
-            <AcademicDetails
-              formData={formData}
-              updateField={updateField}
-              errors={errors}
-              batches={batches}
-              loadingBatches={loadingBatches}
-              classes={classes}
-              loadingClasses={loadingClasses}
-              degrees={degrees}
-              loadingDegrees={loadingDegrees}
-              openDropdown={openDropdown}
-              onDropdownToggle={handleDropdownToggle}
-              onDropdownClose={handleDropdownClose}
-              campusId={currentCampusId}
-            />
-
-            <AdditionalDetails
-              formData={formData}
-              updateField={updateField}
-              errors={errors}
-            />
-          </div>
-
-          <div className="px-4 sm:px-8 py-4 bg-black/20 flex flex-col sm:flex-row justify-end gap-3 border-t border-white/10">
-            <button
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-            {isEditMode && (
+    <Portal>
+      <div className="fixed inset-0 z-[9999] flex items-start justify-center p-2 sm:p-3 md:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div className="relative w-full max-w-4xl my-1 sm:my-2 md:my-4" onClick={e => e.stopPropagation()}>
+          <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden flex flex-col max-h-[98vh] sm:max-h-[95vh] md:max-h-[90vh]">
+            
+            {/* Header - Fixed */}
+            <div className="flex-shrink-0 sticky top-0 z-10 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-3 sm:px-4 md:px-8 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 text-center border-b border-white/10">
               <button
-                onClick={handleDelete}
-                disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-xl bg-red-500/20 text-red-200 hover:bg-red-500/40 transition disabled:opacity-50 flex items-center gap-2"
+                onClick={onClose}
+                className="absolute top-3 right-3 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
               >
-                <Trash2 size={18} />
-                Delete
+                <X size={16} className="sm:w-[18px] sm:h-[18px]" />
               </button>
-            )}
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-950 font-bold hover:scale-105 transition shadow-lg disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-emerald-950 border-t-transparent"></span>
-                  {isEditMode ? 'Updating...' : 'Enrolling...'}
-                </>
-              ) : (
-                isEditMode ? 'Update Student' : 'Enroll Student'
+
+              <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-xl">
+                <GraduationCap size={22} className="sm:w-6 sm:h-6 md:w-7 md:h-7 text-emerald-900" />
+              </div>
+              <h2 className="mt-2 sm:mt-3 text-lg sm:text-xl md:text-2xl font-bold text-white">
+                {isEditMode ? 'Edit Student' : 'Student Enrollment'}
+              </h2>
+              <p className="text-emerald-100 mt-0.5 sm:mt-1 text-xs sm:text-sm">
+                {isEditMode ? 'Update student information' : 'Register new student with complete details'}
+              </p>
+            </div>
+
+            {/* Scrollable Content - Takes remaining space */}
+            <div className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-8 py-3 sm:py-4 custom-scrollbar">
+              {submitError && (
+                <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-200">
+                  <p className="font-semibold text-xs sm:text-sm">Error Saving Student</p>
+                  <p className="text-[10px] sm:text-xs">{submitError}</p>
+                </div>
               )}
-            </button>
+
+              <PersonalDetails
+                formData={formData}
+                updateField={updateField}
+                errors={errors}
+                setErrors={setErrors}
+              />
+
+              <AcademicDetails
+                formData={formData}
+                updateField={updateField}
+                errors={errors}
+                batches={batches}
+                loadingBatches={loadingBatches}
+                classes={classes}
+                loadingClasses={loadingClasses}
+                degrees={degrees}
+                loadingDegrees={loadingDegrees}
+                openDropdown={openDropdown}
+                onDropdownToggle={handleDropdownToggle}
+                onDropdownClose={handleDropdownClose}
+                campusId={currentCampusId}
+              />
+
+              {/* Shift Field with SearchDropdown */}
+              <div className="mt-4">
+                <label className="text-emerald-100 text-sm font-medium block mb-1.5">
+                  Shift <span className="text-red-400">*</span>
+                </label>
+                <SearchDropdown
+                  label=""
+                  placeholder="Select Shift"
+                  icon={null}
+                  options={SHIFT_OPTIONS}
+                  value={selectedShiftName}
+                  onChange={handleShiftSelect}
+                  isOpen={isShiftDropdownOpen}
+                  onToggle={() => setIsShiftDropdownOpen(!isShiftDropdownOpen)}
+                  onClose={() => setIsShiftDropdownOpen(false)}
+                  dropUp={false}
+                  hideSearch={false}
+                  className="w-full"
+                  triggerClassName="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
+                  dropdownClassName="w-full"
+                  optionClassName="px-3 py-2 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+                />
+                {errors.shift && (
+                  <p className="text-red-300 text-xs mt-1">{errors.shift}</p>
+                )}
+              </div>
+
+              <AdditionalDetails
+                formData={formData}
+                updateField={updateField}
+                errors={errors}
+              />
+            </div>
+
+            {/* Footer - Fixed at bottom */}
+            <div className="flex-shrink-0 sticky bottom-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-3 sm:px-4 md:px-8 py-3 sm:py-4 border-t border-white/10">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <button
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base order-2 sm:order-1"
+                >
+                  Cancel
+                </button>
+                {isEditMode && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 rounded-xl bg-red-500/20 text-red-200 hover:bg-red-500/40 transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base order-3 sm:order-2"
+                  >
+                    <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    Delete
+                  </button>
+                )}
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-950 font-bold hover:scale-105 transition shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-4"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="animate-spin rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 border-2 border-emerald-950 border-t-transparent"></span>
+                      <span className="hidden xs:inline">{isEditMode ? 'Updating...' : 'Enrolling...'}</span>
+                      <span className="xs:hidden">...</span>
+                    </>
+                  ) : (
+                    isEditMode ? 'Update Student' : 'Enroll Student'
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
-      `}</style>
-    </div>
+    </Portal>
   );
 }

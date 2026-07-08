@@ -18,7 +18,7 @@ export const AdditionalDetails: React.FC<AdditionalDetailsProps> = ({
   const todayDate = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 mt-6">
       <h3 className="text-base sm:text-lg font-semibold text-yellow-300 mb-3 flex items-center gap-2">
         <span className="w-6 h-6 rounded-full bg-yellow-400/20 flex items-center justify-center text-xs">3</span>
         Additional Details

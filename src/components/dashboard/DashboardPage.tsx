@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LayoutDashboard } from 'lucide-react';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { FilterBar } from '../common/FilterBar';
-import  PageHeader  from '../PageHeader';
+import PageHeader from '../PageHeader';
 import { StudentSummary } from '../dashboard/StudentSummary';
 import { TeacherSummary } from '../dashboard/TeacherSummary';
 import { StudentAttendanceTable } from '../dashboard/StudentAttendanceTable';
@@ -15,7 +15,6 @@ import { RecentActivity } from '../dashboard/RecentActivity';
 import { AbsentList } from '../dashboard/AbsentList';
 import { LateArrivals } from '../dashboard/LateArrivals';
 import { Insights } from '../dashboard/Insights';
-import { QuickActions } from '../dashboard/QuickActions';
 import { SkeletonLoader } from '../common/SkeletonLoader';
 import type { DashboardFilters } from '../../types/dashboard';
 
@@ -47,18 +46,18 @@ export default function DashboardPage() {
   };
 
   if (error) {
-    return <div className="p-8 text-red-400">Error: {error}</div>;
+    return <div className="p-4 sm:p-8 text-red-400">Error: {error}</div>;
   }
 
   return (
     <div className="min-h-screen relative">
       <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-10 left-10 w-72 h-72 border-4 border-yellow-400 rounded-full"></div>
-        <div className="absolute bottom-10 right-10 w-96 h-96 border-4 border-yellow-400 rounded-full"></div>
-        <div className="absolute top-1/2 left-1/3 w-56 h-56 border-2 border-white rounded-full"></div>
+        <div className="absolute top-10 left-10 w-48 sm:w-72 h-48 sm:h-72 border-4 border-yellow-400 rounded-full"></div>
+        <div className="absolute bottom-10 right-10 w-64 sm:w-96 h-64 sm:h-96 border-4 border-yellow-400 rounded-full"></div>
+        <div className="absolute top-1/2 left-1/3 w-40 sm:w-56 h-40 sm:h-56 border-2 border-white rounded-full"></div>
       </div>
 
-      <div className="relative z-10 p-8 max-w-[1600px] mx-auto">
+      <div className="relative z-10 p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
         <PageHeader
           title="Dashboard"
           description="School Management Overview"
@@ -79,7 +78,7 @@ export default function DashboardPage() {
             <StudentSummary data={data!.studentSummary} />
             <TeacherSummary data={data!.teacherSummary} />
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 mb-6">
               <StudentAttendanceTable data={data!.studentAttendanceTable} />
               <TeacherAttendanceTable data={data!.teacherAttendanceTable} />
             </div>
@@ -88,20 +87,18 @@ export default function DashboardPage() {
 
             <ComparisonCards data={data!.comparison} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               <TopPerformers classes={data!.topClasses} departments={data!.topDepartments} />
               <LowAttendance classes={data!.lowClasses} departments={data!.lowDepartments} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
               <RecentActivity activities={data!.recentActivities} />
               <AbsentList students={data!.absentStudents} teachers={data!.absentTeachers} />
               <LateArrivals students={data!.lateStudents} teachers={data!.lateTeachers} />
             </div>
 
             <Insights insights={data!.insights} />
-
-            <QuickActions />
           </>
         )}
       </div>

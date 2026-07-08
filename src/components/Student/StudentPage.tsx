@@ -1,6 +1,6 @@
-// StudentPage.tsx - Updated with SweetAlert2 integration
-import { Plus, Users, Loader2 } from "lucide-react";
-import Swal from 'sweetalert2'; // <-- ADDED
+// StudentPage.tsx - Fully Responsive with Search & Filters
+import { Plus, Users, Loader2, Search, Filter, X } from "lucide-react";
+import Swal from 'sweetalert2';
 import StudentAndStudentCard from "./StudentCard";
 import StudentDetailModal from "./StudentDetailModal";
 import StudentModel from "./StudentModel";
@@ -17,16 +17,26 @@ export default function StudentPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentResponse | null>(null);
   const [students, setStudents] = useState<StudentResponse[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<StudentResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastAdmissionNumber, setLastAdmissionNumber] = useState(24001);
   const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterGender, setFilterGender] = useState<string>("all");
+  const [filterClass, setFilterClass] = useState<string>("all");
+  const [filterShift, setFilterShift] = useState<string>("all");
 
   const campusId = Number(window.CampusID) || 1;
 
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [students, searchTerm, filterGender, filterClass, filterShift]);
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -54,6 +64,45 @@ export default function StudentPage() {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...students];
+
+    // Search filter
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(student =>
+        `${student.first_name} ${student.last_name}`.toLowerCase().includes(term) ||
+        student.email_address?.toLowerCase().includes(term) ||
+        student.phone_number?.includes(term) ||
+        student.roll_number?.toLowerCase().includes(term) ||
+        student.class_name?.toLowerCase().includes(term)
+      );
+    }
+
+    // Gender filter
+    if (filterGender !== "all") {
+      filtered = filtered.filter(student => 
+        student.gender === filterGender
+      );
+    }
+
+    // Class filter
+    if (filterClass !== "all") {
+      filtered = filtered.filter(student => 
+        student.class_name === filterClass
+      );
+    }
+
+    // Shift filter
+    if (filterShift !== "all") {
+      filtered = filtered.filter(student => 
+        student.shift === filterShift
+      );
+    }
+
+    setFilteredStudents(filtered);
+  };
+
   const handleViewDetails = (student: StudentResponse) => {
     setSelectedStudent(student);
     setIsDetailModalOpen(true);
@@ -61,19 +110,11 @@ export default function StudentPage() {
 
   const handleEditStudent = (student: StudentResponse) => {
     console.log('Editing student:', student);
-    
-    // Build the enrollment class display name
-    
-    // Build the image URL
-    
-    // Set the editing student with all data
     setEditingStudent(student);
     setIsStudentFormOpen(true);
   };
 
-  // UPDATED: Delete with SweetAlert2 confirmation
   const handleDeleteStudent = async (student: StudentResponse) => {
-    // Show confirmation dialog
     const result = await Swal.fire({
       title: 'Delete Student?',
       html: `Are you sure you want to delete <strong>${student.first_name} ${student.last_name}</strong>?<br/><span style="color: #ef4444; font-size: 0.9rem;">This action cannot be undone!</span>`,
@@ -88,7 +129,6 @@ export default function StudentPage() {
 
     if (!result.isConfirmed) return;
 
-    // Show loading state
     Swal.fire({
       title: 'Deleting...',
       text: 'Please wait',
@@ -103,7 +143,6 @@ export default function StudentPage() {
       const response = await studentService.deleteStudent(student.student_id);
       
       if (response.success) {
-        // Success toast
         await Swal.fire({
           icon: 'success',
           title: 'Deleted!',
@@ -111,12 +150,9 @@ export default function StudentPage() {
           timer: 3000,
           showConfirmButton: false
         });
-        
-        // Refresh the list
         await fetchStudents();
         setIsDetailModalOpen(false);
       } else {
-        // Error from API
         await Swal.fire({
           icon: 'error',
           title: 'Delete Failed',
@@ -125,7 +161,6 @@ export default function StudentPage() {
       }
     } catch (err: any) {
       console.error('Error deleting student:', err);
-      // Unexpected error
       await Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -163,7 +198,6 @@ export default function StudentPage() {
     };
   };
 
-  // Prepare initial data for edit mode
   const getInitialData = () => {
     if (!editingStudent) return undefined;
     
@@ -200,12 +234,23 @@ export default function StudentPage() {
     };
   };
 
+  // Get unique classes for filter
+  const classes = [...new Set(students.map(s => s.class_name).filter(Boolean))];
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterGender("all");
+    setFilterClass("all");
+    setFilterShift("all");
+    setShowFilters(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 size={48} className="text-yellow-400 animate-spin" />
-          <p className="text-white/70">Loading students...</p>
+        <div className="flex flex-col items-center gap-3 sm:gap-4">
+          <Loader2 size={36} className="text-yellow-400 animate-spin" />
+          <p className="text-white/70 text-sm sm:text-base">Loading students...</p>
         </div>
       </div>
     );
@@ -213,12 +258,12 @@ export default function StudentPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="bg-red-500/20 p-6 rounded-2xl border border-red-500/50">
-          <p className="text-red-300">{error}</p>
+      <div className="flex items-center justify-center min-h-[60vh] p-4">
+        <div className="bg-red-500/20 p-4 sm:p-6 rounded-2xl border border-red-500/50 max-w-md w-full">
+          <p className="text-red-300 text-sm sm:text-base">{error}</p>
           <button
             onClick={fetchStudents}
-            className="mt-4 px-4 py-2 rounded-xl bg-yellow-400 text-emerald-950 font-semibold hover:bg-yellow-300 transition"
+            className="mt-4 px-4 py-2 rounded-xl bg-yellow-400 text-emerald-950 font-semibold hover:bg-yellow-300 transition text-sm sm:text-base"
           >
             Retry
           </button>
@@ -231,16 +276,135 @@ export default function StudentPage() {
     <div className="">
       <PageHeader title={Heading} description={Description} Icon={Users} />
 
-      <div className="relative z-10 p-8">
-        {students.length === 0 ? (
-          <div className="text-center py-12">
-            <Users size={64} className="mx-auto text-white/20 mb-4" />
-            <p className="text-white/70 text-lg">No students enrolled yet</p>
-            <p className="text-white/50 text-sm mt-2">Click the + button to add your first student</p>
+      <div className="relative z-10 p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8">
+        {/* Search and Filter Bar - Responsive */}
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-green-200/60" size={18} />
+              <input
+                type="text"
+                placeholder="Search students by name, roll number, class, or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white/10 text-white rounded-xl pl-10 pr-4 py-2.5 sm:py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-green-200/50 text-sm sm:text-base"
+              />
+            </div>
+
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200 text-sm sm:text-base"
+            >
+              <Filter size={18} />
+              <span>Filters</span>
+              {(filterGender !== "all" || filterClass !== "all" || filterShift !== "all") && (
+                <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
+              )}
+            </button>
+
+            {/* Clear Filters Button */}
+            {(searchTerm || filterGender !== "all" || filterClass !== "all" || filterShift !== "all") && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-2.5 sm:py-3 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all duration-200 text-sm"
+              >
+                <X size={16} />
+                <span className="hidden xs:inline">Clear</span>
+              </button>
+            )}
+          </div>
+
+          {/* Filter Options - Expandable */}
+          {showFilters && (
+            <div className="mt-3 p-3 sm:p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {/* Gender Filter */}
+              <div>
+                <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
+                  Gender
+                </label>
+                <select
+                  value={filterGender}
+                  onChange={(e) => setFilterGender(e.target.value)}
+                  className="w-full bg-white/10 text-white rounded-xl px-3 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                >
+                  <option value="all" className="bg-emerald-900">All Genders</option>
+                  <option value="male" className="bg-emerald-900">Male</option>
+                  <option value="female" className="bg-emerald-900">Female</option>
+                </select>
+              </div>
+
+              {/* Class Filter */}
+              <div>
+                <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
+                  Class
+                </label>
+                <select
+                  value={filterClass}
+                  onChange={(e) => setFilterClass(e.target.value)}
+                  className="w-full bg-white/10 text-white rounded-xl px-3 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                >
+                  <option value="all" className="bg-emerald-900">All Classes</option>
+                  {classes.map((cls) => (
+                    <option key={cls} value={cls} className="bg-emerald-900">
+                      {cls}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Shift Filter */}
+              <div>
+                <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
+                  Shift
+                </label>
+                <select
+                  value={filterShift}
+                  onChange={(e) => setFilterShift(e.target.value)}
+                  className="w-full bg-white/10 text-white rounded-xl px-3 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                >
+                  <option value="all" className="bg-emerald-900">All Shifts</option>
+                  <option value="morning" className="bg-emerald-900">Morning</option>
+                  <option value="evening" className="bg-emerald-900">Evening</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Results Count */}
+        <div className="mb-3 sm:mb-4">
+          <p className="text-green-100/60 text-xs sm:text-sm">
+            Showing {filteredStudents.length} of {students.length} students
+          </p>
+        </div>
+
+        {/* Students Grid */}
+        {filteredStudents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-white/60">
+            <Users size={48} className="mb-3 sm:mb-4 opacity-30" />
+            <p className="text-lg sm:text-xl font-medium">
+              {students.length === 0 ? "No students enrolled yet" : "No students match your filters"}
+            </p>
+            <p className="text-xs sm:text-sm">
+              {students.length === 0 
+                ? "Click the + button to add your first student"
+                : "Try adjusting your search or filters"
+              }
+            </p>
+            {(searchTerm || filterGender !== "all" || filterClass !== "all" || filterShift !== "all") && (
+              <button
+                onClick={clearFilters}
+                className="mt-4 px-4 py-2 rounded-xl bg-yellow-400/20 text-yellow-400 hover:bg-yellow-400/30 transition text-sm"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {students.map((student) => {
+          <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {filteredStudents.map((student) => {
               const cardData = transformStudentForCard(student);
               return (
                 <StudentAndStudentCard
@@ -259,7 +423,6 @@ export default function StudentPage() {
           </div>
         )}
 
-        {/* Student Form Modal */}
         <StudentModel
           isOpen={isStudentFormOpen}
           onClose={handleCloseForm}
@@ -269,7 +432,6 @@ export default function StudentPage() {
           campusId={campusId}
         />
 
-        {/* Student Detail Modal */}
         <StudentDetailModal
           isOpen={isDetailModalOpen}
           onClose={() => {
@@ -290,12 +452,33 @@ export default function StudentPage() {
           }}
         />
 
-        {/* Floating Add Button */}
+        {/* Floating Action Button - Responsive */}
         <button
           onClick={() => setIsStudentFormOpen(true)}
-          className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-green-950 shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 z-50"
+          className="
+            fixed
+            bottom-4 sm:bottom-6 md:bottom-8
+            right-4 sm:right-6 md:right-8
+            w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16
+            rounded-full
+            bg-gradient-to-r
+            from-yellow-400
+            to-amber-500
+            text-green-950
+            shadow-2xl
+            shadow-yellow-500/30
+            flex
+            items-center
+            justify-center
+            hover:scale-110
+            hover:shadow-yellow-500/50
+            active:scale-95
+            transition-all
+            duration-300
+            z-50
+          "
         >
-          <Plus size={28} />
+          <Plus size={22} className="sm:size-24" />
         </button>
       </div>
     </div>

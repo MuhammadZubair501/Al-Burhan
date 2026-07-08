@@ -1,5 +1,3 @@
-// TeacherAttendancePage.tsx
-
 import { Plus, Users, Calendar as CalendarIcon, Search, X, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import PageHeader from "../../components/PageHeader";
@@ -9,7 +7,6 @@ import Swal from "sweetalert2";
 import AttendanceStatusModal, { type AttendanceStatus } from "../AttendanceStatusModal";
 import SearchDropdown from "../../components/custom/SearchDropdown";
 
-// Types
 type AttendanceRecord = {
   attendance_id: number;
   teacher_id: number;
@@ -29,7 +26,7 @@ type Teacher = {
 type FilterState = {
   startDate: string;
   endDate: string;
-  teacherId: number | null;   // null = "All Teachers"
+  teacherId: number | null;
   status: 'present' | 'absent' | 'leave' | 'all';
   searchTerm: string;
 };
@@ -44,20 +41,21 @@ export default function TeacherAttendancePage() {
   const [filteredRecords, setFilteredRecords] = useState<AttendanceRecord[]>([]);
   const [campusName, setCampusName] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(15);
+  const [itemsPerPage] = useState(10);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [selectedTeacherName, setSelectedTeacherName] = useState("All Teachers");
   const [isTeacherDropdownOpen, setIsTeacherDropdownOpen] = useState(false);
 
-const [filters, setFilters] = useState<FilterState>({
-  startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-  endDate: new Date().toISOString().split('T')[0],
-  teacherId: null,           // null means no filter
-  status: 'all',
-  searchTerm: ''
-});
+  const [filters, setFilters] = useState<FilterState>({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    teacherId: null,
+    status: 'all',
+    searchTerm: ''
+  });
+
   const [attendanceDate, setAttendanceDate] = useState(
     new Date().toISOString().split('T')[0]
   );
@@ -155,15 +153,16 @@ const [filters, setFilters] = useState<FilterState>({
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
- const resetFilters = () => {
-  setFilters(prev => ({
-    ...prev,
-    teacherId: null,
-    status: 'all',
-    searchTerm: ''
-  }));
-  setSelectedTeacherName("All Teachers");
-};
+  const resetFilters = () => {
+    setFilters(prev => ({
+      ...prev,
+      teacherId: null,
+      status: 'all',
+      searchTerm: ''
+    }));
+    setSelectedTeacherName("All Teachers");
+  };
+
   const handleAttendanceChange = (teacherId: number, status: 'present' | 'absent' | 'leave') => {
     setTeacherAttendance((prev) => ({
       ...prev,
@@ -228,11 +227,6 @@ const [filters, setFilters] = useState<FilterState>({
       cancelButtonText: "Cancel",
       background: "#1a2e2a",
       color: "#ffffff",
-      customClass: {
-        popup: 'rounded-2xl border border-white/20 shadow-2xl',
-        confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-2 rounded-xl transition',
-        cancelButton: 'bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-xl transition',
-      }
     });
 
     if (!result.isConfirmed) return;
@@ -310,48 +304,47 @@ const [filters, setFilters] = useState<FilterState>({
   ];
 
   return (
-    <div className="min-h-screen ">
-      {/* Background Decoration */}
+    <div className="min-h-screen relative">
       <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-10 left-10 w-72 h-72 border-4 border-yellow-400 rounded-full"></div>
-        <div className="absolute bottom-10 right-10 w-96 h-96 border-4 border-yellow-400 rounded-full"></div>
-        <div className="absolute top-1/2 left-1/3 w-56 h-56 border-2 border-white rounded-full"></div>
+        <div className="absolute top-10 left-10 w-48 sm:w-72 h-48 sm:h-72 border-4 border-yellow-400 rounded-full"></div>
+        <div className="absolute bottom-10 right-10 w-64 sm:w-96 h-64 sm:h-96 border-4 border-yellow-400 rounded-full"></div>
+        <div className="absolute top-1/2 left-1/3 w-40 sm:w-56 h-40 sm:h-56 border-2 border-white rounded-full"></div>
       </div>
 
-      <div className="relative z-10 p-8 max-w-[1600px] mx-auto">
-        {/* Header */}
+      <div className="relative z-10 p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
         <PageHeader
           title="Teacher Attendance"
           description={`Manage attendance records for ${campusName}`}
           Icon={Users}
         />
 
-        {/* Filter Section */}
-        <div className="mb-6 backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 shadow-2xl">
-          <div className="flex flex-wrap items-center gap-4">
+        {/* Filter Section - Responsive */}
+        <div className="mb-4 sm:mb-6 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
             {/* Date Range */}
-            <div className="flex items-center gap-2">
-              <CalendarIcon size={18} className="text-yellow-400" />
+            <div className="flex flex-wrap items-center gap-2">
+              <CalendarIcon size={16} className="text-yellow-400 hidden sm:block" />
               <input
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                className="bg-white/10 text-white rounded-xl px-4 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 w-36 placeholder-green-200"
+                className="bg-white/10 text-white rounded-xl px-3 sm:px-4 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 w-[130px] sm:w-36 text-sm"
               />
-              <span className="text-green-100">to</span>
+              <span className="text-green-100 text-sm">to</span>
               <input
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                className="bg-white/10 text-white rounded-xl px-4 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 w-36 placeholder-green-200"
+                className="bg-white/10 text-white rounded-xl px-3 sm:px-4 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 w-[130px] sm:w-36 text-sm"
               />
             </div>
 
-            {/* Teacher Filter */}
-            <SearchDropdown
+            {/* Teacher Filter - Mobile Friendly */}
+            <div className="flex-1 min-w-[180px]">
+              <SearchDropdown
                 label=""
                 placeholder="Select Teacher"
-                icon={<Users size={18} className="text-yellow-300" />}
+                icon={<Users size={16} className="text-yellow-300" />}
                 options={[
                   { id: 0, name: "All Teachers" },
                   ...teachers.map(t => ({ id: t.teacher_id, name: t.name }))
@@ -372,11 +365,11 @@ const [filters, setFilters] = useState<FilterState>({
                 isOpen={isTeacherDropdownOpen}
                 onToggle={() => setIsTeacherDropdownOpen(!isTeacherDropdownOpen)}
                 onClose={() => setIsTeacherDropdownOpen(false)}
-                className="min-w-[200px]"
+                className="w-full"
                 dropdownClassName="bg-emerald-950/95"
-                triggerClassName="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
-                inputClassName="w-full px-3 py-2 rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm sm:text-base"
-                optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+                triggerClassName="w-full px-3 sm:px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm"
+                inputClassName="w-full px-3 py-2 rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm"
                 iconClassName="text-yellow-300 flex-shrink-0 ml-2"
                 maxHeight="max-h-52"
                 autoFocus={false}
@@ -384,11 +377,13 @@ const [filters, setFilters] = useState<FilterState>({
                 hideSearch={false}
                 dropUp={false}
               />
+            </div>
+
             {/* Status Filter */}
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="bg-white/10 text-white rounded-xl px-4 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 min-w-[130px]"
+              className="bg-white/10 text-white rounded-xl px-3 sm:px-4 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 min-w-[110px] sm:min-w-[130px] text-sm"
             >
               <option value="all" className="bg-emerald-900">All Status</option>
               <option value="present" className="bg-emerald-900">✅ Present</option>
@@ -397,92 +392,81 @@ const [filters, setFilters] = useState<FilterState>({
             </select>
 
             {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-green-200" />
+            <div className="relative flex-1 min-w-[160px]">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-green-200" />
               <input
                 type="text"
                 placeholder="Search teacher..."
                 value={filters.searchTerm}
                 onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-                className="w-full bg-white/10 text-white rounded-xl pl-10 pr-4 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-green-200"
+                className="w-full bg-white/10 text-white rounded-xl pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-green-200 text-sm"
               />
             </div>
 
             {/* Action Buttons */}
-            <button
-              onClick={resetFilters}
-              className="px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition flex items-center gap-2 backdrop-blur-sm"
-            >
-              <X size={16} />
-              Reset
-            </button>
-
-            <button
-              onClick={fetchAttendanceRecords}
-              className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition flex items-center gap-2 backdrop-blur-sm"
-            >
-              <RefreshCw size={16} />
-              Refresh
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={resetFilters}
+                className="px-3 sm:px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition flex items-center gap-1.5 sm:gap-2 backdrop-blur-sm text-sm"
+              >
+                <X size={14} />
+                <span className="hidden xs:inline">Reset</span>
+              </button>
+              <button
+                onClick={fetchAttendanceRecords}
+                className="px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition flex items-center gap-1.5 sm:gap-2 backdrop-blur-sm text-sm"
+              >
+                <RefreshCw size={14} />
+                <span className="hidden xs:inline">Refresh</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        {/* Stats Cards - Responsive Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {stats.map((stat, index) => (
-            <div key={index} className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-4 shadow-xl">
-              <p className="text-green-100 text-sm">{stat.label}</p>
-              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+            <div key={index} className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-3 sm:p-4 shadow-xl">
+              <p className="text-green-100 text-xs sm:text-sm">{stat.label}</p>
+              <p className={`text-lg sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
             </div>
           ))}
         </div>
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex items-center justify-center p-12">
+          <div className="flex items-center justify-center p-8 sm:p-12">
             <div className="text-white text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent mx-auto mb-4"></div>
-              <p>Loading attendance records...</p>
+              <div className="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-4 border-yellow-400 border-t-transparent mx-auto mb-4"></div>
+              <p className="text-sm sm:text-base">Loading attendance records...</p>
             </div>
           </div>
         ) : (
           <>
-            {/* Table View */}
-            <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
+            {/* Table View - Responsive */}
+            <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
-                <div className="max-h-[60vh] overflow-y-auto">
-                  <table className="w-full">
+                <div className="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
+                  <table className="w-full min-w-[600px]">
                     <thead className="sticky top-0 z-10 bg-emerald-900/80 backdrop-blur">
                       <tr>
-                        <th className="p-4 text-left text-yellow-300 font-semibold text-sm uppercase tracking-wider w-16">
-                          #
-                        </th>
-                        <th className="p-4 text-left text-yellow-300 font-semibold text-sm uppercase tracking-wider">
-                          Teacher Name
-                        </th>
-                        <th className="p-4 text-left text-yellow-300 font-semibold text-sm uppercase tracking-wider">
-                          Teacher ID
-                        </th>
-                        <th className="p-4 text-left text-yellow-300 font-semibold text-sm uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="p-4 text-center text-yellow-300 font-semibold text-sm uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="p-4 text-center text-yellow-300 font-semibold text-sm uppercase tracking-wider">
-                          Actions
-                        </th>
+                        <th className="p-2 sm:p-4 text-left text-yellow-300 font-semibold text-xs uppercase tracking-wider w-12 sm:w-16">#</th>
+                        <th className="p-2 sm:p-4 text-left text-yellow-300 font-semibold text-xs uppercase tracking-wider">Teacher Name</th>
+                        <th className="p-2 sm:p-4 text-left text-yellow-300 font-semibold text-xs uppercase tracking-wider hidden sm:table-cell">Teacher ID</th>
+                        <th className="p-2 sm:p-4 text-left text-yellow-300 font-semibold text-xs uppercase tracking-wider hidden md:table-cell">Date</th>
+                        <th className="p-2 sm:p-4 text-center text-yellow-300 font-semibold text-xs uppercase tracking-wider">Status</th>
+                        <th className="p-2 sm:p-4 text-center text-yellow-300 font-semibold text-xs uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedRecords.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="p-8 text-center text-green-100">
+                          <td colSpan={6} className="p-6 sm:p-8 text-center text-green-100">
                             {attendanceRecords.length === 0 ? (
                               <div className="space-y-2">
-                                <Users size={40} className="mx-auto text-green-300/50" />
-                                <p>No attendance records found for this campus</p>
-                                <p className="text-sm text-green-200/60">Click the "+" button to mark attendance for today.</p>
+                                <Users size={32} className="mx-auto text-green-300/50" />
+                                <p className="text-sm">No attendance records found for this campus</p>
+                                <p className="text-xs text-green-200/60">Click the "+" button to mark attendance for today.</p>
                               </div>
                             ) : (
                               'No records match the current filters'
@@ -503,101 +487,45 @@ const [filters, setFilters] = useState<FilterState>({
                               key={record.attendance_id}
                               className="border-t border-white/5 hover:bg-white/5 transition"
                             >
-                              <td className="p-4 text-green-100/60 font-mono text-sm">
+                              <td className="p-2 sm:p-4 text-green-100/60 font-mono text-xs sm:text-sm">
                                 {String((currentPage - 1) * itemsPerPage + index + 1).padStart(2, "0")}
                               </td>
-                              <td className="p-4 text-white font-medium">
+                              <td className="p-2 sm:p-4 text-white font-medium text-sm sm:text-base">
                                 {record.teacher_name}
                               </td>
-                              <td className="p-4 text-green-100 font-mono">
+                              <td className="p-2 sm:p-4 text-green-100 font-mono text-xs sm:text-sm hidden sm:table-cell">
                                 #{String(record.teacher_id).padStart(4, '0')}
                               </td>
-                              <td className="p-4 text-green-100">
+                              <td className="p-2 sm:p-4 text-green-100 text-sm hidden md:table-cell">
                                 {formattedDate}
                               </td>
-                              <td className="p-4 text-center">
+                              <td className="p-2 sm:p-4 text-center">
                                 <span className={`
-                                  inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border
+                                  inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium border
                                   ${statusConfig.bg} ${statusConfig.border} ${statusConfig.text}
                                 `}>
-                                  <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
-                                  {statusConfig.label}
+                                  <span className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${statusConfig.dot}`} />
+                                  <span className="hidden xs:inline">{statusConfig.label}</span>
                                 </span>
                               </td>
-                              <td className="p-4 text-center">
-                         <button
-                              onClick={() => {
-                                setSelectedRecord(record);
-                                setShowAttendanceModal(true);
-                              }}
-                              className="
-                                inline-flex
-                                items-center
-                                gap-2
-                                rounded-xl
-                                border
-                                border-yellow-400/30
-                                bg-gradient-to-r
-                                from-yellow-400/20
-                                to-amber-500/20
-                                px-4
-                                py-2
-                                font-semibold
-                                text-yellow-300
-                                transition-all
-                                duration-300
-                                hover:-translate-y-1
-                                hover:shadow-xl
-                                hover:shadow-yellow-500/30
-                                hover:text-green-950
-                                hover:from-yellow-400
-                                hover:to-amber-500
-                              "
-                            >
-                              ✏️ Edit
-                            </button>
-
+                              <td className="p-2 sm:p-4 text-center">
+                                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                                   <button
-                                  onClick={() =>
-                                    handleDelete(record.attendance_id, record.teacher_name)
-                                  }
-                                  className="
-                                    ml-3
-
-                                    inline-flex
-                                    items-center
-                                    gap-2
-
-                                    px-4
-                                    py-2
-
-                                    rounded-xl
-
-                                    bg-gradient-to-r
-                                    from-red-500/20
-                                    to-rose-600/20
-
-                                    border
-                                    border-red-400/30
-
-                                    text-red-300
-                                    font-semibold
-
-                                    shadow-lg
-                                    backdrop-blur-md
-
-                                    transition-all
-                                    duration-300
-
-                                    hover:from-red-500
-                                    hover:to-rose-600
-                                    hover:text-white
-                                    hover:shadow-red-500/40
-                                    hover:-translate-y-1
-                                "
-                                >
-                                  🗑 Delete
+                                    onClick={() => {
+                                      setSelectedRecord(record);
+                                      setShowAttendanceModal(true);
+                                    }}
+                                    className="inline-flex items-center gap-1 sm:gap-2 rounded-xl border border-yellow-400/30 bg-gradient-to-r from-yellow-400/20 to-amber-500/20 px-2 sm:px-4 py-1.5 sm:py-2 font-semibold text-yellow-300 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-yellow-500/30 hover:text-green-950 hover:from-yellow-400 hover:to-amber-500 text-xs sm:text-sm"
+                                  >
+                                    ✏️ <span className="hidden xs:inline">Edit</span>
                                   </button>
+                                  <button
+                                    onClick={() => handleDelete(record.attendance_id, record.teacher_name)}
+                                    className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-red-500/20 to-rose-600/20 border border-red-400/30 text-red-300 font-semibold shadow-lg backdrop-blur-md transition-all duration-300 hover:from-red-500 hover:to-rose-600 hover:text-white hover:shadow-red-500/40 hover:-translate-y-1 text-xs sm:text-sm"
+                                  >
+                                    🗑 <span className="hidden xs:inline">Delete</span>
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -608,19 +536,19 @@ const [filters, setFilters] = useState<FilterState>({
                 </div>
               </div>
 
-              {/* Pagination */}
+              {/* Pagination - Responsive */}
               {filteredRecords.length > itemsPerPage && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-white/10">
-                  <div className="text-sm text-green-100">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4 border-t border-white/10">
+                  <div className="text-xs sm:text-sm text-green-100">
                     Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredRecords.length)} of {filteredRecords.length} records
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="p-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
-                      <ChevronLeft size={18} className="text-white" />
+                      <ChevronLeft size={16} className="text-white" />
                     </button>
                     <div className="flex gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -638,7 +566,7 @@ const [filters, setFilters] = useState<FilterState>({
                           <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`px-3 py-1 rounded-lg transition ${
+                            className={`px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg transition text-sm ${
                               currentPage === pageNum
                                 ? 'bg-yellow-400 text-green-950'
                                 : 'bg-white/10 hover:bg-white/20 text-white'
@@ -652,9 +580,9 @@ const [filters, setFilters] = useState<FilterState>({
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="p-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
-                      <ChevronRight size={18} className="text-white" />
+                      <ChevronRight size={16} className="text-white" />
                     </button>
                   </div>
                 </div>
@@ -663,7 +591,7 @@ const [filters, setFilters] = useState<FilterState>({
           </>
         )}
 
-        {/* Floating Action Button */}
+        {/* Floating Action Button - Responsive */}
         <button
           onClick={() => {
             setOpenModal(true);
@@ -675,13 +603,13 @@ const [filters, setFilters] = useState<FilterState>({
             setAttendanceDate(new Date().toISOString().split('T')[0]);
           }}
           className="
-            fixed bottom-8 right-8
+            fixed bottom-4 sm:bottom-6 md:bottom-8 right-4 sm:right-6 md:right-8
             z-50
-            flex items-center gap-2.5
-            px-7 py-4
+            flex items-center gap-1.5 sm:gap-2
+            px-4 sm:px-6 md:px-7 py-3 sm:py-4
             rounded-full
             bg-gradient-to-r from-yellow-400 to-amber-500
-            text-green-950 font-extrabold
+            text-green-950 font-bold
             tracking-wide
             shadow-xl shadow-amber-500/20
             hover:scale-105
@@ -690,40 +618,35 @@ const [filters, setFilters] = useState<FilterState>({
             transition-all
             duration-200
             cursor-pointer
+            text-sm sm:text-base
           "
         >
-          <Plus size={20} className="stroke-[3]" />
-          <span>Mark Attendance</span>
+          <Plus size={18} className="stroke-[3]" />
+          <span className="hidden xs:inline">Mark Attendance</span>
+          <span className="xs:hidden">Add</span>
         </button>
       </div>
-<AttendanceStatusModal
-  open={showAttendanceModal}
-  teacherName={selectedRecord?.teacher_name || ""}
-  currentStatus={
-    (selectedRecord?.attendance_status as AttendanceStatus) || "present"
-  }
-  loading={savingAttendance}
-  onClose={() => setShowAttendanceModal(false)}
-  onSave={async (status) => {
-    try {
-      setSavingAttendance(true);
 
-      await teacherAttendanceService.updateAttendance(
-        selectedRecord.attendance_id,
-        status
-      );
+      <AttendanceStatusModal
+        open={showAttendanceModal}
+        teacherName={selectedRecord?.teacher_name || ""}
+        currentStatus={selectedRecord?.attendance_status as AttendanceStatus || "present"}
+        loading={savingAttendance}
+        onClose={() => setShowAttendanceModal(false)}
+        onSave={async (status) => {
+          try {
+            setSavingAttendance(true);
+            await teacherAttendanceService.updateAttendance(selectedRecord.attendance_id, status);
+            await fetchAttendanceRecords();
+            setShowAttendanceModal(false);
+          } catch (error) {
+            console.error(error);
+          } finally {
+            setSavingAttendance(false);
+          }
+        }}
+      />
 
-      await fetchAttendanceRecords();
-
-      setShowAttendanceModal(false);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSavingAttendance(false);
-    }
-  }}
-/>
-      {/* Attendance Modal */}
       <TeacherAttendanceModal
         isOpen={openModal}
         onClose={() => {

@@ -56,7 +56,6 @@ export default function ConfigurationPage() {
 
   const loadDepartments = async () => {
     try {
-      // const res = await fetch(ApiRoutes.DEPARTMENT);
       const campusId = Number(window.CampusID);
       console.log("Campus ID:", campusId);
       const res = await fetch(ApiRoutes.departmentByCampusId(campusId));
@@ -74,68 +73,69 @@ export default function ConfigurationPage() {
   };
 
   const loadDegrees = async () => {
-  try {
-    const res = await fetch(ApiRoutes.DEGREE);
-    const data = await res.json();
+    try {
+      const res = await fetch(ApiRoutes.DEGREE);
+      const data = await res.json();
+      setDegrees(
+        data.map((x: any) => ({
+          id: x.degree_id,
+          name: x.degree_name,
+        }))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-    setDegrees(
-      data.map((x: any) => ({
-        id: x.degree_id,
-        name: x.degree_name,
-      }))
-    );
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-useEffect(() => {
-  loadBatches();
-  loadSubjects();
-  loadDepartments();
-  loadDegrees();
-}, []);
+  useEffect(() => {
+    loadBatches();
+    loadSubjects();
+    loadDepartments();
+    loadDegrees();
+  }, []);
 
   return (
-    <div className="h-full overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       <PageHeader
         title="Configuration"
         description="Manage Batches, Subjects & Departments"
         Icon={Cog}
       />
 
-      <div className="p-4 grid gap-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 h-[calc(100vh-180px)]">
-        <ConfigColumn
-          title="Batches"
-          icon={<Layers3 size={22} />}
-          items={batches}
-          campusId={campusId}
-          reload={loadBatches}
-        />
+      <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-full min-h-[600px] sm:min-h-[500px] md:min-h-[400px]">
+          <ConfigColumn
+            title="Batches"
+            icon={<Layers3 size={18} />}
+            items={batches}
+            campusId={campusId}
+            reload={loadBatches}
+          />
 
-        <ConfigColumn
-          title="Subjects"
-          icon={<BookOpen size={22} />}
-          items={subjects}
-          campusId={campusId}
-          reload={loadSubjects}
-        />
+          <ConfigColumn
+            title="Subjects"
+            icon={<BookOpen size={18} />}
+            items={subjects}
+            campusId={campusId}
+            reload={loadSubjects}
+          />
 
-        <ConfigColumn
-          title="Departments"
-          icon={<Building2 size={22} />}
-          items={departments}
-          campusId={campusId}
-          reload={loadDepartments}
-        />
-        <ConfigColumn
-          title="Highest Degrees"
-          icon={<GraduationCap size={22} />}
-          items={degrees}
-          campusId={campusId}
-          reload={loadDegrees}
-        />
-        
+          <ConfigColumn
+            title="Departments"
+            icon={<Building2 size={18} />}
+            items={departments}
+            campusId={campusId}
+            reload={loadDepartments}
+          />
+          
+          <ConfigColumn
+            title="Highest Degrees"
+            icon={<GraduationCap size={18} />}
+            items={degrees}
+            campusId={campusId}
+            reload={loadDegrees}
+          />
+        </div>
       </div>
     </div>
   );

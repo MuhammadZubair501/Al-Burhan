@@ -6,7 +6,6 @@ import AddInput from "./AddInput";
 import ConfigFooter from "./ConfigFooter";
 import Swal from "sweetalert2";
 
-
 type Item = {
   id: number;
   name: string;
@@ -38,32 +37,32 @@ export default function ConfigColumn({
       let endpoint = "";
       let body = {};
 
-  if (title === "Batches") {
-  endpoint = ApiRoutes.BATCH;
-  body = { batch_name: newItem };
-}
+      if (title === "Batches") {
+        endpoint = ApiRoutes.BATCH;
+        body = { batch_name: newItem };
+      }
 
-          if (title === "Subjects") {
-            endpoint = ApiRoutes.SUBJECT;
-            body = { subject_name: newItem };
-          }
+      if (title === "Subjects") {
+        endpoint = ApiRoutes.SUBJECT;
+        body = { subject_name: newItem };
+      }
 
-          if (title === "Departments") {
-            endpoint = ApiRoutes.DEPARTMENT;
-            const campusId = Number(window.CampusID);
+      if (title === "Departments") {
+        endpoint = ApiRoutes.DEPARTMENT;
+        const campusId = Number(window.CampusID);
+        body = {
+          campus_id: campusId,
+          department_name: newItem,
+        };
+      }
 
-            body = {
-              campus_id: campusId,
-              department_name: newItem,
-            };
-          }
+      if (title === "Highest Degrees") {
+        endpoint = ApiRoutes.DEGREE;
+        body = {
+          degree_name: newItem,
+        };
+      }
 
-          if (title === "Highest Degrees") {
-            endpoint = ApiRoutes.DEGREE;
-            body = {
-              degree_name: newItem,
-            };
-          }
       await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,27 +84,27 @@ export default function ConfigColumn({
       let endpoint = "";
       let body = {};
 
-     if (title === "Batches") {
-          endpoint = ApiRoutes.batchById(id);
-          body = { batch_name: editingValue };
-        }
+      if (title === "Batches") {
+        endpoint = ApiRoutes.batchById(id);
+        body = { batch_name: editingValue };
+      }
 
-        if (title === "Subjects") {
-          endpoint = ApiRoutes.subjectById(id);
-          body = { subject_name: editingValue };
-        }
+      if (title === "Subjects") {
+        endpoint = ApiRoutes.subjectById(id);
+        body = { subject_name: editingValue };
+      }
 
-        if (title === "Departments") {
-          endpoint = ApiRoutes.departmentById(id);
-          body = { department_name: editingValue };
-        }
+      if (title === "Departments") {
+        endpoint = ApiRoutes.departmentById(id);
+        body = { department_name: editingValue };
+      }
 
-        if (title === "Highest Degrees") {
-          endpoint = ApiRoutes.degreeById(id);
-          body = {
-            degree_name: editingValue,
-          };
-        }
+      if (title === "Highest Degrees") {
+        endpoint = ApiRoutes.degreeById(id);
+        body = {
+          degree_name: editingValue,
+        };
+      }
 
       await fetch(endpoint, {
         method: "PUT",
@@ -121,29 +120,31 @@ export default function ConfigColumn({
     }
   };
 
+  const deleteRecord = async (id: number) => {
+    try {
+      const result = await Swal.fire({
+        title: "Qasam kaha tujay ya delete krana ha",
+        text: "permanently delete ho jae ga agr such ma tujay delete krna ha tu qasam kah kr delete kr",
+        icon: "warning",
+        showCancelButton: true,
+        cancelButtonText: "Nahe Qasam Nahe Kah Sakta",
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Qasam kahta ho",
+        customClass: {
+          popup: 'rounded-2xl p-4 sm:p-6',
+          title: 'text-base sm:text-lg md:text-xl',
+          htmlContainer: 'text-sm sm:text-base',
+          confirmButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+          cancelButton: 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base',
+        }
+      });
 
+      if (!result.isConfirmed) return;
 
-const deleteRecord = async (id: number) => {
-  try {
-    const result = await Swal.fire({
-      // title: "Are you sure?",
-      // text: "This record will be permanently deleted!",
-      title: "Qasam kaha tujay ya delete krana ha ",
-      text: "permanently delete ho jae ga agr such ma tujay delete krna ha tu qasam kah kr delete kr",
-      icon: "warning",
-      showCancelButton: true,
-      cancelButtonText: "Nahe Qasam Nahe Kah Sakta",
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      // confirmButtonText: "Yes, delete it!",
-      confirmButtonText: "Qasam kahta ho",
-    });
+      let endpoint = "";
 
-    if (!result.isConfirmed) return;
-
-    let endpoint = "";
-
-        if (title === "Batches")
+      if (title === "Batches")
         endpoint = ApiRoutes.batchById(id);
 
       if (title === "Subjects")
@@ -155,41 +156,49 @@ const deleteRecord = async (id: number) => {
       if (title === "Highest Degrees")
         endpoint = ApiRoutes.degreeById(id);
 
-    const response = await fetch(endpoint, {
-      method: "DELETE",
-    });
+      const response = await fetch(endpoint, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to delete record");
+      if (!response.ok) {
+        throw new Error("Failed to delete record");
+      }
+
+      await Swal.fire({
+        icon: "success",
+        title: "Delete ho gya",
+        text: "permanently delete ho gya ab dubara nahe milay ga ya record",
+        timer: 1500,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'rounded-2xl p-4 sm:p-6',
+          title: 'text-base sm:text-lg md:text-xl',
+          htmlContainer: 'text-sm sm:text-base',
+        }
+      });
+
+      reload();
+    } catch (err) {
+      console.error(err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Something went wrong while deleting.",
+        customClass: {
+          popup: 'rounded-2xl p-4 sm:p-6',
+          title: 'text-base sm:text-lg md:text-xl',
+          htmlContainer: 'text-sm sm:text-base',
+        }
+      });
     }
-
-    await Swal.fire({
-      icon: "success",
-      // title: "Deleted!",
-      // text: "Record has been deleted successfully.",
-      title: "Delete ho gya",
-      text: "permanently delete ho gya ab dubara nahe milay ga ya record",
-      timer: 1500,
-      showConfirmButton: false,
-    });
-
-    reload();
-  } catch (err) {
-    console.error(err);
-
-    Swal.fire({
-      icon: "error",
-      title: "Error!",
-      text: "Something went wrong while deleting.",
-    });
-  }
-};
+  };
 
   return (
-    <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl overflow-hidden flex flex-col shadow-xl">
+    <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col shadow-xl h-full min-h-[320px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px]">
       <ConfigColumnHeader title={title} icon={icon} itemsCount={items.length} />
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-2 sm:space-y-3">
         {showAddInput && (
           <AddInput
             value={newItem}
@@ -203,25 +212,31 @@ const deleteRecord = async (id: number) => {
           />
         )}
 
-        {items.map((item) => (
-          <ConfigItem
-            key={item.id}
-            item={item}
-            isEditing={editingId === item.id}
-            editingValue={editingValue}
-            onEditChange={setEditingValue}
-            onSave={() => updateRecord(item.id)}
-            onCancel={() => {
-              setEditingId(null);
-              setEditingValue("");
-            }}
-            onEdit={() => {
-              setEditingId(item.id);
-              setEditingValue(item.name);
-            }}
-            onDelete={() => deleteRecord(item.id)}
-          />
-        ))}
+        {items.length === 0 && !showAddInput ? (
+          <div className="flex items-center justify-center h-16 sm:h-20 md:h-24 text-green-200/40 text-xs sm:text-sm">
+            No {title.toLowerCase()} found
+          </div>
+        ) : (
+          items.map((item) => (
+            <ConfigItem
+              key={item.id}
+              item={item}
+              isEditing={editingId === item.id}
+              editingValue={editingValue}
+              onEditChange={setEditingValue}
+              onSave={() => updateRecord(item.id)}
+              onCancel={() => {
+                setEditingId(null);
+                setEditingValue("");
+              }}
+              onEdit={() => {
+                setEditingId(item.id);
+                setEditingValue(item.name);
+              }}
+              onDelete={() => deleteRecord(item.id)}
+            />
+          ))
+        )}
       </div>
 
       <ConfigFooter

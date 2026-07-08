@@ -1,4 +1,4 @@
-// SectionPage.tsx
+// SectionPage.tsx - Fully Responsive
 import {
   Users,
   School,
@@ -130,7 +130,6 @@ export default function SectionPage({ classId }: SectionPageProps) {
 
       if (response.ok) {
         await fetchSections();
-        // Only show success message here, not in modal
         await Swal.fire({
           icon: 'success',
           title: 'Section Created!',
@@ -181,7 +180,6 @@ export default function SectionPage({ classId }: SectionPageProps) {
       if (response.ok) {
         await fetchSections();
         setEditingSection(null);
-        // Only show success message here, not in modal
         await Swal.fire({
           icon: 'success',
           title: 'Section Updated!',
@@ -306,54 +304,56 @@ export default function SectionPage({ classId }: SectionPageProps) {
         Icon={SquareDashedText}
       />
       
-      <div className="relative z-10 px-8 pt-6">
+      <div className="relative z-10 px-3 sm:px-4 md:px-6 lg:px-8 pt-2 sm:pt-4">
         <button
           onClick={handleBackToClasses}
           className="
-            flex items-center gap-2
+            flex items-center gap-1.5 sm:gap-2
             text-white/70 hover:text-yellow-400
-            transition-colors mb-4
+            transition-colors mb-3 sm:mb-4
             cursor-pointer
             group
+            text-sm sm:text-base
           "
         >
-          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
           <span className="font-medium">Back to Classes</span>
         </button>
       </div>
 
-      <div className="relative z-10 p-8 pt-2">
+      <div className="relative z-10 p-3 sm:p-4 md:p-6 lg:p-8 pt-1 sm:pt-2">
         {loading ? (
-          <div className="flex items-center justify-center p-12">
+          <div className="flex items-center justify-center p-8 sm:p-12">
             <div className="text-white text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent mx-auto mb-4"></div>
-              <p className="text-green-200/60">Loading sections...</p>
+              <div className="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-4 border-yellow-400 border-t-transparent mx-auto mb-4"></div>
+              <p className="text-sm sm:text-base text-green-200/60">Loading sections...</p>
             </div>
           </div>
         ) : sections.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-16 text-center rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl">
-            <div className="w-20 h-20 rounded-full bg-yellow-400/10 flex items-center justify-center mb-4">
-              <School className="text-yellow-400" size={40} />
+          <div className="flex flex-col items-center justify-center p-8 sm:p-12 md:p-16 text-center rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl">
+            <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-yellow-400/10 flex items-center justify-center mb-3 sm:mb-4">
+              <School className="text-yellow-400" size={32} />
             </div>
-            <p className="text-green-200/60 text-lg mb-4">No sections found for this class</p>
+            <p className="text-green-200/60 text-base sm:text-lg mb-3 sm:mb-4">No sections found for this class</p>
             <button
               onClick={() => setOpenSectionModal(true)}
               className="
-                px-6 py-3
+                px-4 sm:px-6 py-2.5 sm:py-3
                 rounded-xl
                 bg-gradient-to-r from-yellow-400 to-amber-500
                 text-green-950 font-bold
                 hover:scale-105
                 transition
                 flex items-center gap-2
+                text-sm sm:text-base
               "
             >
-              <Plus size={20} />
+              <Plus size={18} />
               Add Your First Section
             </button>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
             {sections.map((section) => (
               <div
                 key={section.section_id}
@@ -363,8 +363,8 @@ export default function SectionPage({ classId }: SectionPageProps) {
                   backdrop-blur-xl
                   border
                   border-white/20
-                  rounded-3xl
-                  p-6
+                  rounded-2xl sm:rounded-3xl
+                  p-4 sm:p-6
                   hover:border-yellow-400/40
                   hover:-translate-y-2
                   hover:shadow-2xl
@@ -379,31 +379,31 @@ export default function SectionPage({ classId }: SectionPageProps) {
                 <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-amber-400/5 rounded-full blur-3xl group-hover:bg-amber-400/10 transition-all duration-500"></div>
 
                 <div className="flex justify-between items-start relative">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <div className={`
-                      w-14 h-14 rounded-2xl 
+                      w-12 sm:w-14 h-12 sm:h-14 rounded-2xl 
                       bg-gradient-to-r ${getRandomColor(section.section_id)}
                       flex items-center justify-center
                       shadow-lg
                       group-hover:scale-110
                       transition-transform duration-300
                     `}>
-                      <School className="text-white" size={24} />
+                      <School className="text-white" size={20} />
                     </div>
 
                     <div>
-                      <h2 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors">
+                      <h2 className="text-lg sm:text-xl font-bold text-white group-hover:text-yellow-400 transition-colors">
                         {section.section_name}
                       </h2>
-                      <p className="text-green-200/50 text-sm">Section</p>
+                      <p className="text-green-200/50 text-xs sm:text-sm">Section</p>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 sm:gap-2">
                     <button
                       onClick={() => handleEditSection(section)}
                       className="
-                        p-2 cursor-pointer rounded-xl 
+                        p-1.5 sm:p-2 cursor-pointer rounded-xl 
                         bg-white/5 text-yellow-300 
                         hover:bg-yellow-400/20
                         hover:scale-110
@@ -411,13 +411,12 @@ export default function SectionPage({ classId }: SectionPageProps) {
                         border border-white/10
                       "
                     >
-                      <Pencil size={16} />
+                      <Pencil size={14} />
                     </button>
-
                     <button
                       onClick={() => handleDeleteSection(section)}
                       className="
-                        p-2 cursor-pointer rounded-xl 
+                        p-1.5 sm:p-2 cursor-pointer rounded-xl 
                         bg-white/5 text-red-300 
                         hover:bg-red-500/20
                         hover:scale-110
@@ -425,13 +424,13 @@ export default function SectionPage({ classId }: SectionPageProps) {
                         border border-white/10
                       "
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center gap-3 text-green-100 relative">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                <div className="mt-3 sm:mt-4 flex items-center gap-2 sm:gap-3 text-green-100 relative">
+                  <div className={`w-7 sm:w-8 h-7 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                     section.teacher_name && section.teacher_name !== 'Not Assigned'
                       ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-green-950'
                       : 'bg-white/10 text-white/50'
@@ -439,20 +438,20 @@ export default function SectionPage({ classId }: SectionPageProps) {
                     {getInitials(section.teacher_name || '')}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-green-200/50">Class Teacher</p>
-                    <p className="text-white font-medium truncate">
+                    <p className="text-xs text-green-200/50">Class Teacher</p>
+                    <p className="text-white font-medium truncate text-sm sm:text-base">
                       {section.teacher_name || 'Not Assigned'}
                     </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 mt-6 relative">
-                  <div className="rounded-2xl bg-white/5 border border-white/10 p-4 hover:bg-white/10 transition-all group/stat">
-                    <div className="flex items-center gap-2 text-yellow-300 mb-1">
-                      <Users size={16} className="group-hover/stat:scale-110 transition-transform" />
+                <div className="grid grid-cols-1 gap-2 sm:gap-3 mt-4 sm:mt-6 relative">
+                  <div className="rounded-2xl bg-white/5 border border-white/10 p-3 sm:p-4 hover:bg-white/10 transition-all group/stat">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-yellow-300 mb-0.5 sm:mb-1">
+                      <Users size={14} className="group-hover/stat:scale-110 transition-transform" />
                       <span className="text-xs font-medium">Total Students</span>
                     </div>
-                    <p className="text-white text-3xl font-bold">
+                    <p className="text-white text-2xl sm:text-3xl font-bold">
                       {section.student_count || 0}
                     </p>
                   </div>
@@ -470,9 +469,9 @@ export default function SectionPage({ classId }: SectionPageProps) {
                     });
                   }}
                   className="
-                    mt-6
+                    mt-4 sm:mt-6
                     w-full
-                    py-3
+                    py-2.5 sm:py-3
                     rounded-xl
                     bg-gradient-to-r
                     from-yellow-400
@@ -485,10 +484,11 @@ export default function SectionPage({ classId }: SectionPageProps) {
                     relative
                     overflow-hidden
                     group/btn
+                    text-sm sm:text-base
                   "
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
-                    <UserCircle size={18} />
+                    <UserCircle size={16} />
                     View Students
                   </span>
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
@@ -504,9 +504,10 @@ export default function SectionPage({ classId }: SectionPageProps) {
             setOpenSectionModal(true);
           }}
           className="
-            fixed bottom-8 right-8
-            flex items-center gap-2
-            px-6 py-4
+            fixed bottom-4 sm:bottom-6 md:bottom-8 right-4 sm:right-6 md:right-8
+            flex items-center gap-1.5 sm:gap-2
+            px-4 sm:px-6
+            py-3 sm:py-4
             rounded-full
             bg-gradient-to-r from-yellow-400 to-amber-500
             text-green-950 font-bold
@@ -515,10 +516,12 @@ export default function SectionPage({ classId }: SectionPageProps) {
             transition
             group
             z-50
+            text-sm sm:text-base
           "
         >
-          <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
-          Add Section
+          <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+          <span className="hidden xs:inline">Add Section</span>
+          <span className="xs:hidden">Add</span>
         </button>
       </div>
 
