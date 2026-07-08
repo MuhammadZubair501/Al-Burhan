@@ -28,7 +28,7 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
   const iconClass = "text-yellow-300 flex-shrink-0 ml-2";
 
   return (
-    <div className="mb-4 sm:mb-6">
+    <div className="bg-black/20 rounded-2xl sm:rounded-3xl p-3 sm:p-6 mb-4 sm:mb-6 border border-white/10">
       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4">
         {/* Academic Year */}
         <div className="w-full sm:w-auto sm:flex-1 min-w-[140px]">
