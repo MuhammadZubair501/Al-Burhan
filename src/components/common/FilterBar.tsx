@@ -22,143 +22,158 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
   };
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-2 mb-3">
-      <div className="grid grid-cols-2 gap-1.5">
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl mb-4 sm:mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 sm:gap-4">
         {/* Academic Year */}
-        <SearchDropdown
-          label=""
-          placeholder="Year"
-          icon={<CalendarIcon size={12} className="text-yellow-300" />}
-          options={academicYears.map(y => ({ id: y.id, name: y.name }))}
-          value={getSelectedName(academicYears, filters.academicYear)}
-          onChange={(name) => {
-            const year = academicYears.find(y => y.name === name);
-            onFilterChange('academicYear', year ? year.id : null);
-          }}
-          className="w-full"
-          dropdownClassName="bg-emerald-950/95"
-          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
-          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
-          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
-          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
-          maxHeight="max-h-40"
-          autoFocus={false}
-          closeOnSelect={true}
-          hideSearch={false}
-          dropUp={false}
-        />
+        <div className="sm:col-span-1 lg:flex-1 min-w-[160px]">
+          <SearchDropdown
+            label=""
+            placeholder="Academic Year"
+            icon={<CalendarIcon size={18} className="text-yellow-300" />}
+            options={academicYears.map(y => ({ id: y.id, name: y.name }))}
+            value={getSelectedName(academicYears, filters.academicYear)}
+            onChange={(name) => {
+              const year = academicYears.find(y => y.name === name);
+              onFilterChange('academicYear', year ? year.id : null);
+            }}
+            className="w-full"
+            dropdownClassName="bg-emerald-950/95"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-base"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-base"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-base"
+            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            maxHeight="max-h-52"
+            autoFocus={false}
+            closeOnSelect={true}
+            hideSearch={false}
+            dropUp={false}
+          />
+        </div>
 
         {/* Campus */}
-        <SearchDropdown
-          label=""
-          placeholder="Campus"
-          icon={<Users size={12} className="text-yellow-300" />}
-          options={campuses.map(c => ({ id: c.id, name: c.name }))}
-          value={getSelectedName(campuses, filters.campusId)}
-          onChange={(name) => {
-            const campus = campuses.find(c => c.name === name);
-            onFilterChange('campusId', campus ? campus.id : null);
-          }}
-          className="w-full"
-          dropdownClassName="bg-emerald-950/95"
-          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
-          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
-          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
-          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
-          maxHeight="max-h-40"
-          autoFocus={false}
-          closeOnSelect={true}
-          hideSearch={false}
-          dropUp={false}
-        />
+        <div className="sm:col-span-1 lg:flex-1 min-w-[160px]">
+          <SearchDropdown
+            label=""
+            placeholder="Campus"
+            icon={<Users size={18} className="text-yellow-300" />}
+            options={campuses.map(c => ({ id: c.id, name: c.name }))}
+            value={getSelectedName(campuses, filters.campusId)}
+            onChange={(name) => {
+              const campus = campuses.find(c => c.name === name);
+              onFilterChange('campusId', campus ? campus.id : null);
+            }}
+            className="w-full"
+            dropdownClassName="bg-emerald-950/95"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-base"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-base"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-base"
+            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            maxHeight="max-h-52"
+            autoFocus={false}
+            closeOnSelect={true}
+            hideSearch={false}
+            dropUp={false}
+          />
+        </div>
 
         {/* Department */}
-        <SearchDropdown
-          label=""
-          placeholder="Dept"
-          icon={<Layers size={12} className="text-yellow-300" />}
-          options={departments.map(d => ({ id: d.id, name: d.name }))}
-          value={getSelectedName(departments, filters.departmentId)}
-          onChange={(name) => {
-            const dept = departments.find(d => d.name === name);
-            onFilterChange('departmentId', dept ? dept.id : null);
-          }}
-          className="w-full"
-          dropdownClassName="bg-emerald-950/95"
-          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
-          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
-          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
-          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
-          maxHeight="max-h-40"
-          autoFocus={false}
-          closeOnSelect={true}
-          hideSearch={false}
-          dropUp={false}
-        />
+        <div className="sm:col-span-1 lg:flex-1 min-w-[160px]">
+          <SearchDropdown
+            label=""
+            placeholder="Department"
+            icon={<Layers size={18} className="text-yellow-300" />}
+            options={departments.map(d => ({ id: d.id, name: d.name }))}
+            value={getSelectedName(departments, filters.departmentId)}
+            onChange={(name) => {
+              const dept = departments.find(d => d.name === name);
+              onFilterChange('departmentId', dept ? dept.id : null);
+            }}
+            className="w-full"
+            dropdownClassName="bg-emerald-950/95"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-base"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-base"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-base"
+            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            maxHeight="max-h-52"
+            autoFocus={false}
+            closeOnSelect={true}
+            hideSearch={false}
+            dropUp={false}
+          />
+        </div>
 
         {/* Class */}
-        <SearchDropdown
-          label=""
-          placeholder="Class"
-          icon={<BookOpen size={12} className="text-yellow-300" />}
-          options={classes.map(c => ({ id: c.id, name: c.name }))}
-          value={getSelectedName(classes, filters.classId)}
-          onChange={(name) => {
-            const cls = classes.find(c => c.name === name);
-            onFilterChange('classId', cls ? cls.id : null);
-          }}
-          className="w-full"
-          dropdownClassName="bg-emerald-950/95"
-          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
-          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
-          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
-          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
-          maxHeight="max-h-40"
-          autoFocus={false}
-          closeOnSelect={true}
-          hideSearch={false}
-          dropUp={false}
-        />
+        <div className="sm:col-span-1 lg:flex-1 min-w-[160px]">
+          <SearchDropdown
+            label=""
+            placeholder="Class"
+            icon={<BookOpen size={18} className="text-yellow-300" />}
+            options={classes.map(c => ({ id: c.id, name: c.name }))}
+            value={getSelectedName(classes, filters.classId)}
+            onChange={(name) => {
+              const cls = classes.find(c => c.name === name);
+              onFilterChange('classId', cls ? cls.id : null);
+            }}
+            className="w-full"
+            dropdownClassName="bg-emerald-950/95"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-base"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-base"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-base"
+            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            maxHeight="max-h-52"
+            autoFocus={false}
+            closeOnSelect={true}
+            hideSearch={false}
+            dropUp={false}
+          />
+        </div>
 
         {/* Section */}
-        <SearchDropdown
-          label=""
-          placeholder="Sec"
-          icon={<Layers size={12} className="text-yellow-300" />}
-          options={sections.map(s => ({ id: s.id, name: s.name }))}
-          value={getSelectedName(sections, filters.sectionId)}
-          onChange={(name) => {
-            const sec = sections.find(s => s.name === name);
-            onFilterChange('sectionId', sec ? sec.id : null);
-          }}
-          className="w-full"
-          dropdownClassName="bg-emerald-950/95"
-          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
-          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
-          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
-          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
-          maxHeight="max-h-40"
-          autoFocus={false}
-          closeOnSelect={true}
-          hideSearch={false}
-          dropUp={false}
-        />
+        <div className="sm:col-span-1 lg:flex-1 min-w-[140px]">
+          <SearchDropdown
+            label=""
+            placeholder="Section"
+            icon={<Layers size={18} className="text-yellow-300" />}
+            options={sections.map(s => ({ id: s.id, name: s.name }))}
+            value={getSelectedName(sections, filters.sectionId)}
+            onChange={(name) => {
+              const sec = sections.find(s => s.name === name);
+              onFilterChange('sectionId', sec ? sec.id : null);
+            }}
+            className="w-full"
+            dropdownClassName="bg-emerald-950/95"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-base"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-base"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-base"
+            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            maxHeight="max-h-52"
+            autoFocus={false}
+            closeOnSelect={true}
+            hideSearch={false}
+            dropUp={false}
+          />
+        </div>
 
         {/* Date Input */}
-        <input
-          type="date"
-          value={filters.date}
-          onChange={(e) => onFilterChange('date', e.target.value)}
-          className="col-span-1 bg-white/5 text-white rounded-lg px-1.5 py-1 border border-white/10 focus:outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
-        />
+        <div className="sm:col-span-1 lg:flex-1 min-w-[160px]">
+          <input
+            type="date"
+            value={filters.date}
+            onChange={(e) => onFilterChange('date', e.target.value)}
+            className="w-full bg-white/10 text-white rounded-xl px-4 py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-base"
+          />
+        </div>
 
         {/* Reset Button */}
-        <button
-          onClick={onReset}
-          className="col-span-2 bg-red-500/20 text-red-400 rounded-lg px-1.5 py-1 text-[10px] flex items-center justify-center gap-0.5 hover:bg-red-500/30 transition"
-        >
-          <RefreshCw size={12} /> ↻
-        </button>
+        <div className="sm:col-span-2 lg:flex-none">
+          <button
+            onClick={onReset}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition flex items-center justify-center gap-2 text-base font-medium"
+          >
+            <RefreshCw size={18} />
+            <span>Reset Filters</span>
+          </button>
+        </div>
       </div>
     </div>
   );
