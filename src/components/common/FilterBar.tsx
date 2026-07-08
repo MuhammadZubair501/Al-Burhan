@@ -21,166 +21,144 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
     return item ? item.name : '';
   };
 
-  // Common trigger class for all dropdowns
-  const triggerClass = "w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-[11px] sm:text-sm";
-  const inputClass = "w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-white/10 text-white outline-none focus:ring-2 focus:ring-yellow-400 text-[11px] sm:text-sm";
-  const optionClass = "px-2 sm:px-4 py-1.5 sm:py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-[11px] sm:text-sm";
-  const iconClass = "text-yellow-300 flex-shrink-0 ml-1 sm:ml-2";
-
   return (
-    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-2xl mb-4 sm:mb-6">
-      {/* Mobile: 2 columns, Tablet+: Flexible */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-4">
+    <div className="bg-white/5 border border-white/10 rounded-xl p-2 mb-3">
+      <div className="grid grid-cols-2 gap-1.5">
         {/* Academic Year */}
-        <div className="col-span-1">
-          <SearchDropdown
-            label=""
-            placeholder="Year"
-            icon={<CalendarIcon size={14} className="text-yellow-300 sm:w-4 sm:h-4" />}
-            options={academicYears.map(y => ({ id: y.id, name: y.name }))}
-            value={getSelectedName(academicYears, filters.academicYear)}
-            onChange={(name) => {
-              const year = academicYears.find(y => y.name === name);
-              onFilterChange('academicYear', year ? year.id : null);
-            }}
-            className="w-full"
-            dropdownClassName="bg-emerald-950/95"
-            triggerClassName={triggerClass}
-            inputClassName={inputClass}
-            optionClassName={optionClass}
-            iconClassName={iconClass}
-            maxHeight="max-h-52"
-            autoFocus={false}
-            closeOnSelect={true}
-            hideSearch={false}
-            dropUp={false}
-          />
-        </div>
+        <SearchDropdown
+          label=""
+          placeholder="Year"
+          icon={<CalendarIcon size={12} className="text-yellow-300" />}
+          options={academicYears.map(y => ({ id: y.id, name: y.name }))}
+          value={getSelectedName(academicYears, filters.academicYear)}
+          onChange={(name) => {
+            const year = academicYears.find(y => y.name === name);
+            onFilterChange('academicYear', year ? year.id : null);
+          }}
+          className="w-full"
+          dropdownClassName="bg-emerald-950/95"
+          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
+          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
+          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
+          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
+          maxHeight="max-h-40"
+          autoFocus={false}
+          closeOnSelect={true}
+          hideSearch={false}
+          dropUp={false}
+        />
 
         {/* Campus */}
-        <div className="col-span-1">
-          <SearchDropdown
-            label=""
-            placeholder="Campus"
-            icon={<Users size={14} className="text-yellow-300 sm:w-4 sm:h-4" />}
-            options={campuses.map(c => ({ id: c.id, name: c.name }))}
-            value={getSelectedName(campuses, filters.campusId)}
-            onChange={(name) => {
-              const campus = campuses.find(c => c.name === name);
-              onFilterChange('campusId', campus ? campus.id : null);
-            }}
-            className="w-full"
-            dropdownClassName="bg-emerald-950/95"
-            triggerClassName={triggerClass}
-            inputClassName={inputClass}
-            optionClassName={optionClass}
-            iconClassName={iconClass}
-            maxHeight="max-h-52"
-            autoFocus={false}
-            closeOnSelect={true}
-            hideSearch={false}
-            dropUp={false}
-          />
-        </div>
+        <SearchDropdown
+          label=""
+          placeholder="Campus"
+          icon={<Users size={12} className="text-yellow-300" />}
+          options={campuses.map(c => ({ id: c.id, name: c.name }))}
+          value={getSelectedName(campuses, filters.campusId)}
+          onChange={(name) => {
+            const campus = campuses.find(c => c.name === name);
+            onFilterChange('campusId', campus ? campus.id : null);
+          }}
+          className="w-full"
+          dropdownClassName="bg-emerald-950/95"
+          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
+          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
+          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
+          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
+          maxHeight="max-h-40"
+          autoFocus={false}
+          closeOnSelect={true}
+          hideSearch={false}
+          dropUp={false}
+        />
 
         {/* Department */}
-        <div className="col-span-1">
-          <SearchDropdown
-            label=""
-            placeholder="Dept."
-            icon={<Layers size={14} className="text-yellow-300 sm:w-4 sm:h-4" />}
-            options={departments.map(d => ({ id: d.id, name: d.name }))}
-            value={getSelectedName(departments, filters.departmentId)}
-            onChange={(name) => {
-              const dept = departments.find(d => d.name === name);
-              onFilterChange('departmentId', dept ? dept.id : null);
-            }}
-            className="w-full"
-            dropdownClassName="bg-emerald-950/95"
-            triggerClassName={triggerClass}
-            inputClassName={inputClass}
-            optionClassName={optionClass}
-            iconClassName={iconClass}
-            maxHeight="max-h-52"
-            autoFocus={false}
-            closeOnSelect={true}
-            hideSearch={false}
-            dropUp={false}
-          />
-        </div>
+        <SearchDropdown
+          label=""
+          placeholder="Dept"
+          icon={<Layers size={12} className="text-yellow-300" />}
+          options={departments.map(d => ({ id: d.id, name: d.name }))}
+          value={getSelectedName(departments, filters.departmentId)}
+          onChange={(name) => {
+            const dept = departments.find(d => d.name === name);
+            onFilterChange('departmentId', dept ? dept.id : null);
+          }}
+          className="w-full"
+          dropdownClassName="bg-emerald-950/95"
+          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
+          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
+          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
+          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
+          maxHeight="max-h-40"
+          autoFocus={false}
+          closeOnSelect={true}
+          hideSearch={false}
+          dropUp={false}
+        />
 
         {/* Class */}
-        <div className="col-span-1">
-          <SearchDropdown
-            label=""
-            placeholder="Class"
-            icon={<BookOpen size={14} className="text-yellow-300 sm:w-4 sm:h-4" />}
-            options={classes.map(c => ({ id: c.id, name: c.name }))}
-            value={getSelectedName(classes, filters.classId)}
-            onChange={(name) => {
-              const cls = classes.find(c => c.name === name);
-              onFilterChange('classId', cls ? cls.id : null);
-            }}
-            className="w-full"
-            dropdownClassName="bg-emerald-950/95"
-            triggerClassName={triggerClass}
-            inputClassName={inputClass}
-            optionClassName={optionClass}
-            iconClassName={iconClass}
-            maxHeight="max-h-52"
-            autoFocus={false}
-            closeOnSelect={true}
-            hideSearch={false}
-            dropUp={false}
-          />
-        </div>
+        <SearchDropdown
+          label=""
+          placeholder="Class"
+          icon={<BookOpen size={12} className="text-yellow-300" />}
+          options={classes.map(c => ({ id: c.id, name: c.name }))}
+          value={getSelectedName(classes, filters.classId)}
+          onChange={(name) => {
+            const cls = classes.find(c => c.name === name);
+            onFilterChange('classId', cls ? cls.id : null);
+          }}
+          className="w-full"
+          dropdownClassName="bg-emerald-950/95"
+          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
+          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
+          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
+          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
+          maxHeight="max-h-40"
+          autoFocus={false}
+          closeOnSelect={true}
+          hideSearch={false}
+          dropUp={false}
+        />
 
         {/* Section */}
-        <div className="col-span-1">
-          <SearchDropdown
-            label=""
-            placeholder="Sec."
-            icon={<Layers size={14} className="text-yellow-300 sm:w-4 sm:h-4" />}
-            options={sections.map(s => ({ id: s.id, name: s.name }))}
-            value={getSelectedName(sections, filters.sectionId)}
-            onChange={(name) => {
-              const sec = sections.find(s => s.name === name);
-              onFilterChange('sectionId', sec ? sec.id : null);
-            }}
-            className="w-full"
-            dropdownClassName="bg-emerald-950/95"
-            triggerClassName={triggerClass}
-            inputClassName={inputClass}
-            optionClassName={optionClass}
-            iconClassName={iconClass}
-            maxHeight="max-h-52"
-            autoFocus={false}
-            closeOnSelect={true}
-            hideSearch={false}
-            dropUp={false}
-          />
-        </div>
+        <SearchDropdown
+          label=""
+          placeholder="Sec"
+          icon={<Layers size={12} className="text-yellow-300" />}
+          options={sections.map(s => ({ id: s.id, name: s.name }))}
+          value={getSelectedName(sections, filters.sectionId)}
+          onChange={(name) => {
+            const sec = sections.find(s => s.name === name);
+            onFilterChange('sectionId', sec ? sec.id : null);
+          }}
+          className="w-full"
+          dropdownClassName="bg-emerald-950/95"
+          triggerClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white flex items-center justify-between cursor-pointer text-[10px]"
+          inputClassName="w-full px-1.5 py-1 rounded-lg bg-white/5 text-white outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
+          optionClassName="px-2 py-1.5 text-white hover:bg-yellow-400/20 cursor-pointer text-[10px]"
+          iconClassName="text-yellow-300 flex-shrink-0 ml-0.5"
+          maxHeight="max-h-40"
+          autoFocus={false}
+          closeOnSelect={true}
+          hideSearch={false}
+          dropUp={false}
+        />
 
         {/* Date Input */}
-        <div className="col-span-1">
-          <input
-            type="date"
-            value={filters.date}
-            onChange={(e) => onFilterChange('date', e.target.value)}
-            className="w-full bg-white/10 text-white rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-[11px] sm:text-sm"
-          />
-        </div>
+        <input
+          type="date"
+          value={filters.date}
+          onChange={(e) => onFilterChange('date', e.target.value)}
+          className="col-span-1 bg-white/5 text-white rounded-lg px-1.5 py-1 border border-white/10 focus:outline-none focus:ring-1 focus:ring-yellow-400 text-[10px]"
+        />
 
         {/* Reset Button */}
-        <div className="col-span-2 sm:col-span-1">
-          <button
-            onClick={onReset}
-            className="w-full px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition flex items-center justify-center gap-1 sm:gap-2 text-[11px] sm:text-sm"
-          >
-            <RefreshCw size={14} className="sm:w-4 sm:h-4" /> 
-            <span>Reset</span>
-          </button>
-        </div>
+        <button
+          onClick={onReset}
+          className="col-span-2 bg-red-500/20 text-red-400 rounded-lg px-1.5 py-1 text-[10px] flex items-center justify-center gap-0.5 hover:bg-red-500/30 transition"
+        >
+          <RefreshCw size={12} /> ↻
+        </button>
       </div>
     </div>
   );

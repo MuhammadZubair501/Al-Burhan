@@ -58,7 +58,7 @@ export default function DashboardPage() {
           Icon={LayoutDashboard}
         />
 
-        {/* <FilterBar filters={filters} onFilterChange={handleFilterChange} onReset={handleReset} /> */}
+        <FilterBar filters={filters} onFilterChange={handleFilterChange} onReset={handleReset} />
 
         {loading ? (
           <>
