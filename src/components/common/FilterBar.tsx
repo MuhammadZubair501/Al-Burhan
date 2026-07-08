@@ -23,14 +23,14 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
 
   return (
     <div className="mb-3 sm:mb-6">
-      {/* Mobile: Stack vertically, Desktop: Row */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3">
+      {/* Simple grid: 1 column on mobile, flexible on desktop */}
+      <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2 sm:gap-3">
         {/* Academic Year */}
-        <div className="w-full sm:w-auto sm:flex-1 min-w-[140px]">
+        <div className="sm:flex-1 min-w-[140px]">
           <SearchDropdown
             label=""
             placeholder="Academic Year"
-            icon={<CalendarIcon size={18} className="text-yellow-300" />}
+            icon={<CalendarIcon size={18} className="text-yellow-400" />}
             options={academicYears.map(y => ({ id: y.id, name: y.name }))}
             value={getSelectedName(academicYears, filters.academicYear)}
             onChange={(name) => {
@@ -38,11 +38,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
               onFilterChange('academicYear', year ? year.id : null);
             }}
             className="w-full"
-            dropdownClassName="bg-[#0d1b2a] border border-white/10 rounded-xl"
-            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-white/10 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
-            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm placeholder-white/50"
-            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-white/5 last:border-0"
-            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            dropdownClassName="bg-[#0d1b2a] border border-gray-700 rounded-xl"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-gray-700 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-gray-700 last:border-0"
+            iconClassName="text-yellow-400 flex-shrink-0 ml-2"
             maxHeight="max-h-52"
             autoFocus={false}
             closeOnSelect={true}
@@ -52,11 +52,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
         </div>
 
         {/* Campus */}
-        <div className="w-full sm:w-auto sm:flex-1 min-w-[140px]">
+        <div className="sm:flex-1 min-w-[140px]">
           <SearchDropdown
             label=""
             placeholder="Campus"
-            icon={<Users size={18} className="text-yellow-300" />}
+            icon={<Users size={18} className="text-yellow-400" />}
             options={campuses.map(c => ({ id: c.id, name: c.name }))}
             value={getSelectedName(campuses, filters.campusId)}
             onChange={(name) => {
@@ -64,11 +64,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
               onFilterChange('campusId', campus ? campus.id : null);
             }}
             className="w-full"
-            dropdownClassName="bg-[#0d1b2a] border border-white/10 rounded-xl"
-            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-white/10 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
-            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm placeholder-white/50"
-            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-white/5 last:border-0"
-            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            dropdownClassName="bg-[#0d1b2a] border border-gray-700 rounded-xl"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-gray-700 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-gray-700 last:border-0"
+            iconClassName="text-yellow-400 flex-shrink-0 ml-2"
             maxHeight="max-h-52"
             autoFocus={false}
             closeOnSelect={true}
@@ -78,11 +78,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
         </div>
 
         {/* Department */}
-        <div className="w-full sm:w-auto sm:flex-1 min-w-[140px]">
+        <div className="sm:flex-1 min-w-[140px]">
           <SearchDropdown
             label=""
             placeholder="Department"
-            icon={<Layers size={18} className="text-yellow-300" />}
+            icon={<Layers size={18} className="text-yellow-400" />}
             options={departments.map(d => ({ id: d.id, name: d.name }))}
             value={getSelectedName(departments, filters.departmentId)}
             onChange={(name) => {
@@ -90,11 +90,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
               onFilterChange('departmentId', dept ? dept.id : null);
             }}
             className="w-full"
-            dropdownClassName="bg-[#0d1b2a] border border-white/10 rounded-xl"
-            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-white/10 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
-            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm placeholder-white/50"
-            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-white/5 last:border-0"
-            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            dropdownClassName="bg-[#0d1b2a] border border-gray-700 rounded-xl"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-gray-700 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-gray-700 last:border-0"
+            iconClassName="text-yellow-400 flex-shrink-0 ml-2"
             maxHeight="max-h-52"
             autoFocus={false}
             closeOnSelect={true}
@@ -104,11 +104,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
         </div>
 
         {/* Class */}
-        <div className="w-full sm:w-auto sm:flex-1 min-w-[140px]">
+        <div className="sm:flex-1 min-w-[140px]">
           <SearchDropdown
             label=""
             placeholder="Class"
-            icon={<BookOpen size={18} className="text-yellow-300" />}
+            icon={<BookOpen size={18} className="text-yellow-400" />}
             options={classes.map(c => ({ id: c.id, name: c.name }))}
             value={getSelectedName(classes, filters.classId)}
             onChange={(name) => {
@@ -116,11 +116,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
               onFilterChange('classId', cls ? cls.id : null);
             }}
             className="w-full"
-            dropdownClassName="bg-[#0d1b2a] border border-white/10 rounded-xl"
-            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-white/10 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
-            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm placeholder-white/50"
-            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-white/5 last:border-0"
-            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            dropdownClassName="bg-[#0d1b2a] border border-gray-700 rounded-xl"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-gray-700 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-gray-700 last:border-0"
+            iconClassName="text-yellow-400 flex-shrink-0 ml-2"
             maxHeight="max-h-52"
             autoFocus={false}
             closeOnSelect={true}
@@ -130,11 +130,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
         </div>
 
         {/* Section */}
-        <div className="w-full sm:w-auto sm:flex-1 min-w-[120px]">
+        <div className="sm:flex-1 min-w-[120px]">
           <SearchDropdown
             label=""
             placeholder="Section"
-            icon={<Layers size={18} className="text-yellow-300" />}
+            icon={<Layers size={18} className="text-yellow-400" />}
             options={sections.map(s => ({ id: s.id, name: s.name }))}
             value={getSelectedName(sections, filters.sectionId)}
             onChange={(name) => {
@@ -142,11 +142,11 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
               onFilterChange('sectionId', sec ? sec.id : null);
             }}
             className="w-full"
-            dropdownClassName="bg-[#0d1b2a] border border-white/10 rounded-xl"
-            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-white/10 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
-            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm placeholder-white/50"
-            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-white/5 last:border-0"
-            iconClassName="text-yellow-300 flex-shrink-0 ml-2"
+            dropdownClassName="bg-[#0d1b2a] border border-gray-700 rounded-xl"
+            triggerClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] border border-gray-700 text-white flex items-center justify-between cursor-pointer hover:bg-[#2a3a4a] transition-all text-sm"
+            inputClassName="w-full px-4 py-3 rounded-xl bg-[#1a2a3a] text-white outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+            optionClassName="px-4 py-3 text-white hover:bg-yellow-400/20 cursor-pointer text-sm border-b border-gray-700 last:border-0"
+            iconClassName="text-yellow-400 flex-shrink-0 ml-2"
             maxHeight="max-h-52"
             autoFocus={false}
             closeOnSelect={true}
@@ -156,17 +156,17 @@ export function FilterBar({ filters, onFilterChange, onReset }: FilterBarProps) 
         </div>
 
         {/* Date Input */}
-        <div className="w-full sm:w-auto sm:flex-1 min-w-[140px]">
+        <div className="sm:flex-1 min-w-[140px]">
           <input
             type="date"
             value={filters.date}
             onChange={(e) => onFilterChange('date', e.target.value)}
-            className="w-full bg-[#1a2a3a] text-white rounded-xl px-4 py-3 border border-white/10 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+            className="w-full bg-[#1a2a3a] text-white rounded-xl px-4 py-3 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
           />
         </div>
 
         {/* Reset Button */}
-        <div className="w-full sm:w-auto">
+        <div className="sm:flex-none">
           <button
             onClick={onReset}
             className="w-full sm:px-8 py-3 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition flex items-center justify-center gap-2 text-sm font-medium border border-red-500/20"
