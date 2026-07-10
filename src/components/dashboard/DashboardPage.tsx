@@ -79,20 +79,6 @@ export default function DashboardPage() {
 
             <ChartsSection studentData={data!.studentCharts} teacherData={data!.teacherCharts} />
 
-            <ComparisonCards data={data!.comparison} />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
-              <TopPerformers classes={data!.topClasses} departments={data!.topDepartments} />
-              <LowAttendance classes={data!.lowClasses} departments={data!.lowDepartments} />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-              <RecentActivity activities={data!.recentActivities} />
-              <AbsentList students={data!.absentStudents} teachers={data!.absentTeachers} />
-              <LateArrivals students={data!.lateStudents} teachers={data!.lateTeachers} />
-            </div>
-
-            <Insights insights={data!.insights} />
           </>
         )}
       </div>

@@ -14,6 +14,7 @@ import ApiRoutes from "../../services/ApiRoutes";
 import type { CampusType } from "../../types/CampusType";
 import loadDepartments from "../../types/Department";
 import loadBatches from "../../types/Batch";
+import Portal from "../../components/common/Portal";
 
 interface Props {
   isOpen: boolean;
@@ -50,8 +51,33 @@ export default function ClassModal({
   const [departments, setDepartments] = useState<{ id: number; name: string }[]>([]);
   const [batches, setBatches] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const campusId = Number(window.CampusID);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Keyboard shortcut - Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !isSubmitting) {
+        handleClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isSubmitting]);
 
   // Fetch data when modal opens
   useEffect(() => {
@@ -115,22 +141,29 @@ export default function ClassModal({
   const isValid = className && department && batch && shift;
 
   const handleSubmit = () => {
-    if (!isValid) return;
+    if (!isValid || isSubmitting) return;
 
-    onSave({
-      className,
-      department,
-      batch,
-      shift,
-    });
+    setIsSubmitting(true);
+    try {
+      onSave({
+        className,
+        department,
+        batch,
+        shift,
+      });
 
-    // Reset form after save
-    setClassName("");
-    setDepartment("");
-    setBatch("");
-    setShift("");
-    setOpenDropdown(null);
-    onClose();
+      // Reset form after save
+      setClassName("");
+      setDepartment("");
+      setBatch("");
+      setShift("");
+      setOpenDropdown(null);
+      onClose();
+    } catch (error) {
+      console.error('Error saving class:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDropdownToggle = (dropdownName: string) => {
@@ -143,241 +176,268 @@ export default function ClassModal({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 text-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent"></div>
-          <span>Loading data...</span>
+      <Portal>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-yellow-400 border-t-transparent"></div>
+            <span className="text-white text-sm sm:text-base">Loading data...</span>
+          </div>
         </div>
-      </div>
+      </Portal>
     );
   }
 
   if (!campus) {
     return (
-      <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 text-white">
-        <div className="bg-red-500/20 p-6 rounded-2xl border border-red-500/50">
-          <p className="text-red-300">Campus data could not be found.</p>
+      <Portal>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-red-500/20 p-4 sm:p-6 rounded-2xl border border-red-500/50 max-w-md mx-4">
+            <p className="text-red-300 text-sm sm:text-base">Campus data could not be found.</p>
+          </div>
         </div>
-      </div>
+      </Portal>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-md"
-        // onClick={handleClose}
-      />
+    <Portal>
+      <div className="fixed inset-0 z-[9999] flex items-start justify-center p-2 sm:p-3 md:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div className="relative w-full max-w-2xl my-1 sm:my-2 md:my-4" onClick={e => e.stopPropagation()}>
+          <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden flex flex-col max-h-[98vh] sm:max-h-[95vh] md:max-h-[90vh]">
+            
+            {/* Close Button */}
+            <button
+              onClick={handleClose}
+              className="
+                absolute top-3 right-3 z-20
+                w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10
+                rounded-xl
+                bg-white/10
+                text-white
+                hover:bg-red-500/30
+                flex items-center justify-center
+                transition
+              "
+            >
+              <X size={16} className="sm:w-[18px] sm:h-[18px]" />
+            </button>
 
-      {/* Glow - hidden on small screens */}
-      <div className="absolute w-[650px] h-[650px] bg-yellow-400/10 blur-3xl rounded-full hidden sm:block" />
+            {/* Header - Fixed */}
+            <div className="flex-shrink-0 sticky top-0 z-10 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 text-center border-b border-white/10">
+              <div
+                className="
+                  mx-auto w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20
+                  rounded-2xl sm:rounded-3xl
+                  bg-gradient-to-r
+                  from-yellow-400
+                  to-amber-500
+                  flex items-center justify-center
+                  shadow-xl
+                "
+              >
+                <School
+                  size={28}
+                  className="text-green-950 sm:w-8 sm:h-8 md:w-10 md:h-10"
+                />
+              </div>
 
-      {/* Modal */}
-      <div
-        className="
-          relative
-          w-full
-          max-w-2xl
-          rounded-[32px]
-          bg-white/10
-          backdrop-blur-2xl
-          border border-white/20
-          shadow-[0_25px_70px_rgba(0,0,0,0.45)]
-          overflow-visible
-          max-h-[95vh]
-          flex flex-col
-        "
-      >
-        {/* Close */}
-        <button
-          onClick={handleClose}
-          className="
-            absolute top-4 right-4
-            w-10 h-10
-            rounded-xl
-            bg-white/10
-            text-white
-            hover:bg-red-500/20
-            flex items-center justify-center
-            z-10
-          "
-        >
-          <X size={18} />
-        </button>
+              <h2 className="mt-3 sm:mt-4 text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                {mode === 'edit' ? 'Edit Class' : 'Create Class'}
+              </h2>
 
-        {/* Header */}
-        <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 text-center flex-shrink-0">
-          <div
-            className="
-              mx-auto w-16 h-16 sm:w-20 sm:h-20
-              rounded-2xl sm:rounded-3xl
-              bg-gradient-to-r
-              from-yellow-400
-              to-amber-500
-              flex items-center justify-center
-              shadow-xl
-            "
-          >
-            <School
-              size={32}
-              className="text-green-950 sm:w-10 sm:h-10"
-            />
-          </div>
+              <p className="text-green-100 mt-1 text-sm sm:text-base">
+                {mode === 'edit' ? 'Update class information' : 'Add class information and academic details'}
+              </p>
+            </div>
 
-          <h2 className="mt-4 sm:mt-5 text-2xl sm:text-3xl font-bold text-white">
-            {mode === 'edit' ? 'Edit Class' : 'Create Class'}
-          </h2>
+            {/* Form - Scrollable */}
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 space-y-4 sm:space-y-5 custom-scrollbar">
+              {/* Class Name */}
+              <div>
+                <label className="text-green-100 text-sm font-medium mb-1.5 block">
+                  Class Name
+                </label>
+                <div className="relative">
+                  <BookOpen
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300"
+                  />
+                  <input
+                    value={className}
+                    onChange={(e) => setClassName(e.target.value)}
+                    placeholder="e.g. Al-Aula"
+                    className="
+                      w-full py-2.5 sm:py-3 pl-10 pr-3
+                      rounded-xl sm:rounded-2xl
+                      bg-white/10
+                      border border-white/20
+                      text-white
+                      outline-none
+                      focus:ring-2 focus:ring-yellow-400
+                      text-sm sm:text-base
+                      placeholder-white/40
+                    "
+                  />
+                </div>
+              </div>
 
-          <p className="text-green-100 mt-1 sm:mt-2 text-sm sm:text-base">
-            {mode === 'edit' ? 'Update class information' : 'Add class information and academic details'}
-          </p>
-        </div>
+              {/* Campus */}
+              <div>
+                <label className="text-green-100 text-sm font-medium mb-1.5 block">
+                  Campus Name
+                </label>
+                <div className="relative">
+                  <Building2
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300"
+                  />
+                  <input
+                    disabled
+                    value={campus.campus_name}
+                    className="
+                      w-full py-2.5 sm:py-3 pl-10 pr-3
+                      rounded-xl sm:rounded-2xl
+                      bg-white/5
+                      border border-white/10
+                      text-white/70
+                      cursor-not-allowed
+                      text-sm sm:text-base
+                    "
+                  />
+                </div>
+              </div>
 
-        {/* Form - Scrollable */}
-        <div className="px-4 sm:px-8 pb-2 space-y-4 sm:space-y-5  flex-1">
-          {/* Class Name */}
-          <div>
-            <label className="text-green-100 text-xs sm:text-sm mb-2 block">
-              Class Name
-            </label>
-
-            <div className="relative">
-              <BookOpen
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-300"
+              {/* Department Dropdown */}
+              <SearchDropdown
+                label="Department"
+                placeholder="Select Department"
+                icon={<Building2 size={18} className="text-yellow-300" />}
+                options={departments}
+                value={department}
+                onChange={setDepartment}
+                isOpen={openDropdown === "department"}
+                onToggle={() => handleDropdownToggle("department")}
+                onClose={() => setOpenDropdown(null)}
+                dropUp={false}
+                hideSearch={false}
+                className="w-full"
+                triggerClassName="w-full px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
+                dropdownClassName="w-full"
+                optionClassName="px-3 py-2.5 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
               />
 
-              <input
-                value={className}
-                onChange={(e) => setClassName(e.target.value)}
-                placeholder="e.g. Al-Aula"
+              {/* Batch Dropdown */}
+              <SearchDropdown
+                label="Batch"
+                placeholder="Select Batch"
+                icon={<Layers3 size={18} className="text-yellow-300" />}
+                options={batches}
+                value={batch}
+                onChange={setBatch}
+                isOpen={openDropdown === "batch"}
+                onToggle={() => handleDropdownToggle("batch")}
+                onClose={() => setOpenDropdown(null)}
+                dropUp={false}
+                hideSearch={false}
+                className="w-full"
+                triggerClassName="w-full px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
+                dropdownClassName="w-full"
+                optionClassName="px-3 py-2.5 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+              />
+
+              {/* Shift Dropdown */}
+              <SearchDropdown
+                label="Shift"
+                placeholder="Select Shift"
+                icon={<Sunrise size={18} className="text-yellow-300" />}
+                options={shifts}
+                value={shift}
+                onChange={setShift}
+                isOpen={openDropdown === "shift"}
+                onToggle={() => handleDropdownToggle("shift")}
+                onClose={() => setOpenDropdown(null)}
+                dropUp={true}
+                hideSearch={true}
+                className="w-full"
+                triggerClassName="w-full px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
+                dropdownClassName="w-full"
+                optionClassName="px-3 py-2.5 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+              />
+            </div>
+
+            {/* Footer - Fixed */}
+            <div className="flex-shrink-0 sticky bottom-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 border-t border-white/10">
+              <button
+                onClick={handleClose}
+                disabled={isSubmitting}
                 className="
-                  w-full py-3 sm:py-4 pl-10 sm:pl-12 pr-4
-                  rounded-2xl
+                  w-full sm:w-auto
+                  px-4 sm:px-6 py-2.5 sm:py-3
+                  rounded-xl sm:rounded-2xl
                   bg-white/10
-                  border border-white/20
                   text-white
-                  outline-none
-                  focus:ring-2 focus:ring-yellow-400
+                  hover:bg-white/20
                   text-sm sm:text-base
+                  transition-colors
+                  disabled:opacity-50
+                  order-2 sm:order-1
                 "
-              />
-            </div>
-          </div>
+              >
+                Cancel
+              </button>
 
-          {/* Campus */}
-          <div>
-            <label className="text-green-100 text-xs sm:text-sm mb-2 block">
-              Campus Name
-            </label>
-
-            <div className="relative">
-              <Building2
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-300"
-              />
-
-              <input
-                disabled
-                value={campus.campus_name}
+              <button
+                onClick={handleSubmit}
+                disabled={!isValid || isSubmitting}
                 className="
-                  w-full py-3 sm:py-4 pl-10 sm:pl-12 pr-4
-                  rounded-2xl
-                  bg-white/5
-                  border border-white/10
-                  text-white/70
-                  cursor-not-allowed
+                  w-full sm:w-auto
+                  px-6 sm:px-8 py-2.5 sm:py-3
+                  rounded-xl sm:rounded-2xl
+                  bg-gradient-to-r
+                  from-yellow-400
+                  to-amber-500
+                  text-green-950
+                  font-bold
+                  hover:scale-[1.02]
+                  transition-all
+                  disabled:opacity-40
+                  disabled:hover:scale-100
                   text-sm sm:text-base
+                  flex items-center justify-center gap-2
+                  order-1 sm:order-2
+                  shadow-lg shadow-yellow-500/20
                 "
-              />
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-green-950 border-t-transparent"></span>
+                    {mode === 'edit' ? 'Updating...' : 'Saving...'}
+                  </>
+                ) : (
+                  mode === 'edit' ? 'Update Class' : 'Save Class'
+                )}
+              </button>
             </div>
           </div>
-
-          {/* Department Dropdown */}
-          <SearchDropdown
-            label="Department"
-            placeholder="Select Department"
-            icon={<Building2 size={18} className="text-yellow-300" />}
-            options={departments}
-            value={department}
-            onChange={setDepartment}
-            isOpen={openDropdown === "department"}
-            onToggle={() => handleDropdownToggle("department")}
-            onClose={() => setOpenDropdown(null)}
-          />
-
-          {/* Batch Dropdown */}
-          <SearchDropdown
-            label="Batch"
-            placeholder="Select Batch"
-            icon={<Layers3 size={18} className="text-yellow-300" />}
-            options={batches}
-            value={batch}
-            onChange={setBatch}
-            isOpen={openDropdown === "batch"}
-            onToggle={() => handleDropdownToggle("batch")}
-            onClose={() => setOpenDropdown(null)}
-          />
-
-          {/* Shift Dropdown */}
-          <SearchDropdown
-            label="Shift"
-            placeholder="Select Shift"
-            icon={<Sunrise size={18} className="text-yellow-300" />}
-            options={shifts}
-            value={shift}
-            onChange={setShift}
-            isOpen={openDropdown === "shift"}
-            onToggle={() => handleDropdownToggle("shift")}
-            onClose={() => setOpenDropdown(null)}
-            dropUp={true}
-            hideSearch={true}
-          />
-        </div>
-
-        {/* Footer */}
-        <div className="px-4 sm:px-8 py-4 sm:py-8 flex flex-col sm:flex-row justify-end gap-3 flex-shrink-0 border-t border-white/10">
-          <button
-            onClick={handleClose}
-            className="
-              w-full sm:w-auto
-              px-6 py-3
-              rounded-2xl
-              bg-white/10
-              text-white
-              hover:bg-white/20
-              text-sm sm:text-base
-              transition-colors
-            "
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={handleSubmit}
-            disabled={!isValid}
-            className="
-              w-full sm:w-auto
-              px-8 py-3
-              rounded-2xl
-              bg-gradient-to-r
-              from-yellow-400
-              to-amber-500
-              text-green-950
-              font-bold
-              hover:scale-105
-              transition
-              disabled:opacity-40
-              disabled:hover:scale-100
-              text-sm sm:text-base
-              cursor-pointer
-            "
-          >
-            {mode === 'edit' ? 'Update Class' : 'Save Class'}
-          </button>
         </div>
       </div>
-    </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(251, 191, 36, 0.4);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(251, 191, 36, 0.6);
+        }
+      `}</style>
+    </Portal>
   );
 }

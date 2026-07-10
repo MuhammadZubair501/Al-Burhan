@@ -1,40 +1,49 @@
-import { API_BASE_URL }  from "../config/api";
+import { API_BASE_URL } from "../config/api";
 
 export default class ApiRoutes {
-  // Campus routes
+  // ============================================
+  // CAMPUS ROUTES
+  // ============================================
   static CAMPUS = `${API_BASE_URL}/campus`;
 
   static campusById(id: number | string) {
     return `${API_BASE_URL}/campus/${id}`;
   }
 
-  // Batch routes
+  // ============================================
+  // BATCH ROUTES
+  // ============================================
   static BATCH = `${API_BASE_URL}/batch`;
   
   static batchById(id: number | string) {
     return `${API_BASE_URL}/batch/${id}`;
   }
 
-  // Subject routes
+  // ============================================
+  // SUBJECT ROUTES
+  // ============================================
   static SUBJECT = `${API_BASE_URL}/subject`;
   
   static subjectById(id: number | string) {
     return `${API_BASE_URL}/subject/${id}`;
   }
 
-  // Department routes
+  // ============================================
+  // DEPARTMENT ROUTES
+  // ============================================
   static DEPARTMENT = `${API_BASE_URL}/department`;
   
   static departmentById(id: number | string) {
     return `${API_BASE_URL}/department/${id}`;
   }
 
-  // Fetch departments filtered by a campus ID
   static departmentByCampusId(campusId: number | string) {
     return `${API_BASE_URL}/department/campus/${campusId}`;
   }
 
-  // Section routes
+  // ============================================
+  // SECTION ROUTES
+  // ============================================
   static SECTION = `${API_BASE_URL}/section`;
   static SECTION_WITH_CLASS_NAMES = `${API_BASE_URL}/section/with-class-names`;
 
@@ -46,92 +55,101 @@ export default class ApiRoutes {
     return `${API_BASE_URL}/section/class/${classId}`;
   }
 
-  // Added: Fetch sections with class names filtered by a campus ID
   static sectionByCampusId(campusId: number | string) {
     return `${API_BASE_URL}/section/with-class-names?campusId=${campusId}`;
   }
 
+  static sectionsWithClassByCampus(campusId: number | string) {
+    return `${API_BASE_URL}/section/with-class-names?campusId=${campusId}`;
+  }
 
- // Teacher routes setup
+  // ============================================
+  // TEACHER ROUTES
+  // ============================================
   static TEACHER = `${API_BASE_URL}/teacher`;
+  
   static teacherById(id: number | string) {
     return `${API_BASE_URL}/teacher/${id}`;
   }
 
-static teacherCountByCampus(campusId: number | string) {
-  return `${API_BASE_URL}/teacher/count/campus/${campusId}`;
-}
+  static teacherCountByCampus(campusId: number | string) {
+    return `${API_BASE_URL}/teacher/count/campus/${campusId}`;
+  }
 
-  // Student routes
+  // ============================================
+  // STUDENT ROUTES
+  // ============================================
   static STUDENT = `${API_BASE_URL}/student`;
+  
   static studentById(id: number | string) {
     return `${API_BASE_URL}/student/${id}`;
   }
+  
   static studentByCampusId(campusId: number | string) {
     return `${API_BASE_URL}/student/campus/${campusId}`;
   }
-// Student Count Routes
-static studentCountByCampus(campusId: number | string) {
-  return `${API_BASE_URL}/student/count/campus/${campusId}`;
-}
 
-static studentCountByClass(classId: number | string) {
-  return `${API_BASE_URL}/student/count/class/${classId}`;
-}
+  static studentCountByCampus(campusId: number | string) {
+    return `${API_BASE_URL}/student/count/campus/${campusId}`;
+  }
 
-static studentCountBySection(sectionId: number | string) {
-  return `${API_BASE_URL}/student/count/section/${sectionId}`;
-}
+  static studentCountByClass(classId: number | string) {
+    return `${API_BASE_URL}/student/count/class/${classId}`;
+  }
 
-static STUDENT_ATTENDANCE = `${API_BASE_URL}/student-attendance`;
+  static studentCountBySection(sectionId: number | string) {
+    return `${API_BASE_URL}/student/count/section/${sectionId}`;
+  }
 
-static studentAttendanceByRange(campusId: number | string, startDate: string, endDate: string, sectionId?: number | string) {
-  let url = `${this.STUDENT_ATTENDANCE}/range?campusId=${campusId}&start_date=${startDate}&end_date=${endDate}`;
-  if (sectionId) url += `&sectionId=${sectionId}`;
-  return url;
-}
+  // ============================================
+  // STUDENT ATTENDANCE ROUTES
+  // ============================================
+  static STUDENT_ATTENDANCE = `${API_BASE_URL}/student-attendance`;
 
-static studentAttendanceByDateAndCampus(campusId: number | string, date: string, sectionId?: number | string) {
-  let url = `${this.STUDENT_ATTENDANCE}?campusId=${campusId}&date=${date}`;
-  if (sectionId) url += `&sectionId=${sectionId}`;
-  return url;
-}
+  static studentAttendanceByRange(
+    campusId: number | string, 
+    startDate: string, 
+    endDate: string, 
+    sectionId?: number | string
+  ) {
+    let url = `${this.STUDENT_ATTENDANCE}/range?campusId=${campusId}&start_date=${startDate}&end_date=${endDate}`;
+    if (sectionId) url += `&sectionId=${sectionId}`;
+    return url;
+  }
 
-static studentAttendanceBySection(sectionId: number | string) {
-  return `${this.STUDENT_ATTENDANCE}/section/${sectionId}`;
-}
+  static studentAttendanceByDateAndCampus(
+    campusId: number | string, 
+    date: string, 
+    sectionId?: number | string
+  ) {
+    let url = `${this.STUDENT_ATTENDANCE}?campusId=${campusId}&date=${date}`;
+    if (sectionId) url += `&sectionId=${sectionId}`;
+    return url;
+  }
 
-static studentAttendanceById(id: number | string) {
-  return `${this.STUDENT_ATTENDANCE}/${id}`;
-}
+  static studentAttendanceBySection(sectionId: number | string) {
+    return `${this.STUDENT_ATTENDANCE}/section/${sectionId}`;
+  }
 
-// Sections with class names (already exists? if not, add)
-static sectionsWithClassByCampus(campusId: number | string) {
-  return `${API_BASE_URL}/section/with-class-names?campusId=${campusId}`;
-}
-// ApiRoutes.ts – add this line inside the student attendance section
+  static studentAttendanceById(id: number | string) {
+    return `${this.STUDENT_ATTENDANCE}/${id}`;
+  }
 
-// Student Attendance routes
+  static studentAttendanceSections(campusId: number | string) {
+    return `${this.STUDENT_ATTENDANCE}/sections/campus/${campusId}`;
+  }
 
+  // ============================================
+  // DEGREE ROUTES
+  // ============================================
+  static DEGREE = `${API_BASE_URL}/degree`;
 
-// ... other endpoints ...
+  static degreeById(id: number | string) {
+    return `${API_BASE_URL}/degree/${id}`;
+  }
 
-// Get sections with students in a campus (for attendance dropdown)
-static studentAttendanceSections(campusId: number | string) {
-  return `${this.STUDENT_ATTENDANCE}/sections/campus/${campusId}`;
-}
-
-// Degree routes
-
-static DEGREE = `${API_BASE_URL}/degree`;
-
-static degreeById(id: number | string) {
-  return `${API_BASE_URL}/degree/${id}`;
-}
-
-
- // ============================================
-  // MEGA File Management Routes
+  // ============================================
+  // MEGA FILE MANAGEMENT ROUTES
   // ============================================
   static MEGA_FILES = `${API_BASE_URL}/files`;
   static MEGA_FOLDERS = `${API_BASE_URL}/folders`;
@@ -146,7 +164,6 @@ static degreeById(id: number | string) {
   }
   
   static megaDownloadFile(path: string, name: string) {
-    // Properly encode the path and name for URL
     const encodedPath = encodeURIComponent(path);
     const encodedName = encodeURIComponent(name);
     return `${this.MEGA_FILES}/download?path=${encodedPath}&name=${encodedName}`;
@@ -178,8 +195,7 @@ static degreeById(id: number | string) {
     return `${this.MEGA_FOLDERS}`;
   }
 
-
- // ============================================
+  // ============================================
   // AUTH ROUTES
   // ============================================
   static AUTH = `${API_BASE_URL}/auth`;
@@ -204,6 +220,11 @@ static degreeById(id: number | string) {
     return `${this.AUTH}/reset-password`;
   }
 
+  // EXTEND SESSION ROUTE - ADD THIS
+  static extendSession() {
+    return `${this.AUTH}/extend-session`;
+  }
+
   // ============================================
   // OTP ROUTES
   // ============================================
@@ -216,6 +237,4 @@ static degreeById(id: number | string) {
   static verifyOTP() {
     return `${this.OTP}/verify`;
   }
-
-
 }

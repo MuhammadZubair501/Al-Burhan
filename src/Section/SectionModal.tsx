@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { X, School, GraduationCap, Section, Search, Building2 } from "lucide-react";
 import { classService } from "../services/ClassService";
 import ApiRoutes from "../services/ApiRoutes";
+import Portal from "../components/common/Portal";
 
 type Teacher = {
   id: number;
@@ -25,7 +26,7 @@ interface Props {
   };
 }
 
-export default function ClassModal({
+export default function SectionModal({
   classId,
   isOpen,
   onClose,
@@ -43,6 +44,30 @@ export default function ClassModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const campusId = Number(window.CampusID);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Keyboard shortcut - Escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !isSubmitting) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isSubmitting, onClose]);
 
   const fetchTeachers = async () => {
     if (!campusId) {
@@ -81,22 +106,18 @@ export default function ClassModal({
     }
   };
 
-  // Populate form when editing - FIXED: Use teacherName from editData
+  // Populate form when editing
   useEffect(() => {
     if (editData && isOpen) {
       setSecName(editData.secName);
       
-      // If we have teacherName, use it directly
       if (editData.teacherName) {
         setTeacher(editData.teacherName);
-        // Find teacher ID from name
         const teacherObj = teachers.find(t => t.name === editData.teacherName);
         if (teacherObj) {
           setSelectedTeacherId(teacherObj.id);
         }
-      } 
-      // Fallback: try to find teacher by ID
-      else if (editData.teacher) {
+      } else if (editData.teacher) {
         const teacherId = parseInt(editData.teacher);
         if (!isNaN(teacherId)) {
           const teacherObj = teachers.find(t => t.id === teacherId);
@@ -133,7 +154,6 @@ export default function ClassModal({
   // Handle form submission
   const handleSubmit = useCallback(async () => {
     if (!secName.trim()) {
-      // Use simple alert instead of SweetAlert to avoid double alerts
       alert("Please enter a section name");
       return;
     }
@@ -191,12 +211,10 @@ export default function ClassModal({
 
     if (isOpen) {
       document.addEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'hidden';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
 
@@ -216,293 +234,306 @@ export default function ClassModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300"
-        aria-hidden="true"
-      />
+    <Portal>
+      <div className="fixed inset-0 z-[9999] flex items-start justify-center p-2 sm:p-3 md:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+        <div className="relative w-full max-w-xl my-1 sm:my-2 md:my-4" onClick={e => e.stopPropagation()}>
+          <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 border border-white/20 shadow-2xl overflow-hidden flex flex-col max-h-[98vh] sm:max-h-[95vh] md:max-h-[90vh]">
+            
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="
+                absolute top-3 right-3 z-20
+                w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10
+                rounded-xl
+                bg-white/10
+                text-white
+                hover:bg-red-500/30
+                transition
+                flex items-center justify-center
+                focus:outline-none focus:ring-2 focus:ring-yellow-400
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+              aria-label="Close modal"
+            >
+              <X size={16} className="sm:w-[18px] sm:h-[18px]" />
+            </button>
 
-      <div className="absolute w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] bg-yellow-400/10 blur-3xl rounded-full" />
-
-      <div
-        className="
-          relative w-full max-w-[95%] sm:max-w-xl
-          rounded-[24px] sm:rounded-[32px]
-          bg-white/10
-          backdrop-blur-2xl
-          border border-white/20
-          shadow-[0_20px_60px_rgba(0,0,0,0.45)]
-          overflow-visible
-          max-h-[90vh] sm:max-h-[95vh]
-          scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent
-        "
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          disabled={isSubmitting}
-          className="
-            absolute top-3 right-3 sm:top-5 sm:right-5 z-20
-            w-8 h-8 sm:w-10 sm:h-10
-            rounded-xl
-            bg-white/10
-            text-white
-            hover:bg-red-500/20
-            transition-colors
-            flex items-center justify-center
-            focus:outline-none focus:ring-2 focus:ring-yellow-400
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-          aria-label="Close modal"
-        >
-          <X size={16} className="sm:w-[18px] sm:h-[18px]" />
-        </button>
-
-        <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 text-center">
-          <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-xl">
-            <School size={32} className="sm:w-[40px] sm:h-[40px] text-green-950" />
-          </div>
-
-          <h2 className="mt-4 sm:mt-5 text-2xl sm:text-3xl font-bold text-white">
-            {editData ? 'Edit Section' : 'Create Class Section'}
-          </h2>
-
-          <p className="text-green-100 mt-1 sm:mt-2 text-sm sm:text-base">
-            {editData ? 'Update section details' : 'Add new academic Class Section details'}
-          </p>
-        </div>
-
-        <div className="px-4 sm:px-8 space-y-4 sm:space-y-5 pb-4 sm:pb-6">
-          <div>
-            <label className="text-green-100 text-xs sm:text-sm mb-1.5 sm:mb-2 block font-medium">
-              Class Name
-            </label>
-
-            <div className="relative">
-              <Building2
-                size={16}
-                className="sm:w-[18px] sm:h-[18px] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-yellow-300"
-              />
-
-              <input
-                disabled
-                value={className}
-                className="
-                  w-full py-2.5 sm:py-4 pl-9 sm:pl-12 pr-3 sm:pr-4
-                  rounded-xl sm:rounded-2xl
-                  bg-white/5
-                  border border-white/10
-                  text-white/70
-                  cursor-not-allowed
-                  text-sm sm:text-base
-                  focus:outline-none
-                "
-                aria-label="Class name"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-green-100 text-xs sm:text-sm mb-1.5 sm:mb-2 block font-medium">
-              Section Name
-            </label>
-
-            <div className="relative">
-              <Section
-                size={16}
-                className="sm:w-[18px] sm:h-[18px] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-yellow-300"
-              />
-
-              <input
-                value={secName}
-                onChange={(e) => setSecName(e.target.value)}
-                placeholder="e.g. SEC A"
-                disabled={isSubmitting}
-                className="
-                  w-full py-2.5 sm:py-4 pl-9 sm:pl-12 pr-3 sm:pr-4
-                  rounded-xl sm:rounded-2xl
-                  bg-white/5
-                  border border-white/10
-                  text-white
-                  placeholder:text-white/50
-                  text-sm sm:text-base
-                  focus:outline-none focus:ring-2 focus:ring-yellow-400/50
-                  transition-all
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                "
-                aria-label="Section name"
-              />
-            </div>
-          </div>
-
-          <div className="dropdown-container">
-            <label className="text-green-100 text-xs sm:text-sm mb-1.5 sm:mb-2 block font-medium">
-              Teacher
-            </label>
-
-            <div className="relative">
-              <div
-                onClick={() => !loadingTeachers && !isSubmitting && setOpenDropdown(!openDropdown)}
-                className="
-                  w-full px-3 sm:px-4 py-2.5 sm:py-4
-                  rounded-xl sm:rounded-2xl
-                  bg-white/10
-                  border border-white/20
-                  text-white
-                  flex justify-between items-center
-                  cursor-pointer
-                  hover:bg-white/15
-                  transition-colors
-                  focus:outline-none focus:ring-2 focus:ring-yellow-400/50
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                "
-                role="combobox"
-                aria-expanded={openDropdown}
-                aria-haspopup="listbox"
-                tabIndex={isSubmitting ? -1 : 0}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <GraduationCap size={16} className="sm:w-[18px] sm:h-[18px] text-yellow-300 flex-shrink-0" />
-                  <span className={teacher ? "text-white truncate" : "text-white/50 truncate"}>
-                    {loadingTeachers ? "Loading teachers..." : (teacher || "Select Teacher")}
-                  </span>
-                </div>
-
-                <Search size={14} className="sm:w-[16px] sm:h-[16px] text-yellow-300 flex-shrink-0 ml-2" />
+            {/* Header - Fixed */}
+            <div className="flex-shrink-0 sticky top-0 z-10 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 text-center border-b border-white/10">
+              <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-yellow-400 to-amber-500 flex items-center justify-center shadow-xl">
+                <School size={28} className="sm:w-8 sm:h-8 md:w-10 md:h-10 text-green-950" />
               </div>
 
-              {openDropdown && (
-                <div
-                  className="
-                    absolute w-full mt-1.5 sm:mt-2
-                    rounded-xl sm:rounded-2xl
-                    bg-emerald-950/95
-                    backdrop-blur-2xl
-                    border border-white/20
-                    shadow-2xl
-                    overflow-hidden
-                    z-[9999]
-                  "
-                  role="listbox"
-                >
-                  <div className="p-1.5 sm:p-2 border-b border-white/10">
-                    <input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search teacher..."
-                      disabled={isSubmitting}
-                      className="
-                        w-full px-2.5 sm:px-3 py-1.5 sm:py-2
-                        rounded-lg
-                        bg-white/10
-                        text-white
-                        text-xs sm:text-sm
-                        outline-none
-                        focus:ring-2 focus:ring-yellow-400
-                        placeholder:text-white/50
-                        disabled:opacity-50
-                      "
-                      aria-label="Search teachers"
-                      autoFocus
-                    />
+              <h2 className="mt-3 sm:mt-4 text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                {editData ? 'Edit Section' : 'Create Class Section'}
+              </h2>
+
+              <p className="text-green-100 mt-1 text-sm sm:text-base">
+                {editData ? 'Update section details' : 'Add new academic Class Section details'}
+              </p>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 space-y-4 sm:space-y-5 custom-scrollbar">
+              {/* Class Name */}
+              <div>
+                <label className="text-green-100 text-sm font-medium mb-1.5 block">
+                  Class Name
+                </label>
+
+                <div className="relative">
+                  <Building2
+                    size={16}
+                    className="sm:w-[18px] sm:h-[18px] absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300"
+                  />
+
+                  <input
+                    disabled
+                    value={className}
+                    className="
+                      w-full py-2.5 sm:py-3 pl-9 sm:pl-10 pr-3
+                      rounded-xl sm:rounded-2xl
+                      bg-white/5
+                      border border-white/10
+                      text-white/70
+                      cursor-not-allowed
+                      text-sm sm:text-base
+                      focus:outline-none
+                    "
+                    aria-label="Class name"
+                  />
+                </div>
+              </div>
+
+              {/* Section Name */}
+              <div>
+                <label className="text-green-100 text-sm font-medium mb-1.5 block">
+                  Section Name
+                </label>
+
+                <div className="relative">
+                  <Section
+                    size={16}
+                    className="sm:w-[18px] sm:h-[18px] absolute left-3 top-1/2 -translate-y-1/2 text-yellow-300"
+                  />
+
+                  <input
+                    value={secName}
+                    onChange={(e) => setSecName(e.target.value)}
+                    placeholder="e.g. SEC A"
+                    disabled={isSubmitting}
+                    className="
+                      w-full py-2.5 sm:py-3 pl-9 sm:pl-10 pr-3
+                      rounded-xl sm:rounded-2xl
+                      bg-white/10
+                      border border-white/20
+                      text-white
+                      placeholder:text-white/40
+                      text-sm sm:text-base
+                      focus:outline-none focus:ring-2 focus:ring-yellow-400
+                      transition-all
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    "
+                    aria-label="Section name"
+                  />
+                </div>
+              </div>
+
+              {/* Teacher Dropdown */}
+              <div className="dropdown-container">
+                <label className="text-green-100 text-sm font-medium mb-1.5 block">
+                  Teacher
+                </label>
+
+                <div className="relative">
+                  <div
+                    onClick={() => !loadingTeachers && !isSubmitting && setOpenDropdown(!openDropdown)}
+                    className="
+                      w-full px-3 py-2.5 sm:py-3
+                      rounded-xl sm:rounded-2xl
+                      bg-white/10
+                      border border-white/20
+                      text-white
+                      flex justify-between items-center
+                      cursor-pointer
+                      hover:bg-white/15
+                      transition-colors
+                      focus:outline-none focus:ring-2 focus:ring-yellow-400
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                      text-sm sm:text-base
+                    "
+                    role="combobox"
+                    aria-expanded={openDropdown}
+                    aria-haspopup="listbox"
+                    tabIndex={isSubmitting ? -1 : 0}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <GraduationCap size={16} className="sm:w-[18px] sm:h-[18px] text-yellow-300 flex-shrink-0" />
+                      <span className={teacher ? "text-white truncate" : "text-white/50 truncate"}>
+                        {loadingTeachers ? "Loading teachers..." : (teacher || "Select Teacher")}
+                      </span>
+                    </div>
+
+                    <Search size={14} className="sm:w-[16px] sm:h-[16px] text-yellow-300 flex-shrink-0 ml-2" />
                   </div>
 
-                  <div className="max-h-36 sm:max-h-44 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-                    {loadingTeachers ? (
-                      <div className="px-3 sm:px-4 py-2 text-white/50 text-sm flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-400 border-t-transparent"></div>
-                        Loading teachers...
-                      </div>
-                    ) : filteredTeachers.length > 0 ? (
-                      filteredTeachers.map((t) => (
-                        <div
-                          key={t.id}
-                          onClick={() => {
-                            if (!isSubmitting) {
-                              setTeacher(t.name);
-                              setSelectedTeacherId(t.id);
-                              setOpenDropdown(false);
-                              setSearch("");
-                            }
-                          }}
-                          className={`
-                            px-3 sm:px-4 py-1.5 sm:py-2
+                  {openDropdown && (
+                    <div
+                      className="
+                        absolute w-full mt-1.5 sm:mt-2
+                        rounded-xl sm:rounded-2xl
+                        bg-emerald-950/95
+                        backdrop-blur-2xl
+                        border border-white/20
+                        shadow-2xl
+                        overflow-hidden
+                        z-[9999]
+                      "
+                      role="listbox"
+                    >
+                      <div className="p-2 border-b border-white/10">
+                        <input
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder="Search teacher..."
+                          disabled={isSubmitting}
+                          className="
+                            w-full px-2.5 sm:px-3 py-1.5 sm:py-2
+                            rounded-lg
+                            bg-white/10
                             text-white
-                            hover:bg-yellow-400/20
-                            cursor-pointer
-                            text-sm sm:text-base
-                            transition-colors
-                            ${selectedTeacherId === t.id ? 'bg-yellow-400/20' : ''}
-                            ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
-                          `}
-                          role="option"
-                          aria-selected={selectedTeacherId === t.id}
-                        >
-                          {t.name}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="px-3 sm:px-4 py-2 text-white/50 text-sm">
-                        {search ? 'No teachers found for this campus' : 'No teachers available for this campus'}
+                            text-xs sm:text-sm
+                            outline-none
+                            focus:ring-2 focus:ring-yellow-400
+                            placeholder:text-white/50
+                            disabled:opacity-50
+                          "
+                          aria-label="Search teachers"
+                          autoFocus
+                        />
                       </div>
-                    )}
-                  </div>
+
+                      <div className="max-h-36 sm:max-h-44 overflow-y-auto custom-scrollbar">
+                        {loadingTeachers ? (
+                          <div className="px-3 sm:px-4 py-2 text-white/50 text-sm flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-400 border-t-transparent"></div>
+                            Loading teachers...
+                          </div>
+                        ) : filteredTeachers.length > 0 ? (
+                          filteredTeachers.map((t) => (
+                            <div
+                              key={t.id}
+                              onClick={() => {
+                                if (!isSubmitting) {
+                                  setTeacher(t.name);
+                                  setSelectedTeacherId(t.id);
+                                  setOpenDropdown(false);
+                                  setSearch("");
+                                }
+                              }}
+                              className={`
+                                px-3 sm:px-4 py-2
+                                text-white
+                                hover:bg-yellow-400/20
+                                cursor-pointer
+                                text-sm sm:text-base
+                                transition-colors
+                                ${selectedTeacherId === t.id ? 'bg-yellow-400/20' : ''}
+                                ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+                              `}
+                              role="option"
+                              aria-selected={selectedTeacherId === t.id}
+                            >
+                              {t.name}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-3 sm:px-4 py-2 text-white/50 text-sm">
+                            {search ? 'No teachers found for this campus' : 'No teachers available for this campus'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Footer - Fixed */}
+            <div className="flex-shrink-0 sticky bottom-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 border-t border-white/10">
+              <button
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="
+                  w-full sm:w-auto
+                  px-4 sm:px-6 py-2.5 sm:py-3
+                  rounded-xl sm:rounded-2xl
+                  bg-white/10
+                  text-white
+                  hover:bg-white/20
+                  transition-colors
+                  text-sm sm:text-base
+                  font-medium
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  order-2 sm:order-1
+                "
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                disabled={!secName.trim() || isSubmitting}
+                className="
+                  w-full sm:w-auto
+                  px-6 sm:px-8 py-2.5 sm:py-3
+                  rounded-xl sm:rounded-2xl
+                  bg-gradient-to-r from-yellow-400 to-amber-500
+                  text-green-950
+                  font-bold
+                  text-sm sm:text-base
+                  hover:scale-[1.02]
+                  transition-all
+                  disabled:opacity-40 disabled:hover:scale-100
+                  focus:outline-none focus:ring-2 focus:ring-yellow-400/50
+                  flex items-center justify-center gap-2
+                  min-w-[120px]
+                  order-1 sm:order-2
+                  shadow-lg shadow-yellow-500/20
+                "
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-950 border-t-transparent"></div>
+                    {editData ? 'Updating...' : 'Saving...'}
+                  </>
+                ) : (
+                  editData ? 'Update Section' : 'Save Section'
+                )}
+              </button>
             </div>
           </div>
         </div>
-
-        <div className="px-4 sm:px-8 py-4 sm:py-8 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 border-t border-white/5">
-          <button
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="
-              w-full sm:w-auto
-              px-4 sm:px-6 py-2.5 sm:py-3
-              rounded-xl sm:rounded-2xl
-              bg-white/10
-              text-white
-              hover:bg-white/20
-              transition-colors
-              text-sm sm:text-base
-              font-medium
-              disabled:opacity-50 disabled:cursor-not-allowed
-            "
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={handleSubmit}
-            disabled={!secName.trim() || isSubmitting}
-            className="
-              w-full sm:w-auto
-              px-4 sm:px-8 py-2.5 sm:py-3
-              rounded-xl sm:rounded-2xl
-              bg-gradient-to-r from-yellow-400 to-amber-500
-              text-green-950
-              font-bold
-              text-sm sm:text-base
-              hover:scale-[1.02] sm:hover:scale-105
-              transition-all
-              disabled:opacity-40 disabled:hover:scale-100
-              focus:outline-none focus:ring-2 focus:ring-yellow-400/50
-              flex items-center justify-center gap-2
-              min-w-[120px]
-            "
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-950 border-t-transparent"></div>
-                {editData ? 'Updating...' : 'Saving...'}
-              </>
-            ) : (
-              editData ? 'Update Section' : 'Save Section'
-            )}
-          </button>
-        </div>
       </div>
-    </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(251, 191, 36, 0.4);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(251, 191, 36, 0.6);
+        }
+      `}</style>
+    </Portal>
   );
 }

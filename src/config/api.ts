@@ -1,11 +1,14 @@
 // export const BASE_URL = "http://localhost:5000/";
 // export const API_BASE_URL = "http://localhost:5000/api";
-// export const BASE_URL = "http://192.9.210.50:5000/";
-// export const API_BASE_URL = "http://192.9.210.50:5000/api";
+export const BASE_URL = "http://192.9.210.50:5000/";
+export const API_BASE_URL = "http://192.9.210.50:5000/api";
 
-export const BASE_URL = "https://alburhan-backend-production.up.railway.app";
-export const API_BASE_URL = "https://alburhan-backend-production.up.railway.app/api";
+// export const BASE_URL = "https://alburhan-backend-production.up.railway.app";
+// export const API_BASE_URL = "https://alburhan-backend-production.up.railway.app/api";
 
+// Get session duration from environment
+const SESSION_DURATION_MINUTES = parseInt(import.meta.env.VITE_SESSION_DURATION_MINUTES) || 20;
+const SESSION_DURATION_MS = SESSION_DURATION_MINUTES * 60 * 1000;
 
 // Auth token management
 export const getAuthToken = (): string | null => {
@@ -35,17 +38,15 @@ export const getFormDataHeaders = (): HeadersInit => {
   };
 };
 
-// Session management
+// Session management - Uses env variable
 export const isTokenExpired = (): boolean => {
   const timestamp = localStorage.getItem('tokenTimestamp');
   if (!timestamp) return true;
   
-  // Check if token is older than 7 days (or your token expiry time)
   const tokenAge = Date.now() - parseInt(timestamp);
-  const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-  return tokenAge > maxAge;
+  return tokenAge > SESSION_DURATION_MS;
 };
 
 export const refreshSession = (): void => {
   localStorage.setItem('tokenTimestamp', Date.now().toString());
-};;
+};

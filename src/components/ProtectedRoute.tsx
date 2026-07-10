@@ -1,13 +1,19 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import SessionTimer from './SessionTimer';
 
 interface ProtectedRouteProps {
   children: ReactNode;
   requiredRoles?: string[]; // Optional: restrict access to specific roles
+  showTimer?: boolean; // Optional: show session timer (default: true)
 }
 
-export default function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps) {
+export default function ProtectedRoute({ 
+  children, 
+  requiredRoles, 
+  showTimer = true 
+}: ProtectedRouteProps) {
   const isAuthenticated = authService.isAuthenticated();
   const userRole = authService.getUserRole();
 
@@ -24,6 +30,11 @@ export default function ProtectedRoute({ children, requiredRoles }: ProtectedRou
     }
   }
 
-  // If authenticated and has required role (if any), render children
-  return <>{children}</>;
+  // If authenticated and has required role (if any), render children with session timer
+  return (
+    <>
+      {showTimer && <SessionTimer />}
+      {children}
+    </>
+  );
 }
