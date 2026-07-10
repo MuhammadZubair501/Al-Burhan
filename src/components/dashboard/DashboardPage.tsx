@@ -8,13 +8,6 @@ import { TeacherSummary } from '../dashboard/TeacherSummary';
 import { StudentAttendanceTable } from '../dashboard/StudentAttendanceTable';
 import { TeacherAttendanceTable } from '../dashboard/TeacherAttendanceTable';
 import { ChartsSection } from '../dashboard/ChartsSection';
-import { ComparisonCards } from '../dashboard/ComparisonCards';
-import { TopPerformers } from '../dashboard/TopPerformers';
-import { LowAttendance } from '../dashboard/LowAttendance';
-import { RecentActivity } from '../dashboard/RecentActivity';
-import { AbsentList } from '../dashboard/AbsentList';
-import { LateArrivals } from '../dashboard/LateArrivals';
-import { Insights } from '../dashboard/Insights';
 import { SkeletonLoader } from '../common/SkeletonLoader';
 import type { DashboardFilters } from '../../types/dashboard';
 
