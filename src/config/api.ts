@@ -1,10 +1,10 @@
 // export const BASE_URL = "http://localhost:5000/";
 // export const API_BASE_URL = "http://localhost:5000/api";
-export const BASE_URL = "http://192.9.210.50:5000/";
-export const API_BASE_URL = "http://192.9.210.50:5000/api";
+// export const BASE_URL = "http://192.9.210.50:5000/";
+// export const API_BASE_URL = "http://192.9.210.50:5000/api";
 
-// export const BASE_URL = "https://alburhan-backend-production.up.railway.app";
-// export const API_BASE_URL = "https://alburhan-backend-production.up.railway.app/api";
+export const BASE_URL = "https://alburhan-backend-production.up.railway.app";
+export const API_BASE_URL = "https://alburhan-backend-production.up.railway.app/api";
 
 // Get session duration from environment
 const SESSION_DURATION_MINUTES = parseInt(import.meta.env.VITE_SESSION_DURATION_MINUTES) || 20;
