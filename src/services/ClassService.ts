@@ -1,6 +1,6 @@
-// services/classService.js
+// services/classService.ts
 
-import  { API_BASE_URL }  from "../config/api";
+import { API_BASE_URL } from "../config/api";
 
 export const classService = {
   // Get all classes
@@ -24,12 +24,13 @@ export const classService = {
   },
 
   // Create class
-  async createClass(classData: { className: any; department: any; batch: any; shift: any; }) {
+  async createClass(classData: { className: any; department: any; batch: any; shift: any; campusId?: any }) {
     const payload = {
       className: classData.className,
       department: classData.department,
       batch: classData.batch,
       shift: classData.shift,
+      campusId: classData.campusId || window.CampusID // Use campus from window object if not provided
     };
 
     const response = await fetch(`${API_BASE_URL}/class`, {
@@ -47,12 +48,13 @@ export const classService = {
   },
 
   // Update class
-  async updateClass(id: number, classData: { className: any; department: any; batch: any; shift: any; }) {
+  async updateClass(id: number, classData: { className: any; department: any; batch: any; shift: any; campusId?: any }) {
     const payload = {
       className: classData.className,
       department: classData.department,
       batch: classData.batch,
       shift: classData.shift,
+      campusId: classData.campusId || window.CampusID
     };
 
     const response = await fetch(`${API_BASE_URL}/class/${id}`, {
@@ -101,7 +103,7 @@ export const classService = {
     return data;
   },
 
-  // Get classes by campus (Fetches via relation table)
+  // Get classes by campus (Now uses campus_id directly)
   async getClassesByCampus(campusId: any) {
     const response = await fetch(`${API_BASE_URL}/class/campus/${campusId}`);
     const data = await response.json();
@@ -110,5 +112,4 @@ export const classService = {
     }
     return data;
   }
-
 };

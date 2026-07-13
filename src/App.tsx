@@ -1,6 +1,6 @@
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import CampusPage from "./Campus/CampusPage";
 import LoginPage from "./components/LoginPage";
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainDeshboard from "./components/MainDeshboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleBasedRoute from "./components/RoleBasedRoute";
@@ -11,7 +11,11 @@ import { useSessionManager } from "./hooks/useSessionManager";
 
 // Wrapper component to handle session management
 function SessionManagerWrapper({ children }: { children: React.ReactNode }) {
-  const { showWarning, timeLeft, handleLogout, handleExtendSession } = useSessionManager();
+  const location = useLocation();
+  // Skip session management on password reset pages
+  const isResetPath = ['/otp', '/reset-password'].includes(location.pathname);
+  const { showWarning, timeLeft, handleLogout, handleExtendSession } = 
+    useSessionManager({ skip: isResetPath });
 
   return (
     <>

@@ -24,6 +24,7 @@ interface Props {
     department: string;
     batch: string;
     shift: string;
+    campusId: number; // Make it required, not optional
   }) => void;
   editData?: any;
   mode?: 'create' | 'edit';
@@ -53,7 +54,22 @@ export default function ClassModal({
   const [loading, setLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const campusId = Number(window.CampusID);
+  // Get campus ID from window object with proper fallback
+  const getCampusId = (): number => {
+    const id = window.CampusID;
+    if (!id) {
+      console.error('CampusID not found in window object');
+      return 0;
+    }
+    const parsedId = Number(id);
+    if (isNaN(parsedId) || parsedId === 0) {
+      console.error('Invalid CampusID:', id);
+      return 0;
+    }
+    return parsedId;
+  };
+
+  const campusId = getCampusId();
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -86,6 +102,13 @@ export default function ClassModal({
     const fetchAllModalData = async () => {
       setLoading(true);
       try {
+        // Check if campusId is valid
+        if (!campusId || campusId === 0) {
+          console.error('Invalid campus ID:', campusId);
+          setLoading(false);
+          return;
+        }
+
         // Fetch Campus Details
         const url = ApiRoutes.campusById(campusId);
         const campusRes = await fetch(url);
@@ -143,13 +166,32 @@ export default function ClassModal({
   const handleSubmit = () => {
     if (!isValid || isSubmitting) return;
 
+    // Validate campus ID before submitting
+    const finalCampusId = campus?.campus_id || campusId || window.CampusID;
+    
+    if (!finalCampusId) {
+      console.error('No campus ID available for submission');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const numericCampusId = Number(finalCampusId);
+    if (isNaN(numericCampusId) || numericCampusId === 0) {
+      console.error('Invalid campus ID for submission:', finalCampusId);
+      setIsSubmitting(false);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      console.log('Submitting with campusId:', numericCampusId); // Debug log
+      
       onSave({
         className,
         department,
         batch,
         shift,
+        campusId: numericCampusId
       });
 
       // Reset form after save
@@ -192,7 +234,15 @@ export default function ClassModal({
       <Portal>
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-red-500/20 p-4 sm:p-6 rounded-2xl border border-red-500/50 max-w-md mx-4">
-            <p className="text-red-300 text-sm sm:text-base">Campus data could not be found.</p>
+            <p className="text-red-300 text-sm sm:text-base">
+              Campus data could not be found. Please refresh the page.
+            </p>
+            <button
+              onClick={handleClose}
+              className="mt-4 px-4 py-2 bg-yellow-400 text-green-950 rounded-lg font-medium hover:bg-yellow-300 transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
       </Portal>
@@ -208,6 +258,7 @@ export default function ClassModal({
             {/* Close Button */}
             <button
               onClick={handleClose}
+              disabled={isSubmitting}
               className="
                 absolute top-3 right-3 z-20
                 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10
@@ -217,6 +268,7 @@ export default function ClassModal({
                 hover:bg-red-500/30
                 flex items-center justify-center
                 transition
+                disabled:opacity-50
               "
             >
               <X size={16} className="sm:w-[18px] sm:h-[18px]" />
@@ -266,6 +318,7 @@ export default function ClassModal({
                     value={className}
                     onChange={(e) => setClassName(e.target.value)}
                     placeholder="e.g. Al-Aula"
+                    disabled={isSubmitting}
                     className="
                       w-full py-2.5 sm:py-3 pl-10 pr-3
                       rounded-xl sm:rounded-2xl
@@ -276,6 +329,7 @@ export default function ClassModal({
                       focus:ring-2 focus:ring-yellow-400
                       text-sm sm:text-base
                       placeholder-white/40
+                      disabled:opacity-50
                     "
                   />
                 </div>
@@ -324,6 +378,7 @@ export default function ClassModal({
                 triggerClassName="w-full px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
                 dropdownClassName="w-full"
                 optionClassName="px-3 py-2.5 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+           
               />
 
               {/* Batch Dropdown */}
@@ -343,6 +398,7 @@ export default function ClassModal({
                 triggerClassName="w-full px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
                 dropdownClassName="w-full"
                 optionClassName="px-3 py-2.5 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+           
               />
 
               {/* Shift Dropdown */}
@@ -362,6 +418,7 @@ export default function ClassModal({
                 triggerClassName="w-full px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
                 dropdownClassName="w-full"
                 optionClassName="px-3 py-2.5 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+               
               />
             </div>
 

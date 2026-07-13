@@ -21,7 +21,7 @@ const parseWarningConfig = () => {
 
 const SESSION_WARNING_MS = parseWarningConfig();
 
-export const useSessionManager = () => {
+export const useSessionManager = ({ skip = false } = {}) => {
   const [showWarning, setShowWarning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -74,6 +74,14 @@ export const useSessionManager = () => {
   }, []);
 
   useEffect(() => {
+    // If skip is true, skip all session checks and clean up
+    if (skip) {
+      // Reset any warning state
+      setShowWarning(false);
+      setIsExpiring(false);
+      return;
+    }
+
     // Check session status every second for better accuracy
     const interval = setInterval(() => {
       const { isValid, remainingTime } = authService.checkSessionStatus();
@@ -111,7 +119,7 @@ export const useSessionManager = () => {
     }
 
     return () => clearInterval(interval);
-  }, [handleLogout, formatTime]);
+  }, [handleLogout, formatTime, skip]);
 
   return {
     showWarning,
