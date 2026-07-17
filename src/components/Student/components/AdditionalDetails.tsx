@@ -1,8 +1,6 @@
 // components/AdditionalDetails.tsx
 import React from 'react';
-import { TextInput } from './TextInput';
-import { SelectInput } from './SelectInput';
-import { type StudentFormData, SHIFTS } from '../types/student';
+import { type StudentFormData } from '../types/student';
 
 interface AdditionalDetailsProps {
   formData: StudentFormData;
@@ -13,9 +11,9 @@ interface AdditionalDetailsProps {
 export const AdditionalDetails: React.FC<AdditionalDetailsProps> = ({
   formData,
   updateField,
-  errors
+  // errors
 }) => {
-  const todayDate = new Date().toISOString().split('T')[0];
+  // const todayDate = new Date().toISOString().split('T')[0];
 
   return (
     <div className="mb-6 mt-6">
@@ -23,16 +21,9 @@ export const AdditionalDetails: React.FC<AdditionalDetailsProps> = ({
         <span className="w-6 h-6 rounded-full bg-yellow-400/20 flex items-center justify-center text-xs">3</span>
         Additional Details
       </h3>
-
+{/* 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SelectInput
-          label="Shift"
-          value={formData.shift}
-          onChange={(v) => updateField('shift', v)}
-          options={SHIFTS.map(s => s.charAt(0).toUpperCase() + s.slice(1))}
-          error={errors.shift}
-          required
-        />
+       
 
         <TextInput
           label="Joining Date"
@@ -43,7 +34,7 @@ export const AdditionalDetails: React.FC<AdditionalDetailsProps> = ({
           type="date"
           max={todayDate}
         />
-      </div>
+      </div> */}
 
       <div className="mt-4">
         <label className="text-emerald-100 text-sm mb-1 block">Extra Details</label>

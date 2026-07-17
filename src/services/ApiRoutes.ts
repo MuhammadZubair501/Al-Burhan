@@ -237,4 +237,16 @@ export default class ApiRoutes {
   static verifyOTP() {
     return `${this.OTP}/verify`;
   }
+
+// ApiRoutes.ts (add these static methods)
+
+static importStudents() {
+  return `${API_BASE_URL}/section/import-students`;
+}
+
+static deleteClassStudentsAndSections(classId: number | string) {
+  return `${API_BASE_URL}/section/class/${classId}/delete-all`;
+}
+
+
 }

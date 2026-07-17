@@ -1,7 +1,7 @@
-// StudentAttendanceModal.tsx
+// components/student/StudentAttendanceModal.tsx
 
 import { useState, useEffect, type JSX } from "react";
-import { X, Calendar, Users, Check, Clock, Filter, User } from "lucide-react";
+import { X, Calendar, Users, Check, Clock, Filter, User, MessageSquare } from "lucide-react";
 import { studentAttendanceService } from "../../services/StudentAttendanceService";
 import SearchDropdown from "../../components/custom/SearchDropdown";
 
@@ -19,7 +19,7 @@ interface StudentAttendanceModalProps {
   onClose: () => void;
   onSave: (data: {
     attendance_date: string;
-    attendance: Array<{ student_id: number; status: Status }>;
+    attendance: Array<{ student_id: number; status: Status; comments?: string }>;
     section_id?: number;
   }) => Promise<void>;
   campusId: number;
@@ -43,22 +43,19 @@ export default function StudentAttendanceModal({
     initialDate || new Date().toISOString().split('T')[0]
   );
   const [studentStatus, setStudentStatus] = useState<Record<number, Status>>({});
-  
-  // Dropdown open state
+  const [studentComments, setStudentComments] = useState<Record<number, string>>({});
+
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
 
-  // Map sections to SearchDropdown options
   const sectionOptions = sections.map(sec => ({
     id: sec.section_id,
     name: `${sec.class_name} - ${sec.section_name}`
   }));
 
-  // Get display name for selected section
   const selectedSectionName = selectedSection
     ? sectionOptions.find(opt => opt.id === selectedSection)?.name || ''
     : '';
 
-  // Handle section selection from dropdown
   const handleSectionSelect = (name: string) => {
     const found = sectionOptions.find(opt => opt.name === name);
     if (found) {
@@ -67,7 +64,7 @@ export default function StudentAttendanceModal({
     }
   };
 
-  // Prevent body scroll when modal is open
+  // Handle body scroll lock
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -79,14 +76,13 @@ export default function StudentAttendanceModal({
     };
   }, [isOpen]);
 
-  // Keyboard shortcut - Escape key to close
+  // Escape key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
@@ -105,6 +101,7 @@ export default function StudentAttendanceModal({
     } else {
       setStudents([]);
       setStudentStatus({});
+      setStudentComments({});
     }
   }, [selectedSection]);
 
@@ -124,17 +121,30 @@ export default function StudentAttendanceModal({
     try {
       const data = await studentAttendanceService.getStudentsBySection(sectionId);
       setStudents(data);
-      // Initialize all as absent
       const initial: Record<number, Status> = {};
       data.forEach(s => { initial[s.student_id] = 'absent'; });
       setStudentStatus(initial);
+      setStudentComments({});
     } catch (error) {
       console.error('Error fetching students:', error);
     }
   };
 
+  // Handle status change – clear comment if not 'leave'
   const handleStatusChange = (studentId: number, status: Status) => {
     setStudentStatus(prev => ({ ...prev, [studentId]: status }));
+    // If status is not 'leave', clear any comment for that student
+    if (status !== 'leave') {
+      setStudentComments(prev => {
+        const newComments = { ...prev };
+        delete newComments[studentId];
+        return newComments;
+      });
+    }
+  };
+
+  const handleCommentChange = (studentId: number, comment: string) => {
+    setStudentComments(prev => ({ ...prev, [studentId]: comment }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,6 +166,8 @@ export default function StudentAttendanceModal({
         attendance: students.map(s => ({
           student_id: s.student_id,
           status: studentStatus[s.student_id] || 'absent',
+          // Only send comment if status is 'leave'
+          comments: studentStatus[s.student_id] === 'leave' ? (studentComments[s.student_id] || '') : undefined
         })),
         section_id: selectedSection,
       });
@@ -200,11 +212,10 @@ export default function StudentAttendanceModal({
   return (
     <div 
       className="fixed inset-0 z-[999] flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm"
-      // Removed onClick handler - modal only closes via close button or Escape key
     >
       <div className="w-full max-w-4xl max-h-[98vh] sm:max-h-[95vh] md:max-h-[90vh] flex flex-col bg-gradient-to-br from-emerald-900 via-green-800 to-emerald-950 rounded-xl sm:rounded-2xl md:rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
         
-        {/* Header - Fixed */}
+        {/* Header */}
         <div className="flex-shrink-0 sticky top-0 z-10 bg-emerald-900/95 backdrop-blur-xl px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -222,7 +233,7 @@ export default function StudentAttendanceModal({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex-shrink-0"
+              className="cursor-pointer p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex-shrink-0"
             >
               <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -232,7 +243,7 @@ export default function StudentAttendanceModal({
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
           
-          {/* Section Selector + Date - Responsive */}
+          {/* Section + Date */}
           <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 backdrop-blur-xl bg-white/10 rounded-xl p-3 sm:p-4 border border-white/20">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 flex-shrink-0" />
@@ -269,7 +280,7 @@ export default function StudentAttendanceModal({
             </div>
           </div>
 
-          {/* Stats - Responsive Grid */}
+          {/* Stats */}
           {students.length > 0 && (
             <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
               <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-2 sm:p-3 text-center">
@@ -287,7 +298,7 @@ export default function StudentAttendanceModal({
             </div>
           )}
 
-          {/* Students List - Responsive */}
+          {/* Students List */}
           <div className="max-h-[40vh] sm:max-h-[45vh] md:max-h-[50vh] overflow-y-auto space-y-2 sm:space-y-3 pr-1 sm:pr-2">
             {students.length === 0 ? (
               <div className="text-center text-green-100 py-6 sm:py-8 text-sm sm:text-base">
@@ -298,13 +309,16 @@ export default function StudentAttendanceModal({
               students.map((student) => {
                 const currentStatus = studentStatus[student.student_id] || 'absent';
                 const fullName = `${student.first_name} ${student.last_name}`;
+                const comment = studentComments[student.student_id] || '';
+                const showComment = currentStatus === 'leave'; // only show when status is 'leave'
+
                 return (
                   <div
                     key={student.student_id}
-                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 backdrop-blur-xl bg-white/5 rounded-xl p-3 sm:p-4 border border-white/10 hover:border-yellow-400/30 transition-all duration-200"
+                    className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 backdrop-blur-xl bg-white/5 rounded-xl p-3 sm:p-4 border border-white/10 hover:border-yellow-400/30 transition-all duration-200"
                   >
                     {/* Student Info */}
-                    <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:min-w-[180px]">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-yellow-400/20 to-amber-500/20 flex items-center justify-center border border-yellow-400/30 flex-shrink-0">
                         <User className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
                       </div>
@@ -314,7 +328,7 @@ export default function StudentAttendanceModal({
                       </div>
                     </div>
 
-                    {/* Status Buttons - Responsive */}
+                    {/* Status Buttons */}
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto">
                       {statusOptions.map((option) => {
                         const isActive = currentStatus === option.value;
@@ -332,6 +346,7 @@ export default function StudentAttendanceModal({
                               font-medium 
                               transition-all duration-200
                               flex items-center justify-center gap-1 sm:gap-1.5
+                              cursor-pointer
                               ${isActive ? option.activeColor : option.color}
                               ${isActive ? 'scale-105' : 'scale-100'}
                             `}
@@ -345,6 +360,20 @@ export default function StudentAttendanceModal({
                         );
                       })}
                     </div>
+
+                    {/* Comment Input - only shown when status is 'leave' */}
+                    {showComment && (
+                      <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-2">
+                        <MessageSquare className="w-4 h-4 text-yellow-400 flex-shrink-0 hidden sm:block" />
+                        <input
+                          type="text"
+                          placeholder="Reason for leave..."
+                          value={comment}
+                          onChange={(e) => handleCommentChange(student.student_id, e.target.value)}
+                          className="w-full sm:w-28 md:w-36 bg-white/10 text-white rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 border border-yellow-400/30 focus:outline-none focus:ring-1 focus:ring-yellow-400 text-xs sm:text-sm placeholder-green-200/50"
+                        />
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -352,13 +381,13 @@ export default function StudentAttendanceModal({
           </div>
         </div>
 
-        {/* Footer - Fixed at bottom */}
+        {/* Footer */}
         <div className="flex-shrink-0 sticky bottom-0 bg-emerald-900/95 backdrop-blur-xl px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-white/10">
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition text-sm sm:text-base"
+              className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition text-sm sm:text-base"
             >
               Cancel
             </button>
@@ -366,7 +395,7 @@ export default function StudentAttendanceModal({
               type="submit"
               onClick={handleSubmit}
               disabled={loading || students.length === 0}
-              className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-green-950 font-bold hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base shadow-lg shadow-yellow-500/20"
+              className="cursor-pointer w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-green-950 font-bold hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base shadow-lg shadow-yellow-500/20"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

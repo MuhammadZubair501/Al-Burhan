@@ -65,7 +65,7 @@ export default function StudentDetailModal({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 z-20 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
+              className="cursor-pointer absolute top-3 right-3 z-20 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
             >
               <X size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
@@ -219,21 +219,21 @@ export default function StudentDetailModal({
             <div className="flex-shrink-0 sticky bottom-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 border-t border-white/10">
               <button
                 onClick={onDelete}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition flex items-center justify-center gap-2 text-sm sm:text-base order-3 sm:order-1"
+                className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition flex items-center justify-center gap-2 text-sm sm:text-base order-3 sm:order-1"
               >
                 <Trash2 size={16} />
                 Delete
               </button>
               <button
                 onClick={onEdit}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-yellow-400/20 text-yellow-300 hover:bg-yellow-400/30 transition flex items-center justify-center gap-2 text-sm sm:text-base order-2"
+                className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-yellow-400/20 text-yellow-300 hover:bg-yellow-400/30 transition flex items-center justify-center gap-2 text-sm sm:text-base order-2"
               >
                 <Pencil size={16} />
                 Edit
               </button>
               <button
                 onClick={onClose}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition text-sm sm:text-base order-1 sm:order-4"
+                className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition text-sm sm:text-base order-1 sm:order-4"
               >
                 Close
               </button>

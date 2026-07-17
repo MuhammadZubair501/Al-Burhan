@@ -454,37 +454,51 @@ export default function TeacherPage() {
           )}
         </div>
 
-        {/* Floating Action Button - Responsive */}
+   {/* Floating Action Button - Responsive */}
         <button
           onClick={() => {
             setEditingTeacher(null);
             setOpenTeacherModal(true);
           }}
           className="
+            group
+            cursor-pointer
             fixed
-            bottom-4 sm:bottom-6 md:bottom-8
-            right-4 sm:right-6 md:right-8
-            w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16
+            bottom-6 md:bottom-8
+            right-6 md:right-8
+            h-12 md:h-14
+            px-4 md:px-5
             rounded-full
-            bg-gradient-to-r
+            bg-gradient-to-br
             from-yellow-400
             to-amber-500
             text-green-950
-            shadow-2xl
-            shadow-yellow-500/30
+            font-semibold
+            text-sm md:text-base
+            tracking-wide
+            shadow-lg
+            shadow-amber-500/20
             flex
             items-center
-            justify-center
-            hover:scale-110
-            hover:shadow-yellow-500/50
-            active:scale-95
+            gap-2
+            hover:-translate-y-1
+            hover:shadow-xl
+            hover:shadow-amber-500/30
+            active:translate-y-0
+            active:scale-98
             transition-all
             duration-300
+            ease-out
             z-50
           "
         >
-          <Plus size={22} className="sm:size-24" />
+          <Plus 
+            size={18} 
+            className="transition-transform duration-300 group-hover:rotate-90" 
+          />
+          <span>Add Teacher</span>
         </button>
+
       </div>
 
       <TeacherModal

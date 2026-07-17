@@ -20,6 +20,7 @@ export interface AttendanceRecord {
   date: string;
   section_id?: number;
   campus_id?: number;
+  comments?: string; // added
 }
 
 export interface SaveAttendancePayload {
@@ -27,6 +28,7 @@ export interface SaveAttendancePayload {
   attendance: Array<{
     student_id: number;
     status: 'present' | 'absent' | 'leave';
+    comments?: string; // added
   }>;
   section_id?: number;
   campus_id?: number;
@@ -34,16 +36,13 @@ export interface SaveAttendancePayload {
 
 export const studentAttendanceService = {
   // Get sections with class names by campus
-// services/StudentAttendanceService.ts
-
-// Replace the old getSectionsByCampus with:
-async getSectionsByCampus(campusId: number): Promise<any[]> {
-  const response = await fetch(`${API_BASE_URL}/student-attendance/sections/campus/${campusId}`);
-  if (!response.ok) throw new Error('Failed to fetch sections');
-  const result = await response.json();
-  if (result.success) return result.data;
-  throw new Error(result.message || 'Failed to fetch sections');
-},
+  async getSectionsByCampus(campusId: number): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/student-attendance/sections/campus/${campusId}`);
+    if (!response.ok) throw new Error('Failed to fetch sections');
+    const result = await response.json();
+    if (result.success) return result.data;
+    throw new Error(result.message || 'Failed to fetch sections');
+  },
 
   // Get students by section
   async getStudentsBySection(sectionId: number): Promise<Student[]> {
@@ -67,16 +66,17 @@ async getSectionsByCampus(campusId: number): Promise<any[]> {
   },
 
   // Update single attendance record
-  async updateAttendance(attendanceId: number, status: 'present' | 'absent' | 'leave') {
-    const response = await fetch(`${API_BASE_URL}/student-attendance/${attendanceId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Failed to update attendance');
-    return result;
-  },
+ // In StudentAttendanceService.ts
+async updateAttendance(attendanceId: number, status: 'present' | 'absent' | 'leave', comments?: string) {
+  const response = await fetch(`${API_BASE_URL}/student-attendance/${attendanceId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, comments }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.message || 'Failed to update attendance');
+  return result;
+},
 
   // Get attendance by date range and campus (optional section)
   async getAttendanceByDateRangeAndCampus(
@@ -139,6 +139,17 @@ async getSectionsByCampus(campusId: number): Promise<any[]> {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Failed to delete attendance');
+    return result;
+  },
+
+  // IMPORT ATTENDANCE
+  async importAttendance(formData: FormData): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/student-attendance/import`, {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Import failed');
     return result;
   }
 };

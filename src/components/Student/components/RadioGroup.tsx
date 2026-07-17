@@ -39,7 +39,7 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
               value={option.value}
               checked={value === option.value}
               onChange={(e) => onChange(e.target.value)}
-              className="w-4 h-4 accent-yellow-400"
+              className="cursor-pointer w-4 h-4 accent-yellow-400"
             />
             <span className="text-white capitalize">{option.label}</span>
           </label>

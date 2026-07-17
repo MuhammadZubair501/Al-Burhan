@@ -38,7 +38,7 @@ export const MultiSelectChips: React.FC<MultiSelectChipsProps> = ({
 
   return (
     <div className="mt-3">
-      <label className="text-emerald-100 text-sm block font-medium">{label}</label>
+      <label className="text-emerald-100 text-sm block font-medium mb-1.5">{label}</label>
       <div className="relative">
         <div
           className="flex flex-wrap gap-2 min-h-[50px] p-2 rounded-xl 
@@ -56,15 +56,16 @@ export const MultiSelectChips: React.FC<MultiSelectChipsProps> = ({
                   e.stopPropagation();
                   onRemove(item);
                 }}
-                className="hover:text-red-300 transition"
+                className="cursor-pointer hover:text-red-300 transition"
               >
                 <X size={14} />
               </button>
             </span>
           ))}
           <button
+            type="button"
             className="inline-flex items-center gap-1 px-3 py-1 rounded-full 
-              bg-white/10 text-white/70 text-sm hover:bg-white/20 transition"
+              bg-white/10 text-white/70 text-sm hover:bg-white/20 transition cursor-pointer"
           >
             <Plus size={14} /> Add
           </button>
@@ -75,16 +76,31 @@ export const MultiSelectChips: React.FC<MultiSelectChipsProps> = ({
             className="absolute z-20 w-full mt-1 rounded-xl bg-emerald-800 
               border border-white/20 shadow-lg overflow-hidden"
           >
-            <div className="p-2 border-b border-white/10">
+            {/* Search and Close Header Box */}
+            <div className="p-2 border-b border-white/10 flex gap-2 items-center">
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full px-3 py-2 rounded-lg bg-white/10 text-white 
-                  placeholder-white/40 outline-none"
+                className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white 
+                  placeholder-white/40 outline-none text-sm"
                 onClick={(e) => e.stopPropagation()}
+                autoFocus
               />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+                className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 
+                  transition cursor-pointer flex items-center justify-center aspect-square"
+                title="Close dropdown"
+              >
+                <X size={16} />
+              </button>
             </div>
+            
             <div className="max-h-40 overflow-y-auto custom-scrollbar">
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((opt) => (
@@ -92,13 +108,13 @@ export const MultiSelectChips: React.FC<MultiSelectChipsProps> = ({
                     key={opt}
                     onClick={() => handleAdd(opt)}
                     className="px-4 py-2 text-white hover:bg-yellow-400/20 
-                      cursor-pointer transition"
+                      cursor-pointer transition text-sm"
                   >
                     {opt}
                   </div>
                 ))
               ) : (
-                <div className="px-4 py-2 text-white/50">No options available</div>
+                <div className="px-4 py-2 text-white/50 text-sm">No options available</div>
               )}
             </div>
           </div>

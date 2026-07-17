@@ -13,6 +13,7 @@ import loadDegrees from '../../types/Degree';
 import Portal from '../../components/common/Portal';
 import SearchDropdown from '../custom/SearchDropdown';
 import { formatDateForInput } from '../../utils/dateUtils';
+import { TextInput } from './components/TextInput';
 
 interface BatchResponse {
   batch_id?: number;
@@ -335,7 +336,7 @@ export default function StudentForm({
     }
     setIsShiftDropdownOpen(false);
   };
-
+ const todayDate = new Date().toISOString().split('T')[0];
   // Get display name for selected shift
   const selectedShiftName = formData.shift
     ? SHIFT_OPTIONS.find(s => s.name.toLowerCase() === formData.shift.toLowerCase())?.name || ''
@@ -569,7 +570,7 @@ export default function StudentForm({
             <div className="flex-shrink-0 sticky top-0 z-10 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-3 sm:px-4 md:px-8 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 text-center border-b border-white/10">
               <button
                 onClick={onClose}
-                className="absolute top-3 right-3 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
+                className="  cursor-pointer absolute top-3 right-3 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
               >
                 <X size={16} className="sm:w-[18px] sm:h-[18px]" />
               </button>
@@ -618,31 +619,47 @@ export default function StudentForm({
               />
 
               {/* Shift Field with SearchDropdown */}
-              <div className="mt-4">
-                <label className="text-emerald-100 text-sm font-medium block mb-1.5">
-                  Shift <span className="text-red-400">*</span>
-                </label>
-                <SearchDropdown
-                  label=""
-                  placeholder="Select Shift"
-                  icon={null}
-                  options={SHIFT_OPTIONS}
-                  value={selectedShiftName}
-                  onChange={handleShiftSelect}
-                  isOpen={isShiftDropdownOpen}
-                  onToggle={() => setIsShiftDropdownOpen(!isShiftDropdownOpen)}
-                  onClose={() => setIsShiftDropdownOpen(false)}
-                  dropUp={false}
-                  hideSearch={false}
-                  className="w-full"
-                  triggerClassName="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
-                  dropdownClassName="w-full"
-                  optionClassName="px-3 py-2 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
-                />
-                {errors.shift && (
-                  <p className="text-red-300 text-xs mt-1">{errors.shift}</p>
-                )}
-              </div>
+            <div className="mt-4 flex flex-col sm:flex-row gap-4 items-start">
+                  {/* Shift Dropdown Container */}
+                  <div className="w-full sm:w-1/2">
+                    <label className="text-emerald-100 text-sm font-medium block mb-1.5">
+                      Shift <span className="text-red-400">*</span>
+                    </label>
+                    <SearchDropdown
+                      label=""
+                      placeholder="Select Shift"
+                      icon={null}
+                      options={SHIFT_OPTIONS}
+                      value={selectedShiftName}
+                      onChange={handleShiftSelect}
+                      isOpen={isShiftDropdownOpen}
+                      onToggle={() => setIsShiftDropdownOpen(!isShiftDropdownOpen)}
+                      onClose={() => setIsShiftDropdownOpen(false)}
+                      dropUp={false}
+                      hideSearch={false}
+                      className="w-full"
+                      triggerClassName="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
+                      dropdownClassName="w-full"
+                      optionClassName="px-3 py-2 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+                    />
+                    {errors.shift && (
+                      <p className="text-red-300 text-xs mt-1">{errors.shift}</p>
+                    )}
+                  </div>
+
+                  {/* Joining Date Container */}
+                  <div className="w-full sm:w-1/2">
+                    <TextInput
+                      label="Joining Date"
+                      value={formData.joiningDate}
+                      onChange={(v) => updateField('joiningDate', v)}
+                      error={errors.joiningDate}
+                      required
+                      type="date"
+                      max={todayDate}
+                    />
+                  </div>
+                </div>
 
               <AdditionalDetails
                 formData={formData}
@@ -657,7 +674,7 @@ export default function StudentForm({
                 <button
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base order-2 sm:order-1"
+                  className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base order-2 sm:order-1"
                 >
                   Cancel
                 </button>
@@ -665,7 +682,7 @@ export default function StudentForm({
                   <button
                     onClick={handleDelete}
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 rounded-xl bg-red-500/20 text-red-200 hover:bg-red-500/40 transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base order-3 sm:order-2"
+                    className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 rounded-xl bg-red-500/20 text-red-200 hover:bg-red-500/40 transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base order-3 sm:order-2"
                   >
                     <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                     Delete
@@ -674,7 +691,7 @@ export default function StudentForm({
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-950 font-bold hover:scale-105 transition shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-4"
+                  className="cursor-pointer w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-emerald-950 font-bold hover:scale-105 transition shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-4"
                 >
                   {isSubmitting ? (
                     <>

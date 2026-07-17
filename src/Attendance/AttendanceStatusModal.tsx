@@ -1,4 +1,4 @@
-import { X, User, CheckCircle2, Check, Clock } from "lucide-react";
+import { X, User, CheckCircle2, Check, Clock, MessageSquare } from "lucide-react";
 import { useEffect, useState, type JSX } from "react";
 import Swal from "sweetalert2";
 
@@ -8,9 +8,10 @@ type Props = {
   open: boolean;
   teacherName: string;
   currentStatus: AttendanceStatus;
+  currentComment?: string; // added
   loading?: boolean;
   onClose: () => void;
-  onSave: (status: AttendanceStatus) => Promise<void>; // now async
+  onSave: (status: AttendanceStatus, comment?: string) => Promise<void>; // now accepts comment
 };
 
 const statusOptions: {
@@ -43,17 +44,28 @@ export default function AttendanceStatusModal({
   open,
   teacherName,
   currentStatus,
+  currentComment = "",
   loading = false,
   onClose,
   onSave,
 }: Props) {
   const [selectedStatus, setSelectedStatus] =
     useState<AttendanceStatus>(currentStatus);
+  const [comment, setComment] = useState<string>(currentComment || "");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setSelectedStatus(currentStatus);
-  }, [currentStatus]);
+    setComment(currentComment || "");
+  }, [currentStatus, currentComment]);
+
+  // When status changes away from leave, clear comment
+  const handleStatusChange = (status: AttendanceStatus) => {
+    setSelectedStatus(status);
+    if (status !== 'leave') {
+      setComment('');
+    }
+  };
 
   const handleSave = async () => {
     // Confirm before saving
@@ -71,8 +83,9 @@ export default function AttendanceStatusModal({
 
     setIsSaving(true);
     try {
-      await onSave(selectedStatus);
-      // Success alert
+      // If status is leave, send comment; otherwise undefined
+      const commentToSend = selectedStatus === 'leave' ? comment : undefined;
+      await onSave(selectedStatus, commentToSend);
       await Swal.fire({
         icon: "success",
         title: "Updated!",
@@ -80,7 +93,7 @@ export default function AttendanceStatusModal({
         timer: 2000,
         showConfirmButton: false,
       });
-      onClose(); // close modal after success
+      onClose();
     } catch (error) {
       console.error(error);
       await Swal.fire({
@@ -122,9 +135,6 @@ export default function AttendanceStatusModal({
 
         {/* Body */}
         <div className="px-8 pb-8">
-          
-
-          {/* Select Status */}
           <p className="mb-3 text-sm font-medium text-green-200">
             Select New Status
           </p>
@@ -137,7 +147,7 @@ export default function AttendanceStatusModal({
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => setSelectedStatus(option.value)}
+                  onClick={() => handleStatusChange(option.value)}
                   className={`
                     flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all
                     ${
@@ -153,6 +163,25 @@ export default function AttendanceStatusModal({
               );
             })}
           </div>
+
+          {/* Comment input - only if leave is selected */}
+          {selectedStatus === 'leave' && (
+            <div className="mt-5">
+              <label className="block text-sm font-medium text-green-200 mb-1.5">
+                Reason for Leave
+              </label>
+              <div className="flex items-center gap-2 bg-white/10 rounded-xl border border-white/20 p-2">
+                <MessageSquare className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Enter reason for leave..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="w-full bg-transparent text-white placeholder-green-200/50 focus:outline-none text-sm"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="mt-8 flex justify-end gap-3">

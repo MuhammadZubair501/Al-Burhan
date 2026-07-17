@@ -8,15 +8,16 @@ import {
   SquareDashedText,
   ArrowLeft,
   UserCircle,
+  Upload,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import SectionModal from "./SectionModal";
 import PageHeader from "../components/PageHeader";
 import { useNavigate } from "react-router-dom";
 import { classService } from "../services/ClassService";
 import ApiRoutes from "../services/ApiRoutes";
-
+import * as XLSX from 'xlsx';
 type Section = {
   section_id: number;
   section_name: string;
@@ -37,7 +38,11 @@ export default function SectionPage({ classId }: SectionPageProps) {
   const [loading, setLoading] = useState(false);
   const [className, setClassName] = useState("");
   const [editingSection, setEditingSection] = useState<Section | null>(null);
-
+  const [importLoading, setImportLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  
   useEffect(() => {
     if (classId) {
       fetchSections();
@@ -156,7 +161,169 @@ export default function SectionPage({ classId }: SectionPageProps) {
       });
     }
   };
+// Handler for file selection
+const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = e.target?.result;
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(firstSheet);
+
+      // Expected columns: S.No, Name, Phone, Section
+      const students = jsonData.map(row => ({
+        name: row.Name || row.name || '',
+        phone: row.Phone || row.phone || '',
+        section: row.Section || row.section || '',
+      })).filter(s => s.name.trim() !== '');
+
+      if (students.length === 0) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'No Data',
+          text: 'The uploaded file contains no student records.',
+          confirmButtonColor: '#f59e0b',
+          background: '#1a1a2e',
+          color: '#fff',
+        });
+        return;
+      }
+
+      // Confirm import
+      const confirmResult = await Swal.fire({
+        title: 'Import Students?',
+        html: `
+          <p class="text-white/70">You are about to import <strong>${students.length}</strong> student(s).</p>
+          <p class="text-white/50 text-sm mt-2">New sections will be created if they don't exist.</p>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, Import',
+        cancelButtonText: 'Cancel',
+        background: '#1a1a2e',
+        color: '#fff',
+      });
+
+      if (!confirmResult.isConfirmed) return;
+
+      setImportLoading(true);
+      const response = await fetch(ApiRoutes.importStudents(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ class_id: Number(classId), students }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Import failed');
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Import Successful!',
+        text: `Imported ${result.totalInserted} students. Created ${result.createdSections} new section(s).`,
+        confirmButtonColor: '#f59e0b',
+        background: '#1a1a2e',
+        color: '#fff',
+      });
+
+      // Refresh sections
+      await fetchSections();
+    } catch (error: any) {
+      console.error('Import error:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Import Failed',
+        text: error.message || 'Failed to import students.',
+        confirmButtonColor: '#ef4444',
+        background: '#1a1a2e',
+        color: '#fff',
+      });
+    } finally {
+      setImportLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+// Handler for delete all
+const handleDeleteAll = async () => {
+  // Check if there are any sections to delete
+  if (sections.length === 0) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Nothing to Delete',
+      text: 'This class has no sections or students.',
+      confirmButtonColor: '#f59e0b',
+      background: '#1a1a2e',
+      color: '#fff',
+    });
+    return;
+  }
+
+  const totalStudents = sections.reduce((sum, s) => sum + (s.student_count || 0), 0);
+  const confirmResult = await Swal.fire({
+    title: 'Delete All Students & Sections?',
+    html: `
+      <div class="text-left">
+        <p class="text-white/70">This will permanently delete:</p>
+        <ul class="list-disc list-inside text-white/80 mt-2">
+          <li><strong>${totalStudents}</strong> student(s)</li>
+          <li><strong>${sections.length}</strong> section(s)</li>
+        </ul>
+        <p class="text-red-400/70 text-sm mt-3 font-bold">This action cannot be undone!</p>
+      </div>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, Delete Everything',
+    cancelButtonText: 'Cancel',
+    background: '#1a1a2e',
+    color: '#fff',
+  });
+
+  if (!confirmResult.isConfirmed) return;
+
+  setDeleteLoading(true);
+  try {
+    const response = await fetch(ApiRoutes.deleteClassStudentsAndSections(Number(classId)), {
+      method: 'DELETE',
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Deletion failed');
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Deleted Successfully',
+      text: `All students and sections for this class have been removed.`,
+      confirmButtonColor: '#f59e0b',
+      background: '#1a1a2e',
+      color: '#fff',
+    });
+
+    // Refresh sections
+    await fetchSections();
+  } catch (error: any) {
+    console.error('Delete error:', error);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Deletion Failed',
+      text: error.message || 'Failed to delete class data.',
+      confirmButtonColor: '#ef4444',
+      background: '#1a1a2e',
+      color: '#fff',
+    });
+  } finally {
+    setDeleteLoading(false);
+  }
+};
   const handleEditSection = (section: Section) => {
     setEditingSection(section);
     setOpenSectionModal(true);
@@ -305,7 +472,10 @@ export default function SectionPage({ classId }: SectionPageProps) {
       />
       
       <div className="relative z-10 px-3 sm:px-4 md:px-6 lg:px-8 pt-2 sm:pt-4">
-        <button
+      
+      </div>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <button
           onClick={handleBackToClasses}
           className="
             flex items-center gap-1.5 sm:gap-2
@@ -319,8 +489,44 @@ export default function SectionPage({ classId }: SectionPageProps) {
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
           <span className="font-medium">Back to Classes</span>
         </button>
-      </div>
 
+          <div className="flex-1"></div>
+
+          {/* Import Excel Button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importLoading}
+            className="
+              flex items-center gap-2 px-4 py-2 rounded-xl
+              bg-green-600 hover:bg-green-700 text-white font-semibold
+              transition disabled:opacity-50 disabled:cursor-not-allowed
+            "
+          >
+            <Upload size={18} />
+            {importLoading ? 'Importing...' : 'Import Excel'}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </button>
+
+          {/* Delete All Button */}
+          <button
+            onClick={handleDeleteAll}
+            disabled={deleteLoading || sections.length === 0}
+            className="
+              flex items-center gap-2 px-4 py-2 rounded-xl
+              bg-red-600 hover:bg-red-700 text-white font-semibold
+              transition disabled:opacity-50 disabled:cursor-not-allowed
+            "
+          >
+            <Trash2 size={18} />
+            {deleteLoading ? 'Deleting...' : 'Delete All'}
+          </button>
+        </div>
       <div className="relative z-10 p-3 sm:p-4 md:p-6 lg:p-8 pt-1 sm:pt-2">
         {loading ? (
           <div className="flex items-center justify-center p-8 sm:p-12">

@@ -88,7 +88,7 @@ export const PersonalDetails: React.FC<PersonalDetailsProps> = ({
           error={errors.firstName}
           required
           icon={<User size={18} />}
-          placeholder="John"
+          placeholder="Muhammad"
         />
 
         <TextInput
@@ -98,7 +98,7 @@ export const PersonalDetails: React.FC<PersonalDetailsProps> = ({
           error={errors.lastName}
           required
           icon={<User size={18} />}
-          placeholder="Doe"
+          placeholder="Zubair"
         />
 
         <TextInput
@@ -118,7 +118,6 @@ export const PersonalDetails: React.FC<PersonalDetailsProps> = ({
           options={[
             { value: 'male', label: 'Male' },
             { value: 'female', label: 'Female' },
-            { value: 'other', label: 'Other' }
           ]}
           error={errors.gender}
           required

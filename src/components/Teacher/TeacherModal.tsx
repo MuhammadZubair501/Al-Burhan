@@ -655,7 +655,7 @@ export default function TeacherModal({
                     label="First Name *"
                     value={formData.firstName}
                     onChange={(e) => updateField('firstName', e.target.value)}
-                    placeholder="John"
+                    placeholder="Muhammad"
                     error={errors.firstName}
                     className="text-sm sm:text-base"
                   />
@@ -663,7 +663,7 @@ export default function TeacherModal({
                     label="Last Name *"
                     value={formData.lastName}
                     onChange={(e) => updateField('lastName', e.target.value)}
-                    placeholder="Doe"
+                    placeholder="Zubair"
                     error={errors.lastName}
                     className="text-sm sm:text-base"
                   />

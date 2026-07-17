@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// const BASE = "http://192.9.210.50:5000/api";
-const BASE = "https://alburhan-backend-production.up.railway.app/api";
+const BASE = "http://192.9.210.50:5000/api";
+// const BASE = "https://alburhan-backend-production.up.railway.app/api";
 
 export const getUserByEmail = (email: string) =>
   axios.post(`${BASE}/auth/get-user-by-email`, { email });
