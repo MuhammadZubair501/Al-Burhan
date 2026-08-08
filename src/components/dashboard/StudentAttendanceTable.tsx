@@ -1,3 +1,5 @@
+// components/dashboard/StudentAttendanceTable.tsx
+
 import { DataTable, type Column } from '../common/DataTable';
 import type { DashboardData } from '../../types/dashboard';
 
@@ -30,7 +32,7 @@ export function StudentAttendanceTable({ data }: { data: DashboardData['studentA
       }),
       { total: 0, present: 0, absent: 0, leave: 0 }
     );
-    const overall = data.length ? ((totals.present / totals.total) * 100).toFixed(1) : 0;
+    const overall = data.length && totals.total > 0 ? ((totals.present / totals.total) * 100).toFixed(1) : 0;
     return (
       <>
         <td className="p-4 font-bold text-yellow-300" colSpan={2}>Totals</td>
@@ -44,13 +46,15 @@ export function StudentAttendanceTable({ data }: { data: DashboardData['studentA
   };
 
   return (
-    <DataTable
-      columns={columns}
-      data={data}
-      keyField="className"
-      searchPlaceholder="Search by class or section..."
-      showFooter
-      footerRenderer={footerRenderer}
-    />
+    <div className="w-full">
+      <DataTable
+        columns={columns}
+        data={data}
+        keyField="className"
+        searchPlaceholder="Search by class or section..."
+        showFooter
+        footerRenderer={footerRenderer}
+      />
+    </div>
   );
 }
