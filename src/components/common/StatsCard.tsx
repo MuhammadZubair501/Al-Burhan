@@ -1,18 +1,42 @@
+// components/common/StatsCard.tsx
+
+// components/common/StatsCard.tsx
+import type { ReactNode } from 'react';
+
 interface StatsCardProps {
   label: string;
-  value: number | string;
-  icon: React.ReactNode;
-  color?: string;
+  value: string | number;
+  icon: ReactNode;
+  bgColor?: string;
+  borderColor?: string;
+  iconBg?: string;
+  textColor?: string;
 }
 
-export function StatsCard({ label, value, icon, color = 'text-white' }: StatsCardProps) {
+export function StatsCard({ 
+  label, 
+  value, 
+  icon, 
+  bgColor = 'bg-white/5',
+  borderColor = 'border-white/10',
+  iconBg = 'bg-white/10',
+  textColor = 'text-white'
+}: StatsCardProps) {
   return (
-    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-4 shadow-xl">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-yellow-400/20 rounded-xl">{icon}</div>
+    <div className={`${bgColor} backdrop-blur-sm ${borderColor} border rounded-xl p-3 sm:p-4 transition-all duration-300 hover:scale-105 hover:shadow-lg`}>
+      <div className="flex items-center justify-between">
         <div>
-          <p className="text-green-100 text-sm">{label}</p>
-          <p className={`text-2xl font-bold ${color}`}>{value}</p>
+          <p className="text-green-100/60 text-[10px] sm:text-xs font-medium uppercase tracking-wider">
+            {label}
+          </p>
+          <p className={`${textColor} text-lg sm:text-xl md:text-2xl font-bold mt-0.5 sm:mt-1`}>
+            {value}
+          </p>
+        </div>
+        <div className={`${iconBg} p-2 sm:p-2.5 rounded-xl`}>
+          <div className="text-green-100">
+            {icon}
+          </div>
         </div>
       </div>
     </div>

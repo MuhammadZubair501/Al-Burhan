@@ -8,29 +8,23 @@ export function useDashboardData(filters: DashboardFilters) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [availableClasses, setAvailableClasses] = useState<Array<{ id: number; name: string }>>([]);
 
   const campusId = Number(window.CampusID) || 1;
-
-  useEffect(() => {
-    const fetchAvailableDates = async () => {
-      try {
-        const dates = await dashboardService.getAvailableDates(campusId);
-        setAvailableDates(dates);
-      } catch (err) {
-        console.error('Error fetching available dates:', err);
-      }
-    };
-    fetchAvailableDates();
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const result = await dashboardService.fetchDashboardData(filters, campusId);
+        const result = await dashboardService.fetchDashboardData(
+          filters, 
+          campusId
+        );
         setData(result.data);
+        if (result.data.availableClasses) {
+          setAvailableClasses(result.data.availableClasses);
+        }
       } catch (err) {
         setError('Failed to load dashboard data');
         console.error(err);
@@ -39,10 +33,10 @@ export function useDashboardData(filters: DashboardFilters) {
       }
     };
 
-    if (filters.date) {
+    if (filters.date && filters.fromDate && filters.toDate) {
       fetchData();
     }
   }, [filters, campusId]);
 
-  return { data, loading, error, availableDates };
+  return { data, loading, error, availableClasses };
 }

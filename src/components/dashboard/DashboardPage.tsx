@@ -6,18 +6,25 @@ import { useDashboardData } from '../../hooks/useDashboardData';
 import { FilterBar } from '../common/FilterBar';
 import PageHeader from '../PageHeader';
 import { StudentSummary } from '../dashboard/StudentSummary';
-import { TeacherSummary } from '../dashboard/TeacherSummary';
 import { StudentAttendanceTable } from '../dashboard/StudentAttendanceTable';
+import { DateRangeAttendanceTable } from '../dashboard/DateRangeAttendanceTable';
 import { ChartsSection } from '../dashboard/ChartsSection';
 import { SkeletonLoader } from '../common/SkeletonLoader';
 import type { DashboardFilters } from '../../types/dashboard';
 
 export default function DashboardPage() {
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 7);
+
   const [filters, setFilters] = useState<DashboardFilters>({
-    date: new Date().toISOString().split('T')[0],
+    date: today.toISOString().split('T')[0],
+    fromDate: sevenDaysAgo.toISOString().split('T')[0],
+    toDate: today.toISOString().split('T')[0],
+    classId: null,
   });
 
-  const { data, loading, error, availableDates } = useDashboardData(filters);
+  const { data, loading, error, availableClasses } = useDashboardData(filters);
 
   const handleFilterChange = (key: keyof DashboardFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -25,10 +32,10 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="p-4 sm:p-8 text-red-400">
-        <div className="bg-red-500/20 p-6 rounded-2xl border border-red-500/50">
-          <h3 className="text-lg font-semibold mb-2">Error Loading Dashboard</h3>
-          <p>{error}</p>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-emerald-950 p-4 sm:p-8">
+        <div className="max-w-4xl mx-auto bg-red-500/20 backdrop-blur-xl border border-red-500/30 rounded-2xl p-6 sm:p-8">
+          <h3 className="text-lg font-semibold text-red-200 mb-2">Error Loading Dashboard</h3>
+          <p className="text-red-300">{error}</p>
         </div>
       </div>
     );
@@ -36,54 +43,87 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
-        <PageHeader
-          title="Dashboard"
-          description="Student & Teacher Attendance Overview"
-          Icon={LayoutDashboard}
-        />
+      <div className="relative overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <div className="absolute top-20 left-10 w-64 h-64 border-4 border-yellow-400 rounded-full"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 border-4 border-yellow-400 rounded-full"></div>
+          <div className="absolute top-1/2 left-1/3 w-48 h-48 border-2 border-white rounded-full"></div>
+        </div>
 
-        <FilterBar 
-          filters={filters} 
-          onFilterChange={handleFilterChange}
-          availableDates={availableDates}
-        />
+        <div className="relative z-10 p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
+          {/* Page Header */}
+          <PageHeader
+            title="Dashboard"
+            description="Student Attendance Overview"
+            Icon={LayoutDashboard}
+          />
 
-        {loading ? (
-          <>
-            <SkeletonLoader count={5} />
-            <div className="my-6">
-              <SkeletonLoader count={5} />
-            </div>
-            <div className="my-6">
-              <SkeletonLoader count={2} />
-            </div>
-          </>
-        ) : (
-          data && (
+          {/* Filter Bar - Glass Container */}
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+            <FilterBar 
+              filters={filters} 
+              onFilterChange={handleFilterChange}
+              availableClasses={availableClasses}
+            />
+          </div>
+
+          {loading ? (
             <>
-              {/* Student Summary */}
-              <h2 className="text-lg font-semibold text-white mb-3">Students</h2>
-              <StudentSummary data={data.studentSummary} />
-              
-              {/* Teacher Summary */}
-              <h2 className="text-lg font-semibold text-white mb-3 mt-6">Teachers</h2>
-              <TeacherSummary data={data.teacherSummary} />
-
-              {/* Tables */}
-              <div className="grid grid-cols-1 xl:grid-cols-1 gap-4 sm:gap-6 mb-6 mt-6">
-                <StudentAttendanceTable data={data.studentAttendanceTable} />
-                {/* <TeacherAttendanceTable data={data.teacherAttendanceTable} /> */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {[...Array(5)].map((_, i) => (
+                  <SkeletonLoader key={i} count={1} />
+                ))}
               </div>
-
-              {/* Charts */}
-              <ChartsSection 
-                studentData={data.studentCharts} 
-                teacherData={data.teacherCharts} 
-              />
+              <div className="my-6">
+                <SkeletonLoader count={3} />
+              </div>
+              <div className="my-6">
+                <SkeletonLoader count={2} />
+              </div>
             </>
-          )
-        )}
+          ) : (
+            data && (
+              <>
+                {/* Student Summary - Glass Container */}
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <h2 className="text-lg sm:text-xl font-semibold text-white">
+                      Students - {new Date(filters.date).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </h2>
+                  </div>
+                  <StudentSummary data={data.studentSummary} />
+                </div>
+
+                {/* Student Table - Glass Container */}
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+                  <h3 className="text-md sm:text-lg font-semibold text-green-300 mb-4">
+                    Students by Class
+                  </h3>
+                  <StudentAttendanceTable data={data.studentAttendanceTable} />
+                </div>
+
+                {/* Charts - Glass Container */}
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+                  <ChartsSection studentData={data.studentCharts} />
+                </div>
+
+                {/* Date Range Attendance Table - Glass Container */}
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-white mb-4">
+                    Daily Attendance ({filters.fromDate} to {filters.toDate})
+                  </h2>
+                  <DateRangeAttendanceTable data={data.dateRangeAttendance} />
+                </div>
+              </>
+            )
+          )}
+        </div>
       </div>
     </div>
   );
