@@ -143,7 +143,7 @@ export function ChartsSection({ studentData }: ChartsSectionProps) {
     );
   }
 
-  // Calculate totals for summary - FIXED: Total students should be sum of totals per class
+  // Calculate totals for summary
   const totalStudents = studentData.bar.present.reduce((a, _b, index) => {
     return a + studentData.bar.present[index] + studentData.bar.absent[index] + studentData.bar.leave[index];
   }, 0);
@@ -151,8 +151,7 @@ export function ChartsSection({ studentData }: ChartsSectionProps) {
   const totalPresent = studentData.bar.present.reduce((a, b) => a + b, 0);
   const totalAbsent = studentData.bar.absent.reduce((a, b) => a + b, 0);
 
-  // Pie chart total (should match totalStudents)
-  const pieTotal = studentData.pie.data.reduce((a, b) => a + b, 0);
+  // Pie chart total
 
   return (
     <div className="space-y-6">
@@ -181,8 +180,7 @@ export function ChartsSection({ studentData }: ChartsSectionProps) {
                 datasets: [{
                   data: studentData.pie.data,
                   backgroundColor: pieColors,
-                  borderColor: ['#1a2a3a', '#1a2a3a', '#1a2a3a'],
-                  borderWidth: 4,
+                  borderWidth: 0, // Explicitly set to 0 to remove all borders
                   hoverOffset: 20,
                 }],
               }}
@@ -194,14 +192,10 @@ export function ChartsSection({ studentData }: ChartsSectionProps) {
         <div className="px-5 sm:px-7 pb-5 sm:pb-7 pt-3 border-t border-white/10">
           <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
             {studentData.pie.labels.map((label, index) => {
-              const percentage = pieTotal > 0 ? Math.round((studentData.pie.data[index] / pieTotal) * 100) : 0;
               return (
                 <div key={label} className="text-center">
                   <div className="flex items-center justify-center gap-2 mb-1.5">
-                    <span 
-                      className="w-3.5 h-3.5 rounded-full"
-                      style={{ backgroundColor: pieColors[index] }}
-                    />
+                    
                     <span className="text-xs sm:text-sm text-green-100/60 font-medium">{label}</span>
                   </div>
                   <div 
@@ -210,9 +204,7 @@ export function ChartsSection({ studentData }: ChartsSectionProps) {
                   >
                     {studentData.pie.data[index]}
                   </div>
-                  <div className="text-xs text-green-100/40 font-medium">
-                    {percentage}%
-                  </div>
+                
                 </div>
               );
             })}
