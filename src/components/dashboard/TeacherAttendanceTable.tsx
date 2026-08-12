@@ -4,9 +4,14 @@ import { DataTable, type Column } from '../common/DataTable';
 import type { DashboardData } from '../../types/dashboard';
 
 export function TeacherAttendanceTable({ data }: { data: DashboardData['teacherAttendanceTable'] }) {
+  // If no data, return null or a message
+  if (!data || data.length === 0) {
+    return null;
+  }
+
   const columns: Column[] = [
     { key: 'department', label: 'Department' },
-    { key: 'teacherCount', label: 'Total Teachers' },
+    { key: 'teacherCount', label: 'Teacher Count' },
     { key: 'present', label: 'Present' },
     { key: 'absent', label: 'Absent' },
     { key: 'leave', label: 'Leave' },
@@ -31,10 +36,10 @@ export function TeacherAttendanceTable({ data }: { data: DashboardData['teacherA
       }),
       { teacherCount: 0, present: 0, absent: 0, leave: 0 }
     );
-    const overall = data.length && totals.teacherCount > 0 ? ((totals.present / totals.teacherCount) * 100).toFixed(1) : 0;
+    const overall = data.length ? ((totals.present / totals.teacherCount) * 100).toFixed(1) : 0;
     return (
       <>
-        <td className="p-4 font-bold text-yellow-300" colSpan={2}>Totals</td>
+        <td className="p-4 font-bold text-yellow-300">Totals</td>
         <td className="p-4 font-bold">{totals.teacherCount}</td>
         <td className="p-4 font-bold text-green-400">{totals.present}</td>
         <td className="p-4 font-bold text-red-400">{totals.absent}</td>
@@ -45,15 +50,13 @@ export function TeacherAttendanceTable({ data }: { data: DashboardData['teacherA
   };
 
   return (
-    <div className="w-full">
-      <DataTable
-        columns={columns}
-        data={data}
-        keyField="department"
-        searchPlaceholder="Search by department..."
-        showFooter
-        footerRenderer={footerRenderer}
-      />
-    </div>
+    <DataTable
+      columns={columns}
+      data={data}
+      keyField="department"
+      searchPlaceholder="Search by department..."
+      showFooter
+      footerRenderer={footerRenderer}
+    />
   );
 }

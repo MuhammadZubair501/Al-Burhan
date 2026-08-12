@@ -15,6 +15,21 @@ export interface DashboardData {
     leave: number;
     percentage: number;
   };
+  teacherSummary?: {  // Add this as optional
+    total: number;
+    present: number;
+    absent: number;
+    leave: number;
+    percentage: number;
+  };
+  teacherAttendanceTable?: Array<{  // Add this as optional
+    department: string;
+    teacherCount: number;
+    present: number;
+    absent: number;
+    leave: number;
+    percentage: number;
+  }>;
   studentAttendanceTable: Array<{
     className: string;
     sectionName: string;
@@ -38,7 +53,7 @@ export interface DashboardData {
     pie: { labels: string[]; data: number[] };
     bar: { labels: string[]; present: number[]; absent: number[]; leave: number[] };
   };
-  teacherCharts?: { // Made optional
+  teacherCharts?: {
     pie: { labels: string[]; data: number[] };
     bar: { labels: string[]; present: number[]; absent: number[]; leave: number[] };
   };
