@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { authService } from '../services/authService';
-import SessionTimer from './SessionTimer';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -33,7 +32,7 @@ export default function ProtectedRoute({
   // If authenticated and has required role (if any), render children with session timer
   return (
     <>
-      {showTimer && <SessionTimer />}
+      {/* {showTimer && <SessionTimer />} */}
       {children}
     </>
   );

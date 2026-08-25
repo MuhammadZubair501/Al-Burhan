@@ -50,23 +50,53 @@ export default function DashboardPage() {
           <div className="absolute bottom-20 right-10 w-96 h-96 border-4 border-yellow-400 rounded-full"></div>
           <div className="absolute top-1/2 left-1/3 w-48 h-48 border-2 border-white rounded-full"></div>
         </div>
-
+        <PageHeader
+          title="Dashboard"
+          description="Student Attendance Overview"
+          Icon={LayoutDashboard}
+        />
         <div className="relative z-10 p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
-          {/* Page Header */}
-          <PageHeader
-            title="Dashboard"
-            description="Student Attendance Overview"
-            Icon={LayoutDashboard}
-          />
+    
 
-          {/* Filter Bar - Glass Container */}
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
-            <FilterBar 
-              filters={filters} 
-              onFilterChange={handleFilterChange}
-              availableClasses={availableClasses}
-            />
-          </div>
+        {/* Filter Bar - Glass Container */}
+<div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+  
+  {/* Flex Container to split Date and Class Filter */}
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    
+    {/* Left Side: Date Filter / Remaining Filters */}
+    <div className="flex-1 w-full">
+      <FilterBar 
+        filters={filters} 
+        onFilterChange={handleFilterChange}
+      />
+    </div>
+
+    {/* Right Side: Class Filter */} 
+    <div className="w-full sm:w-64 sm:self-end"> 
+      <label className="text-green-100/80 text-xs font-medium block mb-1.5"> 
+        Filter by Class 
+      </label> 
+      <select 
+        value={filters.classId || ''} 
+        onChange={(e) => { 
+          const value = e.target.value; 
+          handleFilterChange('classId', value ? parseInt(value) : null); 
+        }} 
+        className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all text-sm" 
+      > 
+        <option value="" className="bg-emerald-800">All Classes</option> 
+        {availableClasses.map((cls) => ( 
+          <option key={cls.id} value={cls.id} className="bg-emerald-800"> 
+            {cls.name} 
+          </option> 
+        ))} 
+      </select> 
+    </div>
+
+  </div>
+</div>
+
 
           {loading ? (
             <>
@@ -111,6 +141,38 @@ export default function DashboardPage() {
                 {/* Charts - Glass Container */}
                 <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
                   <ChartsSection studentData={data.studentCharts} />
+                </div>
+
+                {/* Date Range Filter - shown before the table */}
+                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-wrap">
+                    <div className="w-full sm:w-56">
+                      <label className="text-green-100/80 text-xs font-medium block mb-1.5">
+                        From Date
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.fromDate}
+                        onChange={(e) => handleFilterChange('fromDate', e.target.value)}
+                        className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all text-sm"
+                        max={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+
+                    <div className="w-full sm:w-56">
+                      <label className="text-green-100/80 text-xs font-medium block mb-1.5">
+                        To Date
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.toDate}
+                        onChange={(e) => handleFilterChange('toDate', e.target.value)}
+                        className="w-full bg-white/10 text-white rounded-xl px-4 py-2.5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all text-sm"
+                        max={new Date().toISOString().split('T')[0]}
+                        min={filters.fromDate}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Date Range Attendance Table - Glass Container */}

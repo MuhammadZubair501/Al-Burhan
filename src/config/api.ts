@@ -1,9 +1,9 @@
-// export const BASE_URL = "http://localhost:5000/";
-// export const API_BASE_URL = "http://localhost:5000/api";
+export const BASE_URL = "http://localhost:5000/";
+export const API_BASE_URL = "http://localhost:5000/api";
 
 
-export const BASE_URL = "https://alburhan-backend-production-32a2.up.railway.app/";
-export const API_BASE_URL = "https://alburhan-backend-production-32a2.up.railway.app/api";
+// export const BASE_URL = "https://alburhan-backend-production-32a2.up.railway.app/";
+// export const API_BASE_URL = "https://alburhan-backend-production-32a2.up.railway.app/api";
 
 // export const BASE_URL = "http://192.9.210.50:5000/";
 // export const API_BASE_URL = "http://192.9.210.50:5000/api";

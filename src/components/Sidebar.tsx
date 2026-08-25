@@ -134,7 +134,7 @@ export default function Sidebar({
             onClick={goToCampusPage}
           >
             <div className="w-12 h-12 md:w-14 md:h-14 flex-shrink-0">
-              <img src="./logo5.png" alt="Logo" className="h-full w-full object-contain" />
+              <img src="./logo6.png" alt="Logo" className="h-full w-full object-contain" />
             </div>
             {(!collapsed || isMobile) && (
               <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white truncate">
