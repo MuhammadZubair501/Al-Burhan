@@ -10,9 +10,7 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ 
   children, 
-  requiredRoles, 
-  showTimer = true 
-}: ProtectedRouteProps) {
+  requiredRoles}: ProtectedRouteProps) {
   const isAuthenticated = authService.isAuthenticated();
   const userRole = authService.getUserRole();
 
