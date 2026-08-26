@@ -27,6 +27,7 @@ export default function StudentPage() {
   const [filterGender, setFilterGender] = useState<string>("all");
   const [filterClass, setFilterClass] = useState<string>("all");
   const [filterShift, setFilterShift] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const campusId = Number(window.CampusID) || 1;
 
@@ -36,13 +37,13 @@ export default function StudentPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [students, searchTerm, filterGender, filterClass, filterShift]);
+  }, [students, searchTerm, filterGender, filterClass, filterShift, filterStatus]);
 
   const fetchStudents = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await studentService.getStudentsByCampus(campusId);
+      const response = await studentService.getStudentsByCampus(campusId, true); // includeInactive=true to get all students
       if (response.success) {
         setStudents(response.data);
         if (response.data.length > 0) {
@@ -100,6 +101,13 @@ export default function StudentPage() {
       );
     }
 
+    // Status filter
+    if (filterStatus === "active") {
+      filtered = filtered.filter(student => student.is_active !== false);
+    } else if (filterStatus === "inactive") {
+      filtered = filtered.filter(student => student.is_active === false);
+    }
+
     setFilteredStudents(filtered);
   };
 
@@ -114,6 +122,107 @@ export default function StudentPage() {
     setIsStudentFormOpen(true);
   };
 
+ const handleToggleActive = async (student: StudentResponse) => {
+  const newStatus = !student.is_active;
+  const actionText = newStatus ? 'Activate' : 'Deactivate';
+  
+  const result = await Swal.fire({
+    title: `${actionText} Student?`,
+    html: `Are you sure you want to <strong>${actionText.toLowerCase()}</strong> <strong>${student.first_name} ${student.last_name}</strong>?<br/><span style="color: #${newStatus ? '22c55e' : 'ef4444'}; font-size: 0.9rem;">${newStatus ? 'The student will appear in attendance lists and dashboards.' : 'The student will be hidden from attendance lists and dashboards.'}</span>`,
+    icon: newStatus ? 'question' : 'warning',
+    showCancelButton: true,
+    confirmButtonColor: newStatus ? '#22c55e' : '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: `Yes, ${actionText}`,
+    cancelButtonText: 'Cancel',
+    reverseButtons: true
+  });
+
+  if (!result.isConfirmed) return;
+
+  Swal.fire({
+    title: `${actionText}ing...`,
+    text: 'Please wait',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  try {
+    // Update the student with new is_active status
+    const updatedData = {
+      student_id: student.student_id,
+      first_name: student.first_name,
+      last_name: student.last_name,
+      email: student.email_address,
+      phone: student.phone_number,
+      gender: student.gender,
+      cnic: student.cnic,
+      dateOfBirth: student.date_of_birth,
+      joiningDate: student.joining_date,
+      shift: student.shift,
+      emergencyContact: student.emergency_contact_number,
+      extraDetails: student.extra_details || '',
+      campus_id: student.campus_id,
+      section_id: student.section_id,
+      batch_id: student.batch_id,
+      admissionNumber: student.roll_number || '',
+      highestQualification: student.last_previous_highest_qualification || '',
+      is_active: newStatus,
+      role: 'student'
+    };
+    
+    const response = await studentService.updateStudent(student.student_id, updatedData);
+    
+    if (response.success) {
+      // Update the local state immediately to reflect the change
+      setStudents(prevStudents => 
+        prevStudents.map(s => 
+          s.student_id === student.student_id 
+            ? { ...s, is_active: newStatus }
+            : s
+        )
+      );
+      
+      // Also update filtered students
+      setFilteredStudents(prevFiltered => 
+        prevFiltered.map(s => 
+          s.student_id === student.student_id 
+            ? { ...s, is_active: newStatus }
+            : s
+        )
+      );
+
+      await Swal.fire({
+        icon: 'success',
+        title: `${actionText}d!`,
+        text: `Student has been ${actionText}d successfully.`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+      
+      if (isDetailModalOpen) {
+        setIsDetailModalOpen(false);
+        setSelectedStudent(null);
+      }
+    } else {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Failed',
+        text: response.message || `Failed to ${actionText} student.`
+      });
+    }
+  } catch (err: any) {
+    console.error('Error toggling student status:', err);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: err.message || 'An unexpected error occurred.'
+    });
+  }
+};
   const handleDeleteStudent = async (student: StudentResponse) => {
     const result = await Swal.fire({
       title: 'Delete Student?',
@@ -230,7 +339,8 @@ export default function StudentPage() {
       extraDetails: editingStudent.extra_details || '',
       studentPreview: editingStudent.profile_image_path ? 
         `${baseUrl}${editingStudent.profile_image_path}` : '',
-      studentPicture: null
+      studentPicture: null,
+      is_active: editingStudent.is_active !== false
     };
   };
 
@@ -242,6 +352,7 @@ export default function StudentPage() {
     setFilterGender("all");
     setFilterClass("all");
     setFilterShift("all");
+    setFilterStatus("all");
     setShowFilters(false);
   };
 
@@ -299,13 +410,13 @@ export default function StudentPage() {
             >
               <Filter size={18} />
               <span>Filters</span>
-              {(filterGender !== "all" || filterClass !== "all" || filterShift !== "all") && (
+              {(filterGender !== "all" || filterClass !== "all" || filterShift !== "all" || filterStatus !== "all") && (
                 <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
               )}
             </button>
 
             {/* Clear Filters Button */}
-            {(searchTerm || filterGender !== "all" || filterClass !== "all" || filterShift !== "all") && (
+            {(searchTerm || filterGender !== "all" || filterClass !== "all" || filterShift !== "all" || filterStatus !== "all") && (
               <button
                 onClick={clearFilters}
                 className="flex items-center gap-1.5 px-3 py-2.5 sm:py-3 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all duration-200 text-sm"
@@ -318,7 +429,7 @@ export default function StudentPage() {
 
           {/* Filter Options - Expandable */}
           {showFilters && (
-            <div className="mt-3 p-3 sm:p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="mt-3 p-3 sm:p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {/* Gender Filter */}
               <div>
                 <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
@@ -369,6 +480,22 @@ export default function StudentPage() {
                   <option value="evening" className="bg-emerald-900">Evening</option>
                 </select>
               </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
+                  Status
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full bg-white/10 text-white rounded-xl px-3 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                >
+                  <option value="all" className="bg-emerald-900">All Students</option>
+                  <option value="active" className="bg-emerald-900">Active</option>
+                  <option value="inactive" className="bg-emerald-900">Inactive</option>
+                </select>
+              </div>
             </div>
           )}
         </div>
@@ -393,7 +520,7 @@ export default function StudentPage() {
                 : "Try adjusting your search or filters"
               }
             </p>
-            {(searchTerm || filterGender !== "all" || filterClass !== "all" || filterShift !== "all") && (
+            {(searchTerm || filterGender !== "all" || filterClass !== "all" || filterShift !== "all" || filterStatus !== "all") && (
               <button
                 onClick={clearFilters}
                 className="mt-4 px-4 py-2 rounded-xl bg-yellow-400/20 text-yellow-400 hover:bg-yellow-400/30 transition text-sm"
@@ -417,6 +544,7 @@ export default function StudentPage() {
                   onViewDetails={() => handleViewDetails(student)}
                   onEdit={() => handleEditStudent(student)}
                   onDelete={() => handleDeleteStudent(student)}
+                  onToggleActive={() => handleToggleActive(student)}
                 />
               );
             })}
@@ -450,10 +578,15 @@ export default function StudentPage() {
               handleDeleteStudent(selectedStudent);
             }
           }}
+          onToggleActive={() => {
+            if (selectedStudent) {
+              handleToggleActive(selectedStudent);
+            }
+          }}
         />
 
         {/* Floating Action Button - Responsive */}
-       <button
+        <button
           onClick={() => setIsStudentFormOpen(true)}
           className="
             group
@@ -493,7 +626,6 @@ export default function StudentPage() {
           />
           <span>Add Student</span>
         </button>
-
       </div>
     </div>
   );

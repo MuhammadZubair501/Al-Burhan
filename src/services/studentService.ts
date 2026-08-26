@@ -22,9 +22,9 @@ export interface StudentFormData {
   campus_id: number;
   password?: string;
   role?: string;
+  is_active?: boolean;
 }
 
-// services/studentService.ts
 export interface StudentResponse {
   student_id: number;
   section_id: number;
@@ -44,19 +44,19 @@ export interface StudentResponse {
   profile_image_path: string | null;
   extra_details: string | null;
   campus_id: number;
+  is_active: boolean;
   section_name?: string;
   class_name?: string;
   class_id?: number;
   batch_name?: string;
-
   department_name?: string;
   department_id?: number;
   campus_name?: string;
-  // Extended for edit mode
   className?: string;
   sectionName?: string;
   batchName?: string;
 }
+
 export const studentService = {
   createStudent: async (data: any): Promise<any> => {
     const formData = new FormData();
@@ -84,13 +84,21 @@ export const studentService = {
     return response.json();
   },
   
-  getStudentsByCampus: async (campusId: number): Promise<{ success: boolean; data: StudentResponse[]; count: number }> => {
-    const response = await fetch(ApiRoutes.studentByCampusId(campusId));
+  getStudentsByCampus: async (campusId: number, includeInactive?: boolean): Promise<{ success: boolean; data: StudentResponse[]; count: number }> => {
+    let url = ApiRoutes.studentByCampusId(campusId);
+    if (includeInactive) {
+      url += `?includeInactive=true`;
+    }
+    const response = await fetch(url);
     return response.json();
   },
   
-  getAllStudents: async (campusId?: number): Promise<{ success: boolean; data: StudentResponse[]; count: number }> => {
-    const url = campusId ? `${ApiRoutes.STUDENT}?campusId=${campusId}` : ApiRoutes.STUDENT;
+  getAllStudents: async (campusId?: number, includeInactive?: boolean): Promise<{ success: boolean; data: StudentResponse[]; count: number }> => {
+    let url = ApiRoutes.STUDENT;
+    const params = new URLSearchParams();
+    if (campusId) params.append('campusId', String(campusId));
+    if (includeInactive) params.append('includeInactive', 'true');
+    if (params.toString()) url += `?${params.toString()}`;
     const response = await fetch(url);
     return response.json();
   },
@@ -114,7 +122,6 @@ export const studentService = {
     
     formData.append('data', JSON.stringify(jsonData));
     
-    // Only append if there's a new image
     if (data.profile_image && data.profile_image instanceof File) {
       formData.append('profile_image', data.profile_image);
     }
@@ -134,36 +141,36 @@ export const studentService = {
     return response.json();
   },
 
-getStudentCountByCampus: async (
-  campusId: number
-): Promise<{
-  success: boolean;
-  campus_id: number;
-  total_students: number;
-}> => {
-  const response = await fetch(ApiRoutes.studentCountByCampus(campusId));
-  return response.json();
-},
+  getStudentCountByCampus: async (
+    campusId: number
+  ): Promise<{
+    success: boolean;
+    campus_id: number;
+    total_students: number;
+  }> => {
+    const response = await fetch(ApiRoutes.studentCountByCampus(campusId));
+    return response.json();
+  },
 
-getStudentCountByClass: async (
-  classId: number
-): Promise<{
-  success: boolean;
-  class_id: number;
-  total_students: number;
-}> => {
-  const response = await fetch(ApiRoutes.studentCountByClass(classId));
-  return response.json();
-},
+  getStudentCountByClass: async (
+    classId: number
+  ): Promise<{
+    success: boolean;
+    class_id: number;
+    total_students: number;
+  }> => {
+    const response = await fetch(ApiRoutes.studentCountByClass(classId));
+    return response.json();
+  },
 
-getStudentCountBySection: async (
-  sectionId: number
-): Promise<{
-  success: boolean;
-  section_id: number;
-  total_students: number;
-}> => {
-  const response = await fetch(ApiRoutes.studentCountBySection(sectionId));
-  return response.json();
-}
+  getStudentCountBySection: async (
+    sectionId: number
+  ): Promise<{
+    success: boolean;
+    section_id: number;
+    total_students: number;
+  }> => {
+    const response = await fetch(ApiRoutes.studentCountBySection(sectionId));
+    return response.json();
+  }
 };

@@ -15,14 +15,14 @@ export interface DashboardData {
     leave: number;
     percentage: number;
   };
-  teacherSummary?: {  // Add this as optional
+  teacherSummary?: {
     total: number;
     present: number;
     absent: number;
     leave: number;
     percentage: number;
   };
-  teacherAttendanceTable?: Array<{  // Add this as optional
+  teacherAttendanceTable?: Array<{
     department: string;
     teacherCount: number;
     present: number;

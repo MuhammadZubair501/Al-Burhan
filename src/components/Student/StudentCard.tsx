@@ -1,5 +1,5 @@
 // StudentCard.tsx
-import { Pencil, Trash2, Eye, MapPin, BadgeIcon } from "lucide-react";
+import { Pencil, Trash2, Eye, MapPin, BadgeIcon, Power, PowerOff } from "lucide-react";
 import type { StudentResponse } from "../../services/studentService";
 
 interface StudentCardProps {
@@ -11,6 +11,7 @@ interface StudentCardProps {
   onViewDetails?: (student: StudentResponse) => void;
   onEdit?: (student: StudentResponse) => void;
   onDelete?: (student: StudentResponse) => void;
+  onToggleActive?: (student: StudentResponse) => void;
   onAdd?: () => void;
 }
 
@@ -23,7 +24,10 @@ export default function StudentAndStudentCard({
   onViewDetails,
   onEdit,
   onDelete,
+  onToggleActive,
 }: StudentCardProps) {
+  const isActive = rawData?.is_active !== false;
+
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 transition-all duration-300 hover:-translate-y-2 hover:border-yellow-400/40 hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
       {/* Decorative Glow */}
@@ -34,13 +38,29 @@ export default function StudentAndStudentCard({
 
       {/* Student Badge */}
       <div className="absolute left-4 top-4">
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-400/20 border border-yellow-400/30 text-yellow-300">
-          Student
+        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+          isActive 
+            ? 'bg-yellow-400/20 border-yellow-400/30 text-yellow-300' 
+            : 'bg-red-500/20 border-red-500/30 text-red-300'
+        }`}>
+          {isActive ? 'Active Student' : 'Inactive Student'}
         </span>
       </div>
 
       {/* Actions */}
       <div className="absolute right-4 top-4 flex gap-2">
+        {/* Toggle Active/Inactive Button */}
+        <button
+          onClick={() => rawData && onToggleActive?.(rawData)}
+          className={`p-2 rounded-xl transition ${
+            isActive 
+              ? "bg-white/10 text-green-300 hover:bg-green-500/20" 
+              : "bg-white/10 text-red-300 hover:bg-red-500/20"
+          }`}
+          title={isActive ? "Deactivate Student" : "Activate Student"}
+        >
+          {isActive ? <Power size={16} /> : <PowerOff size={16} />}
+        </button>
         <button
           onClick={() => rawData && onEdit?.(rawData)}
           className="p-2 rounded-xl bg-white/10 text-yellow-300 hover:bg-yellow-400/20 transition"

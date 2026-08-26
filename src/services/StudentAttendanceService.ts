@@ -10,6 +10,7 @@ export interface Student {
   section_id?: number;
   section_name?: string;
   class_name?: string;
+  is_active?: boolean;
 }
 
 export interface AttendanceRecord {
@@ -20,7 +21,7 @@ export interface AttendanceRecord {
   date: string;
   section_id?: number;
   campus_id?: number;
-  comments?: string; // added
+  comments?: string;
 }
 
 export interface SaveAttendancePayload {
@@ -28,7 +29,7 @@ export interface SaveAttendancePayload {
   attendance: Array<{
     student_id: number;
     status: 'present' | 'absent' | 'leave';
-    comments?: string; // added
+    comments?: string;
   }>;
   section_id?: number;
   campus_id?: number;
@@ -44,7 +45,7 @@ export const studentAttendanceService = {
     throw new Error(result.message || 'Failed to fetch sections');
   },
 
-  // Get students by section
+  // Get students by section (only active)
   async getStudentsBySection(sectionId: number): Promise<Student[]> {
     const response = await fetch(`${API_BASE_URL}/student-attendance/students/section/${sectionId}`);
     if (!response.ok) throw new Error('Failed to fetch students for this section');
@@ -66,17 +67,16 @@ export const studentAttendanceService = {
   },
 
   // Update single attendance record
- // In StudentAttendanceService.ts
-async updateAttendance(attendanceId: number, status: 'present' | 'absent' | 'leave', comments?: string) {
-  const response = await fetch(`${API_BASE_URL}/student-attendance/${attendanceId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status, comments }),
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.message || 'Failed to update attendance');
-  return result;
-},
+  async updateAttendance(attendanceId: number, status: 'present' | 'absent' | 'leave', comments?: string) {
+    const response = await fetch(`${API_BASE_URL}/student-attendance/${attendanceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, comments }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Failed to update attendance');
+    return result;
+  },
 
   // Get attendance by date range and campus (optional section)
   async getAttendanceByDateRangeAndCampus(

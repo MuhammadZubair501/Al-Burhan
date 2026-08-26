@@ -220,7 +220,6 @@ export default class ApiRoutes {
     return `${this.AUTH}/reset-password`;
   }
 
-  // EXTEND SESSION ROUTE - ADD THIS
   static extendSession() {
     return `${this.AUTH}/extend-session`;
   }
@@ -238,15 +237,11 @@ export default class ApiRoutes {
     return `${this.OTP}/verify`;
   }
 
-// ApiRoutes.ts (add these static methods)
+  static importStudents() {
+    return `${API_BASE_URL}/section/import-students`;
+  }
 
-static importStudents() {
-  return `${API_BASE_URL}/section/import-students`;
-}
-
-static deleteClassStudentsAndSections(classId: number | string) {
-  return `${API_BASE_URL}/section/class/${classId}/delete-all`;
-}
-
-
+  static deleteClassStudentsAndSections(classId: number | string) {
+    return `${API_BASE_URL}/section/class/${classId}/delete-all`;
+  }
 }

@@ -3,7 +3,7 @@ import React from 'react';
 import {
   X, User, Mail, Phone, Calendar, Clock, GraduationCap, 
   Building2, BookOpen, Users, FileUser, Pencil, Trash2, 
-  PhoneCall, Venus, Medal, BadgeIcon, Layers3
+  PhoneCall, Venus, Medal, BadgeIcon, Layers3, Power, PowerOff, Circle
 } from 'lucide-react';
 import type { StudentResponse } from '../../services/studentService';
 import { BASE_URL } from '../../config/api';
@@ -15,6 +15,7 @@ interface StudentDetailModalProps {
   student: StudentResponse | null;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleActive?: () => void;
 }
 
 export default function StudentDetailModal({
@@ -22,7 +23,8 @@ export default function StudentDetailModal({
   onClose,
   student,
   onEdit,
-  onDelete
+  onDelete,
+  onToggleActive
 }: StudentDetailModalProps) {
   // Prevent body scroll when modal is open
   React.useEffect(() => {
@@ -55,6 +57,7 @@ export default function StudentDetailModal({
   const imageUrl = student.profile_image_path 
     ? `${baseUrl}${student.profile_image_path}` 
     : '/avatar.png';
+  const isActive = student.is_active !== false;
 
   return (
     <Portal>
@@ -93,10 +96,19 @@ export default function StudentDetailModal({
               </div>
               
               {/* Student ID Badge */}
-              <div className="mt-2 flex justify-center">
+              <div className="mt-2 flex justify-center items-center gap-2 flex-wrap">
                 <span className="px-3 sm:px-4 py-1 rounded-full bg-white/10 border border-white/20 text-yellow-300 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
                   <BadgeIcon size={12} className="sm:w-[14px] sm:h-[14px]" />
                   {student.roll_number || `Student #${student.student_id}`}
+                </span>
+                {/* Status Badge */}
+                <span className={`px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 ${
+                  isActive 
+                    ? 'bg-green-500/20 border border-green-500/30 text-green-300' 
+                    : 'bg-red-500/20 border border-red-500/30 text-red-300'
+                }`}>
+                  <Circle size={10} className={isActive ? 'text-green-400 fill-green-400' : 'text-red-400 fill-red-400'} />
+                  {isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
             </div>
@@ -217,16 +229,30 @@ export default function StudentDetailModal({
 
             {/* Footer Actions - Fixed */}
             <div className="flex-shrink-0 sticky bottom-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 border-t border-white/10">
+              {/* Toggle Active Button */}
+              {onToggleActive && (
+                <button
+                  onClick={onToggleActive}
+                  className={`cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-1 ${
+                    isActive 
+                      ? 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/30' 
+                      : 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+                  }`}
+                >
+                  {isActive ? <PowerOff size={16} /> : <Power size={16} />}
+                  {isActive ? 'Deactivate' : 'Activate'}
+                </button>
+              )}
               <button
                 onClick={onDelete}
-                className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition flex items-center justify-center gap-2 text-sm sm:text-base order-3 sm:order-1"
+                className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition flex items-center justify-center gap-2 text-sm sm:text-base order-3 sm:order-2"
               >
                 <Trash2 size={16} />
                 Delete
               </button>
               <button
                 onClick={onEdit}
-                className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-yellow-400/20 text-yellow-300 hover:bg-yellow-400/30 transition flex items-center justify-center gap-2 text-sm sm:text-base order-2"
+                className="cursor-pointer w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-yellow-400/20 text-yellow-300 hover:bg-yellow-400/30 transition flex items-center justify-center gap-2 text-sm sm:text-base order-2 sm:order-3"
               >
                 <Pencil size={16} />
                 Edit
