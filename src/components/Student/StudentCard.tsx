@@ -52,7 +52,7 @@ export default function StudentAndStudentCard({
         {/* Toggle Active/Inactive Button */}
         <button
           onClick={() => rawData && onToggleActive?.(rawData)}
-          className={`p-2 rounded-xl transition ${
+          className={`cursor-pointer p-2 rounded-xl transition ${
             isActive 
               ? "bg-white/10 text-green-300 hover:bg-green-500/20" 
               : "bg-white/10 text-red-300 hover:bg-red-500/20"
@@ -63,13 +63,13 @@ export default function StudentAndStudentCard({
         </button>
         <button
           onClick={() => rawData && onEdit?.(rawData)}
-          className="p-2 rounded-xl bg-white/10 text-yellow-300 hover:bg-yellow-400/20 transition"
+          className="cursor-pointer p-2 rounded-xl bg-white/10 text-yellow-300 hover:bg-yellow-400/20 transition"
         >
           <Pencil size={16} />
         </button>
         <button
           onClick={() => rawData && onDelete?.(rawData)}
-          className="p-2 rounded-xl bg-white/10 text-red-300 hover:bg-red-500/20 transition"
+          className="cursor-pointer p-2 rounded-xl bg-white/10 text-red-300 hover:bg-red-500/20 transition"
         >
           <Trash2 size={16} />
         </button>

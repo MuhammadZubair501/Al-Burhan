@@ -1,6 +1,6 @@
 // StudentModel.tsx
 import { useState, useEffect } from 'react';
-import { X, GraduationCap, Trash2 } from 'lucide-react';
+import { X, GraduationCap, Trash2, Power, PowerOff } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { PersonalDetails } from './components/PersonalDetails';
 import { AcademicDetails } from './components/AcademicDetails';
@@ -43,6 +43,7 @@ interface StudentFormProps {
     classId?: number;
     sectionId?: number;
     batchId?: number;
+    is_active?: boolean;
   };
   lastAdmissionNumber?: number;
   campusId?: number;
@@ -66,7 +67,8 @@ const initialFormData: StudentFormData = {
   highestQualification: '',
   shift: '',
   joiningDate: '',
-  extraDetails: ''
+  extraDetails: '',
+  is_active: true, // Added is_active with default true
 };
 
 // Shift options with number ids (to match Option type)
@@ -88,7 +90,8 @@ export default function StudentForm({
     ...initialFormData,
     ...initialData,
     admissionNumber: initialData?.admissionNumber || String(lastAdmissionNumber),
-    studentPreview: initialData?.studentPreview || ''
+    studentPreview: initialData?.studentPreview || '',
+    is_active: initialData?.is_active !== undefined ? initialData.is_active : true,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -210,18 +213,19 @@ export default function StudentForm({
           firstName: initialData.firstName || '',
           lastName: initialData.lastName || '',
           dateOfBirth: formatDateForInput(initialData.dateOfBirth),
-          gender: initialData.gender ? initialData.gender.toLowerCase() : '', // ✅ Fixed: Normalize gender
+          gender: initialData.gender ? initialData.gender.toLowerCase() : '',
           cnic: initialData.cnic || '',
           phone: initialData.phone || '',
           email: initialData.email || '',
           emergencyContact: initialData.emergencyContact || '',
           admissionNumber: initialData.admissionNumber || String(lastAdmissionNumber),
           highestQualification: initialData.highestQualification || '',
-          shift: initialData.shift ? initialData.shift.toLowerCase() : '', // ✅ Fixed: Normalize shift
+          shift: initialData.shift ? initialData.shift.toLowerCase() : '',
           joiningDate: formatDateForInput(initialData.joiningDate),
           extraDetails: initialData.extraDetails || '',
           studentPreview: initialData.studentPreview || '',
-          studentId: initialData.studentId
+          studentId: initialData.studentId,
+          is_active: initialData.is_active !== undefined ? initialData.is_active : true,
         };
 
         // Find matching class
@@ -269,7 +273,8 @@ export default function StudentForm({
       } else {
         setFormData(prev => ({
           ...prev,
-          admissionNumber: String(lastAdmissionNumber)
+          admissionNumber: String(lastAdmissionNumber),
+          is_active: true,
         }));
       }
 
@@ -285,7 +290,8 @@ export default function StudentForm({
       setFormData({
         ...initialFormData,
         admissionNumber: String(lastAdmissionNumber),
-        studentPreview: ''
+        studentPreview: '',
+        is_active: true,
       });
       setErrors({});
       setSubmitError(null);
@@ -336,7 +342,9 @@ export default function StudentForm({
     }
     setIsShiftDropdownOpen(false);
   };
- const todayDate = new Date().toISOString().split('T')[0];
+
+  const todayDate = new Date().toISOString().split('T')[0];
+  
   // Get display name for selected shift
   const selectedShiftName = formData.shift
     ? SHIFT_OPTIONS.find(s => s.name.toLowerCase() === formData.shift.toLowerCase())?.name || ''
@@ -440,7 +448,8 @@ export default function StudentForm({
         campus_id: currentCampusId,
         password: '123456',
         role: 'student',
-        profile_image: formData.studentPicture
+        profile_image: formData.studentPicture,
+        is_active: formData.is_active !== undefined ? formData.is_active : true,
       };
 
       let response;
@@ -570,7 +579,7 @@ export default function StudentForm({
             <div className="flex-shrink-0 sticky top-0 z-10 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-3 sm:px-4 md:px-8 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 text-center border-b border-white/10">
               <button
                 onClick={onClose}
-                className="  cursor-pointer absolute top-3 right-3 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
+                className="cursor-pointer absolute top-3 right-3 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 text-white hover:bg-red-500/30 flex items-center justify-center transition"
               >
                 <X size={16} className="sm:w-[18px] sm:h-[18px]" />
               </button>
@@ -619,47 +628,86 @@ export default function StudentForm({
               />
 
               {/* Shift Field with SearchDropdown */}
-            <div className="mt-4 flex flex-col sm:flex-row gap-4 items-start">
-                  {/* Shift Dropdown Container */}
-                  <div className="w-full sm:w-1/2">
-                    <label className="text-emerald-100 text-sm font-medium block mb-1.5">
-                      Shift <span className="text-red-400">*</span>
-                    </label>
-                    <SearchDropdown
-                      label=""
-                      placeholder="Select Shift"
-                      icon={null}
-                      options={SHIFT_OPTIONS}
-                      value={selectedShiftName}
-                      onChange={handleShiftSelect}
-                      isOpen={isShiftDropdownOpen}
-                      onToggle={() => setIsShiftDropdownOpen(!isShiftDropdownOpen)}
-                      onClose={() => setIsShiftDropdownOpen(false)}
-                      dropUp={false}
-                      hideSearch={false}
-                      className="w-full"
-                      triggerClassName="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
-                      dropdownClassName="w-full"
-                      optionClassName="px-3 py-2 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
-                    />
-                    {errors.shift && (
-                      <p className="text-red-300 text-xs mt-1">{errors.shift}</p>
-                    )}
-                  </div>
-
-                  {/* Joining Date Container */}
-                  <div className="w-full sm:w-1/2">
-                    <TextInput
-                      label="Joining Date"
-                      value={formData.joiningDate}
-                      onChange={(v) => updateField('joiningDate', v)}
-                      error={errors.joiningDate}
-                      required
-                      type="date"
-                      max={todayDate}
-                    />
-                  </div>
+              <div className="mt-4 flex flex-col sm:flex-row gap-4 items-start">
+                {/* Shift Dropdown Container */}
+                <div className="w-full sm:w-1/2">
+                  <label className="text-emerald-100 text-sm font-medium block mb-1.5">
+                    Shift <span className="text-red-400">*</span>
+                  </label>
+                  <SearchDropdown
+                    label=""
+                    placeholder="Select Shift"
+                    icon={null}
+                    options={SHIFT_OPTIONS}
+                    value={selectedShiftName}
+                    onChange={handleShiftSelect}
+                    isOpen={isShiftDropdownOpen}
+                    onToggle={() => setIsShiftDropdownOpen(!isShiftDropdownOpen)}
+                    onClose={() => setIsShiftDropdownOpen(false)}
+                    dropUp={false}
+                    hideSearch={false}
+                    className="w-full"
+                    triggerClassName="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
+                    dropdownClassName="w-full"
+                    optionClassName="px-3 py-2 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+                  />
+                  {errors.shift && (
+                    <p className="text-red-300 text-xs mt-1">{errors.shift}</p>
+                  )}
                 </div>
+
+                {/* Joining Date Container */}
+                <div className="w-full sm:w-1/2">
+                  <TextInput
+                    label="Joining Date"
+                    value={formData.joiningDate}
+                    onChange={(v) => updateField('joiningDate', v)}
+                    error={errors.joiningDate}
+                    required
+                    type="date"
+                    max={todayDate}
+                  />
+                </div>
+              </div>
+
+              {/* Status Toggle - Added here */}
+              <div className="mt-4">
+                <label className="text-emerald-100 text-sm font-medium block mb-1.5">
+                  Student Status
+                </label>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => updateField('is_active', !formData.is_active)}
+                    className={`relative w-12 h-6 rounded-full transition-colors duration-300 flex-shrink-0 ${
+                      formData.is_active ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                  >
+                    <div
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${
+                        formData.is_active ? 'left-7' : 'left-1'
+                      }`}
+                    />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    {formData.is_active ? (
+                      <Power size={16} className="text-green-400" />
+                    ) : (
+                      <PowerOff size={16} className="text-red-400" />
+                    )}
+                    <span className={`text-sm font-medium ${
+                      formData.is_active ? 'text-green-300' : 'text-red-300'
+                    }`}>
+                      {formData.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <span className="text-xs text-white/40 ml-2">
+                    {formData.is_active 
+                      ? 'Student will appear in attendance and dashboards' 
+                      : 'Student will be hidden from attendance and dashboards'}
+                  </span>
+                </div>
+              </div>
 
               <AdditionalDetails
                 formData={formData}
