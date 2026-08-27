@@ -89,6 +89,10 @@ export default class ApiRoutes {
     return `${API_BASE_URL}/student/campus/${campusId}`;
   }
 
+  static studentAllByCampusId(campusId: number | string) {
+    return `${API_BASE_URL}/student/all/campus/${campusId}`;
+  }
+
   static studentCountByCampus(campusId: number | string) {
     return `${API_BASE_URL}/student/count/campus/${campusId}`;
   }

@@ -26,7 +26,8 @@ export default function StudentAndStudentCard({
   onDelete,
   onToggleActive,
 }: StudentCardProps) {
-  const isActive = rawData?.is_active !== false;
+  // Explicitly check if is_active is true or 1 (from database)
+  const isActive = rawData?.is_active === true || rawData?.is_active === 1;
 
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 transition-all duration-300 hover:-translate-y-2 hover:border-yellow-400/40 hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]">

@@ -43,9 +43,18 @@ export default function StudentPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await studentService.getStudentsByCampus(campusId, true); // includeInactive=true to get all students
+      // Use the new method that fetches ALL students with no filtering
+      const response = await studentService.getAllStudentsByCampusNoFilter(campusId);
+      console.log('📊 Fetched students:', response);
+      
       if (response.success) {
         setStudents(response.data);
+        
+        // Log active/inactive counts for debugging
+        const activeCount = response.data.filter(s => s.is_active !== false).length;
+        const inactiveCount = response.data.filter(s => s.is_active === false).length;
+        console.log(`📊 Students: ${response.data.length} total (${activeCount} active, ${inactiveCount} inactive)`);
+        
         if (response.data.length > 0) {
           const maxRoll = Math.max(
             ...response.data.map(s => parseInt(s.roll_number || '0') || 0)
@@ -65,51 +74,52 @@ export default function StudentPage() {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...students];
+ const applyFilters = () => {
+  let filtered = [...students];
 
-    // Search filter
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(student =>
-        `${student.first_name} ${student.last_name}`.toLowerCase().includes(term) ||
-        student.email_address?.toLowerCase().includes(term) ||
-        student.phone_number?.includes(term) ||
-        student.roll_number?.toLowerCase().includes(term) ||
-        student.class_name?.toLowerCase().includes(term)
-      );
-    }
+  // Search filter
+  if (searchTerm.trim()) {
+    const term = searchTerm.toLowerCase().trim();
+    filtered = filtered.filter(student =>
+      `${student.first_name} ${student.last_name}`.toLowerCase().includes(term) ||
+      student.email_address?.toLowerCase().includes(term) ||
+      student.phone_number?.includes(term) ||
+      student.roll_number?.toLowerCase().includes(term) ||
+      student.class_name?.toLowerCase().includes(term)
+    );
+  }
 
-    // Gender filter
-    if (filterGender !== "all") {
-      filtered = filtered.filter(student => 
-        student.gender === filterGender
-      );
-    }
+  // Gender filter
+  if (filterGender !== "all") {
+    filtered = filtered.filter(student => 
+      student.gender?.toLowerCase() === filterGender.toLowerCase()
+    );
+  }
 
-    // Class filter
-    if (filterClass !== "all") {
-      filtered = filtered.filter(student => 
-        student.class_name === filterClass
-      );
-    }
+  // Class filter
+  if (filterClass !== "all") {
+    filtered = filtered.filter(student => 
+      student.class_name === filterClass
+    );
+  }
 
-    // Shift filter
-    if (filterShift !== "all") {
-      filtered = filtered.filter(student => 
-        student.shift === filterShift
-      );
-    }
+  // Shift filter
+  if (filterShift !== "all") {
+    filtered = filtered.filter(student => 
+      student.shift?.toLowerCase() === filterShift.toLowerCase()
+    );
+  }
 
-    // Status filter
-    if (filterStatus === "active") {
-      filtered = filtered.filter(student => student.is_active !== false);
-    } else if (filterStatus === "inactive") {
-      filtered = filtered.filter(student => student.is_active === false);
-    }
+  // Status filter - Use explicit boolean check
+  if (filterStatus === "active") {
+    filtered = filtered.filter(student => student.is_active === true || student.is_active === 1);
+  } else if (filterStatus === "inactive") {
+    filtered = filtered.filter(student => student.is_active === false || student.is_active === 0);
+  }
+  // If filterStatus is "all", show all students
 
-    setFilteredStudents(filtered);
-  };
+  setFilteredStudents(filtered);
+};
 
   const handleViewDetails = (student: StudentResponse) => {
     setSelectedStudent(student);
@@ -122,107 +132,105 @@ export default function StudentPage() {
     setIsStudentFormOpen(true);
   };
 
- const handleToggleActive = async (student: StudentResponse) => {
-  const newStatus = !student.is_active;
-  const actionText = newStatus ? 'Activate' : 'Deactivate';
-  
-  const result = await Swal.fire({
-    title: `${actionText} Student?`,
-    html: `Are you sure you want to <strong>${actionText.toLowerCase()}</strong> <strong>${student.first_name} ${student.last_name}</strong>?<br/><span style="color: #${newStatus ? '22c55e' : 'ef4444'}; font-size: 0.9rem;">${newStatus ? 'The student will appear in attendance lists and dashboards.' : 'The student will be hidden from attendance lists and dashboards.'}</span>`,
-    icon: newStatus ? 'question' : 'warning',
-    showCancelButton: true,
-    confirmButtonColor: newStatus ? '#22c55e' : '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: `Yes, ${actionText}`,
-    cancelButtonText: 'Cancel',
-    reverseButtons: true
-  });
-
-  if (!result.isConfirmed) return;
-
-  Swal.fire({
-    title: `${actionText}ing...`,
-    text: 'Please wait',
-    allowOutsideClick: false,
-    allowEscapeKey: false,
-    didOpen: () => {
-      Swal.showLoading();
-    }
-  });
-
-  try {
-    // Update the student with new is_active status
-    const updatedData = {
-      student_id: student.student_id,
-      first_name: student.first_name,
-      last_name: student.last_name,
-      email: student.email_address,
-      phone: student.phone_number,
-      gender: student.gender,
-      cnic: student.cnic,
-      dateOfBirth: student.date_of_birth,
-      joiningDate: student.joining_date,
-      shift: student.shift,
-      emergencyContact: student.emergency_contact_number,
-      extraDetails: student.extra_details || '',
-      campus_id: student.campus_id,
-      section_id: student.section_id,
-      batch_id: student.batch_id,
-      admissionNumber: student.roll_number || '',
-      highestQualification: student.last_previous_highest_qualification || '',
-      is_active: newStatus,
-      role: 'student'
-    };
+  const handleToggleActive = async (student: StudentResponse) => {
+    const newStatus = !student.is_active;
+    const actionText = newStatus ? 'Activate' : 'Deactivate';
     
-    const response = await studentService.updateStudent(student.student_id, updatedData);
-    
-    if (response.success) {
-      // Update the local state immediately to reflect the change
-      setStudents(prevStudents => 
-        prevStudents.map(s => 
-          s.student_id === student.student_id 
-            ? { ...s, is_active: newStatus }
-            : s
-        )
-      );
-      
-      // Also update filtered students
-      setFilteredStudents(prevFiltered => 
-        prevFiltered.map(s => 
-          s.student_id === student.student_id 
-            ? { ...s, is_active: newStatus }
-            : s
-        )
-      );
+    const result = await Swal.fire({
+      title: `${actionText} Student?`,
+      html: `Are you sure you want to <strong>${actionText.toLowerCase()}</strong> <strong>${student.first_name} ${student.last_name}</strong>?<br/><span style="color: #${newStatus ? '22c55e' : 'ef4444'}; font-size: 0.9rem;">${newStatus ? 'The student will appear in attendance lists and dashboards.' : 'The student will be hidden from attendance lists and dashboards.'}</span>`,
+      icon: newStatus ? 'question' : 'warning',
+      showCancelButton: true,
+      confirmButtonColor: newStatus ? '#22c55e' : '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: `Yes, ${actionText}`,
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
+    });
 
-      await Swal.fire({
-        icon: 'success',
-        title: `${actionText}d!`,
-        text: `Student has been ${actionText}d successfully.`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-      
-      if (isDetailModalOpen) {
-        setIsDetailModalOpen(false);
-        setSelectedStudent(null);
+    if (!result.isConfirmed) return;
+
+    Swal.fire({
+      title: `${actionText}ing...`,
+      text: 'Please wait',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
       }
-    } else {
+    });
+
+    try {
+      const updatedData = {
+        student_id: student.student_id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        email: student.email_address,
+        phone: student.phone_number,
+        gender: student.gender,
+        cnic: student.cnic,
+        dateOfBirth: student.date_of_birth,
+        joiningDate: student.joining_date,
+        shift: student.shift,
+        emergencyContact: student.emergency_contact_number,
+        extraDetails: student.extra_details || '',
+        campus_id: student.campus_id,
+        section_id: student.section_id,
+        batch_id: student.batch_id,
+        admissionNumber: student.roll_number || '',
+        highestQualification: student.last_previous_highest_qualification || '',
+        is_active: newStatus,
+        role: 'student'
+      };
+      
+      const response = await studentService.updateStudent(student.student_id, updatedData);
+      
+      if (response.success) {
+        // Update the students state with the new status
+        const updatedStudents = students.map(s => 
+          s.student_id === student.student_id 
+            ? { ...s, is_active: newStatus }
+            : s
+        );
+        setStudents(updatedStudents);
+        
+        // Also update filtered students
+        const updatedFiltered = filteredStudents.map(s => 
+          s.student_id === student.student_id 
+            ? { ...s, is_active: newStatus }
+            : s
+        );
+        setFilteredStudents(updatedFiltered);
+
+        await Swal.fire({
+          icon: 'success',
+          title: `${actionText}d!`,
+          text: `Student has been ${actionText}d successfully.`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        if (isDetailModalOpen) {
+          setIsDetailModalOpen(false);
+          setSelectedStudent(null);
+        }
+      } else {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Failed',
+          text: response.message || `Failed to ${actionText} student.`
+        });
+      }
+    } catch (err: any) {
+      console.error('Error toggling student status:', err);
       await Swal.fire({
         icon: 'error',
-        title: 'Failed',
-        text: response.message || `Failed to ${actionText} student.`
+        title: 'Error',
+        text: err.message || 'An unexpected error occurred.'
       });
     }
-  } catch (err: any) {
-    console.error('Error toggling student status:', err);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: err.message || 'An unexpected error occurred.'
-    });
-  }
-};
+  };
+
   const handleDeleteStudent = async (student: StudentResponse) => {
     const result = await Swal.fire({
       title: 'Delete Student?',
@@ -492,19 +500,23 @@ export default function StudentPage() {
                   className="w-full bg-white/10 text-white rounded-xl px-3 py-2 border border-white/20 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
                 >
                   <option value="all" className="bg-emerald-900">All Students</option>
-                  <option value="active" className="bg-emerald-900">Active</option>
-                  <option value="inactive" className="bg-emerald-900">Inactive</option>
+                  <option value="active" className="bg-emerald-900">Active Only</option>
+                  <option value="inactive" className="bg-emerald-900">Inactive Only</option>
                 </select>
               </div>
             </div>
           )}
         </div>
 
-        {/* Results Count */}
-        <div className="mb-3 sm:mb-4">
+        {/* Results Count with Active/Inactive breakdown */}
+        <div className="mb-3 sm:mb-4 flex flex-wrap items-center gap-2 sm:gap-4">
           <p className="text-green-100/60 text-xs sm:text-sm">
             Showing {filteredStudents.length} of {students.length} students
           </p>
+          <div className="flex gap-2 text-xs sm:text-sm">
+            <span className="text-green-400">● {students.filter(s => s.is_active !== false).length} Active</span>
+            <span className="text-red-400">● {students.filter(s => s.is_active === false).length} Inactive</span>
+          </div>
         </div>
 
         {/* Students Grid */}

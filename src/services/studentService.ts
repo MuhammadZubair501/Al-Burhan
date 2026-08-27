@@ -44,7 +44,7 @@ export interface StudentResponse {
   profile_image_path: string | null;
   extra_details: string | null;
   campus_id: number;
-  is_active: boolean;
+  is_active: boolean | number; // Allow both boolean and number
   section_name?: string;
   class_name?: string;
   class_id?: number;
@@ -56,6 +56,14 @@ export interface StudentResponse {
   sectionName?: string;
   batchName?: string;
 }
+
+// Helper function to convert is_active to boolean
+const convertIsActive = (student: any): any => {
+  return {
+    ...student,
+    is_active: student.is_active === 1 || student.is_active === true
+  };
+};
 
 export const studentService = {
   createStudent: async (data: any): Promise<any> => {
@@ -85,27 +93,66 @@ export const studentService = {
   },
   
   getStudentsByCampus: async (campusId: number, includeInactive?: boolean): Promise<{ success: boolean; data: StudentResponse[]; count: number }> => {
-    let url = ApiRoutes.studentByCampusId(campusId);
-    if (includeInactive) {
-      url += `?includeInactive=true`;
+    const url = ApiRoutes.studentByCampusId(campusId);
+    const params = new URLSearchParams();
+    if (includeInactive === true) {
+      params.append('includeInactive', 'true');
     }
-    const response = await fetch(url);
-    return response.json();
+    const fullUrl = params.toString() ? `${url}?${params.toString()}` : url;
+    console.log('📊 Fetching students from URL:', fullUrl);
+    
+    const response = await fetch(fullUrl);
+    const result = await response.json();
+    console.log('📊 Students response before conversion:', result);
+    
+    // Convert is_active to boolean for each student
+    if (result.success && result.data) {
+      result.data = result.data.map(convertIsActive);
+    }
+    console.log('📊 Students response after conversion:', result);
+    return result;
   },
   
   getAllStudents: async (campusId?: number, includeInactive?: boolean): Promise<{ success: boolean; data: StudentResponse[]; count: number }> => {
     let url = ApiRoutes.STUDENT;
     const params = new URLSearchParams();
     if (campusId) params.append('campusId', String(campusId));
-    if (includeInactive) params.append('includeInactive', 'true');
+    if (includeInactive === true) params.append('includeInactive', 'true');
     if (params.toString()) url += `?${params.toString()}`;
     const response = await fetch(url);
-    return response.json();
+    const result = await response.json();
+    
+    // Convert is_active to boolean for each student
+    if (result.success && result.data) {
+      result.data = result.data.map(convertIsActive);
+    }
+    return result;
+  },
+
+  getAllStudentsByCampusNoFilter: async (campusId: number): Promise<{ success: boolean; data: StudentResponse[]; count: number }> => {
+    const url = ApiRoutes.studentAllByCampusId(campusId);
+    console.log('📊 Fetching ALL students from URL:', url);
+    const response = await fetch(url);
+    const result = await response.json();
+    console.log('📊 All students response before conversion:', result);
+    
+    // Convert is_active to boolean for each student
+    if (result.success && result.data) {
+      result.data = result.data.map(convertIsActive);
+    }
+    console.log('📊 All students response after conversion:', result);
+    return result;
   },
   
   getStudentById: async (id: number): Promise<{ success: boolean; data: StudentResponse }> => {
     const response = await fetch(ApiRoutes.studentById(id));
-    return response.json();
+    const result = await response.json();
+    
+    // Convert is_active to boolean
+    if (result.success && result.data) {
+      result.data = convertIsActive(result.data);
+    }
+    return result;
   },
   
   updateStudent: async (id: number, data: any): Promise<any> => {
