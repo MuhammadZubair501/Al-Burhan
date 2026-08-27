@@ -2,7 +2,7 @@ import ApiRoutes from './ApiRoutes';
 import { getAuthHeaders, setAuthToken, removeAuthToken, getAuthToken } from '../config/api';
 
 // ============================================
-// GENERIC TIME CONFIGURATION - Days, Hours, Minutes
+// GENERIC TIME CONFIGURATION
 // ============================================
 interface TimeConfig {
   minutes: number;
@@ -47,20 +47,18 @@ const parseTimeConfig = (days: number, hours: number, minutes: number, defaultMi
   };
 };
 
-// Get session duration from environment
 const SESSION = parseTimeConfig(
   parseInt(import.meta.env.VITE_SESSION_DAYS || '0'),
   parseInt(import.meta.env.VITE_SESSION_HOURS || '0'),
   parseInt(import.meta.env.VITE_SESSION_MINUTES || '0'),
-  20 // Default: 20 minutes
+  20
 );
 
-// Get warning duration from environment
 const WARNING = parseTimeConfig(
   parseInt(import.meta.env.VITE_SESSION_WARNING_DAYS || '0'),
   parseInt(import.meta.env.VITE_SESSION_WARNING_HOURS || '0'),
   parseInt(import.meta.env.VITE_SESSION_WARNING_MINUTES || '0'),
-  3 // Default: 3 minutes
+  3
 );
 
 console.log(`🔐 Session duration: ${SESSION.label}`);
@@ -79,6 +77,8 @@ export interface LoginResponse {
       userId: number;
       email: string;
       role: string;
+      campusId?: number | null;
+      campus_name?: string | null;
     };
     token: string;
     expiresIn?: number;
@@ -99,7 +99,9 @@ export interface UserProfile {
 }
 
 export const authService = {
-  // Login user with remember me support
+  // ============================================
+  // LOGIN
+  // ============================================
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
       if (!credentials.email_address || !credentials.password) {
@@ -120,12 +122,32 @@ export const authService = {
 
       const data = await response.json();
       
+      console.log('🔐 Login response:', data);
+      
       if (data.success && data.data?.token) {
         setAuthToken(data.data.token);
         localStorage.setItem('tokenTimestamp', Date.now().toString());
         localStorage.setItem('loginTime', Date.now().toString());
         
-        // Store session label for display
+        if (data.data.user) {
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          
+          // Store campus ID from response
+          if (data.data.user.campusId !== null && data.data.user.campusId !== undefined) {
+            console.log('📚 Storing campus ID from response:', data.data.user.campusId);
+            localStorage.setItem('userCampusId', String(data.data.user.campusId));
+            localStorage.setItem('CampusID', String(data.data.user.campusId));
+            (window as any).CampusID = data.data.user.campusId;
+          } else {
+            console.log('📚 No campus ID in response (admin)');
+          }
+          
+          if (data.data.user.campus_name) {
+            localStorage.setItem('userCampusName', data.data.user.campus_name);
+          }
+        }
+        
+        // Store session label
         if (data.data.sessionLabel) {
           localStorage.setItem('sessionLabel', data.data.sessionLabel);
         } else {
@@ -142,6 +164,9 @@ export const authService = {
             minutes: SESSION.minutesPart
           }));
         }
+        
+        // Debug after login
+        authService.debugAuthState();
       }
 
       return data;
@@ -155,7 +180,25 @@ export const authService = {
     }
   },
 
-  // Logout user - clear all stored data
+  // ============================================
+  // DEBUG AUTH STATE
+  // ============================================
+  debugAuthState: (): void => {
+    console.log('🔍 === AUTH DEBUG ===');
+    console.log('🔍 Token:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
+    console.log('🔍 User:', localStorage.getItem('user'));
+    console.log('🔍 userCampusId:', localStorage.getItem('userCampusId'));
+    console.log('🔍 CampusID:', localStorage.getItem('CampusID'));
+    console.log('🔍 selectedCampusId:', localStorage.getItem('selectedCampusId'));
+    console.log('🔍 window.CampusID:', (window as any).CampusID);
+    console.log('🔍 getUserCampusId():', authService.getUserCampusId());
+    console.log('🔍 getUserRole():', authService.getUserRole());
+    console.log('🔍 ====================');
+  },
+
+  // ============================================
+  // LOGOUT
+  // ============================================
   logout: (): void => {
     removeAuthToken();
     localStorage.removeItem('user');
@@ -164,9 +207,13 @@ export const authService = {
     localStorage.removeItem('loginTime');
     localStorage.removeItem('sessionLabel');
     localStorage.removeItem('sessionDetails');
+    localStorage.removeItem('userCampusId');
+    localStorage.removeItem('userCampusName');
   },
 
-  // Clear all stored data including remember me
+  // ============================================
+  // CLEAR ALL STORED DATA
+  // ============================================
   clearAllStoredData: (): void => {
     removeAuthToken();
     localStorage.removeItem('user');
@@ -178,9 +225,16 @@ export const authService = {
     localStorage.removeItem('rememberedEmail');
     localStorage.removeItem('rememberedPassword');
     localStorage.removeItem('rememberMe');
+    localStorage.removeItem('userCampusId');
+    localStorage.removeItem('userCampusName');
+    localStorage.removeItem('selectedCampusId');
+    localStorage.removeItem('selectedCampusName');
+    localStorage.removeItem('CampusID');
   },
 
-  // Extend session
+  // ============================================
+  // EXTEND SESSION
+  // ============================================
   extendSession: async (): Promise<{ 
     success: boolean; 
     token?: string; 
@@ -223,7 +277,9 @@ export const authService = {
     }
   },
 
-  // Check session status
+  // ============================================
+  // CHECK SESSION STATUS
+  // ============================================
   checkSessionStatus: (): { isValid: boolean; remainingTime: number } => {
     const loginTime = localStorage.getItem('loginTime');
     if (!loginTime) {
@@ -241,16 +297,13 @@ export const authService = {
   },
 
   // ============================================
-  // SESSION HELPER METHODS - ADDED
+  // SESSION HELPER METHODS
   // ============================================
-  
-  // Get session label for display
   getSessionLabel: (): string => {
     const label = localStorage.getItem('sessionLabel');
     return label || SESSION.label;
   },
 
-  // Get session details
   getSessionDetails: (): { days: number; hours: number; minutes: number } => {
     try {
       const details = localStorage.getItem('sessionDetails');
@@ -267,31 +320,232 @@ export const authService = {
     };
   },
 
-  // Get session duration in milliseconds
   getSessionDurationMs: (): number => {
     return SESSION.ms;
   },
 
-  // Get warning duration in milliseconds
   getWarningDurationMs: (): number => {
     return WARNING.ms;
   },
 
-  // Get session duration label
   getSessionDurationLabel: (): string => {
     return SESSION.label;
   },
 
-  // Get warning duration label
   getWarningDurationLabel: (): string => {
     return WARNING.label;
   },
 
   // ============================================
-  // END SESSION HELPER METHODS
+  // CAMPUS HELPER METHODS
+  // ============================================
+  getUserCampusId: (): number | null => {
+    console.log('🔍 getUserCampusId called');
+    
+    // First try to get from localStorage (set during login)
+    const campusId = localStorage.getItem('userCampusId');
+    if (campusId) {
+      console.log('📚 getUserCampusId from localStorage:', campusId);
+      return parseInt(campusId);
+    }
+    
+    // Then try to get from user object
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        console.log('📚 user object:', user);
+        if (user.campusId) {
+          console.log('📚 getUserCampusId from user object:', user.campusId);
+          return user.campusId;
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+    
+    // Then try to get from token
+    const token = getAuthToken();
+    if (!token) {
+      console.log('📚 No token found');
+      return null;
+    }
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('📚 Token payload:', payload);
+      console.log('📚 getUserCampusId from token:', payload.campusId);
+      return payload.campusId || null;
+    } catch (error) {
+      console.error('Error decoding token for campus ID:', error);
+      return null;
+    }
+  },
+
+  getUserCampusName: (): string | null => {
+    const campusName = localStorage.getItem('userCampusName');
+    if (campusName) {
+      return campusName;
+    }
+    
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.campus_name || null;
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+    
+    return null;
+  },
+
+  // ============================================
+  // ROLE HELPER METHODS
+  // ============================================
+  hasAnyRole: (allowedRoles: string[]): boolean => {
+    const role = authService.getUserRole();
+    if (!role) return false;
+    return allowedRoles.includes(role);
+  },
+
+  hasAllRoles: (requiredRoles: string[]): boolean => {
+    const role = authService.getUserRole();
+    if (!role) return false;
+    return requiredRoles.every(r => r === role);
+  },
+
+  isAdmin: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'admin' || role === 'super_admin';
+  },
+
+  isSuperAdmin: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'super_admin';
+  },
+
+  isTeacherOrNaqeeb: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'teacher' || role === 'naqeeb';
+  },
+
+  isTeacher: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'teacher';
+  },
+
+  isNaqeeb: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'naqeeb';
+  },
+
+  isStudent: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'student';
+  },
+
+  getUserRoleSafe: (): string => {
+    const role = authService.getUserRole();
+    return role || 'unknown';
+  },
+
+  hasCampusAccess: (): boolean => {
+    return authService.isAdmin();
+  },
+
+  getLandingPage: (): string => {
+    const role = authService.getUserRole();
+    if (role === 'admin' || role === 'super_admin') {
+      return '/Campus';
+    }
+    return '/MainDeshboard';
+  },
+
+  getMenuItemsByRole: (): string[] => {
+    const role = authService.getUserRole();
+    const baseMenus = ['dashboard', 'library'];
+    
+    if (role === 'admin' || role === 'super_admin') {
+      return [...baseMenus, 'class', 'teacher', 'student', 'configuration'];
+    }
+    
+    if (role === 'teacher' || role === 'naqeeb') {
+      return baseMenus;
+    }
+    
+    if (role === 'student') {
+      return baseMenus;
+    }
+    
+    return baseMenus;
+  },
+
+  canAccessAttendance: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'teacher' || role === 'naqeeb' || role === 'admin' || role === 'super_admin';
+  },
+
+  canAccessTeacherAttendance: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'admin' || role === 'super_admin';
+  },
+
+  canAccessStudentAttendance: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'teacher' || role === 'naqeeb' || role === 'admin' || role === 'super_admin';
+  },
+
+  canAccessTeacherManagement: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'admin' || role === 'super_admin';
+  },
+
+  canAccessStudentManagement: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'admin' || role === 'super_admin';
+  },
+
+  canAccessClassManagement: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'admin' || role === 'super_admin';
+  },
+
+  canAccessConfiguration: (): boolean => {
+    const role = authService.getUserRole();
+    return role === 'admin' || role === 'super_admin';
+  },
+
+  hasPermission: (permission: string): boolean => {
+    const role = authService.getUserRole();
+    
+    if (role === 'admin' || role === 'super_admin') {
+      return true;
+    }
+    
+    const permissions: Record<string, string[]> = {
+      'view_dashboard': ['admin', 'super_admin', 'teacher', 'naqeeb', 'student'],
+      'view_library': ['admin', 'super_admin', 'teacher', 'naqeeb', 'student'],
+      'view_attendance': ['admin', 'super_admin', 'teacher', 'naqeeb'],
+      'manage_students': ['admin', 'super_admin'],
+      'manage_teachers': ['admin', 'super_admin'],
+      'manage_classes': ['admin', 'super_admin'],
+      'manage_configuration': ['admin', 'super_admin'],
+      'view_campus': ['admin', 'super_admin'],
+    };
+    
+    const allowedRoles = permissions[permission] || [];
+    return allowedRoles.includes(role || '');
+  },
+
+  // ============================================
+  // END ROLE HELPER METHODS
   // ============================================
 
-  // Get current user profile
+  // ============================================
+  // GET PROFILE
+  // ============================================
   getProfile: async (): Promise<{ success: boolean; data?: { user: UserProfile }; error?: string }> => {
     try {
       const token = getAuthToken();
@@ -317,7 +571,9 @@ export const authService = {
     }
   },
 
-  // Change password
+  // ============================================
+  // CHANGE PASSWORD
+  // ============================================
   changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message?: string; error?: string }> => {
     try {
       if (!currentPassword || !newPassword) {
@@ -350,7 +606,9 @@ export const authService = {
     }
   },
 
-  // Get user by email
+  // ============================================
+  // GET USER BY EMAIL
+  // ============================================
   getUserByEmail: async (email: string): Promise<{ success: boolean; data?: { user: UserProfile }; message?: string; error?: string }> => {
     try {
       if (!email) {
@@ -378,7 +636,9 @@ export const authService = {
     }
   },
 
-  // Reset password
+  // ============================================
+  // RESET PASSWORD
+  // ============================================
   resetPassword: async (email: string, newPassword: string): Promise<{ success: boolean; message?: string; error?: string }> => {
     try {
       if (!email || !newPassword) {
@@ -413,7 +673,9 @@ export const authService = {
     }
   },
 
-  // Check if user is authenticated and session is valid
+  // ============================================
+  // AUTHENTICATION STATUS
+  // ============================================
   isAuthenticated: (): boolean => {
     const token = getAuthToken();
     if (!token) return false;
@@ -422,7 +684,9 @@ export const authService = {
     return sessionStatus.isValid;
   },
 
-  // Get current user role
+  // ============================================
+  // GET USER ROLE
+  // ============================================
   getUserRole: (): string | null => {
     const token = getAuthToken();
     if (!token) return null;
@@ -436,7 +700,9 @@ export const authService = {
     }
   },
 
-  // Get current user ID
+  // ============================================
+  // GET USER ID
+  // ============================================
   getUserId: (): number | null => {
     const token = getAuthToken();
     if (!token) return null;

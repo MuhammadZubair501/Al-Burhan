@@ -14,7 +14,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (authService.isAuthenticated()) {
-      navigate('/Campus', { replace: true });
+      const userRole = authService.getUserRole();
+      if (userRole === 'admin' || userRole === 'super_admin') {
+        navigate('/Campus', { replace: true });
+      } else {
+        navigate('/MainDeshboard', { replace: true });
+      }
     }
     loadSavedCredentials();
   }, [navigate]);
@@ -88,7 +93,20 @@ export default function LoginPage() {
       if (response.success && response.data) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
         saveCredentials(email.trim(), password, rememberMe);
-        navigate('/Campus', { replace: true });
+        
+        console.log('🔐 Login response data:', response.data);
+        console.log('🔐 User object:', response.data.user);
+        console.log('🔐 Campus ID from response:', response.data.user.campusId);
+        
+        // Debug auth state
+        authService.debugAuthState();
+        
+        const userRole = response.data.user.role;
+        if (userRole === 'admin' || userRole === 'super_admin') {
+          navigate('/Campus', { replace: true });
+        } else {
+          navigate('/MainDeshboard', { replace: true });
+        }
       } else {
         setError(response.message || 'Login failed. Please check your credentials.');
       }
@@ -129,11 +147,6 @@ export default function LoginPage() {
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 md:p-8">
           <div className="text-center mb-6 sm:mb-8">
             <img className="mx-auto w-32 sm:w-40 h-32 sm:h-40" src="/logo6.png" alt="Logo" />
-            {/* <div className="mx-auto w-16 sm:w-20 h-16 sm:h-20 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
-              <svg className="w-8 sm:w-10 h-8 sm:h-10 text-green-900" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2L2 7l10 5 8-4v6h2V7L12 2zm-7 9v4l7 4 7-4v-4l-7 4-7-4z" />
-              </svg>
-            </div> */}
             <h1 className="mt-3 sm:mt-4 text-2xl sm:text-3xl font-bold text-white">
               Al-Burhan Academy
             </h1>

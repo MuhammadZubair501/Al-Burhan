@@ -1,4 +1,3 @@
-// MainDeshboard.tsx (Alternative with icon)
 import { useState, useEffect } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import Sidebar, { type TabType } from "./Sidebar";
@@ -13,6 +12,7 @@ import ClassPage from "../Class/ClassPage";
 import TeacherAttendancePage from "../Attendance/TeacherAttendance/TeacherAttendancePage";
 import StudentAttendancePage from "../Attendance/StudentAttendance/StudentAttendancePage";
 import DashboardPage from "./dashboard/DashboardPage";
+import { useCampus } from "../context/CampusContext";
 import {
   LayoutDashboard,
   GraduationCap,
@@ -22,7 +22,6 @@ import {
   Cog,
 } from "lucide-react";
 
-// Page name and icon mapping
 const pageConfig: Record<TabType, { name: string; icon: React.ReactNode }> = {
   dashboard: { 
     name: "Dashboard", 
@@ -64,8 +63,42 @@ export default function MainDeshboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const { classId } = useParams<{ classId: string }>();
+  const { campusId, isLoading, refreshCampusData } = useCampus();
   
   const isSectionPage = location.pathname.includes('/sections/');
+
+  // Force refresh campus data on component mount
+  useEffect(() => {
+    refreshCampusData();
+  }, []);
+
+  // Set window.CampusID when campusId changes
+  useEffect(() => {
+    if (campusId !== null) {
+      console.log('📝 MainDeshboard setting CampusID to:', campusId);
+      (window as any).CampusID = campusId;
+    }
+  }, [campusId]);
+
+  // Force set campus ID from user data as fallback
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        console.log('📚 MainDeshboard - User from localStorage:', user);
+        
+        if (user.campusId && !campusId) {
+          console.log('📚 Setting campus ID from user object:', user.campusId);
+          window.CampusID = user.campusId;
+          localStorage.setItem('CampusID', String(user.campusId));
+          localStorage.setItem('userCampusId', String(user.campusId));
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, [campusId]);
 
   useEffect(() => {
     if (isSectionPage) {
@@ -111,7 +144,6 @@ export default function MainDeshboard() {
     }
   };
 
-  // Get current page config for mobile header
   const getCurrentPageConfig = () => {
     if (isSectionPage) {
       return { name: "Sections", icon: <SquareDashedText size={16} className="text-yellow-400" /> };
@@ -121,13 +153,19 @@ export default function MainDeshboard() {
 
   const currentPage = getCurrentPageConfig();
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-emerald-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-emerald-950 overflow-hidden">
       <BackgroundRings />
 
-      {/* Mobile Top Bar - With Icon and Page Name - z-40 so modals appear on top */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-3 py-2 bg-white/5 backdrop-blur-xl border-b border-white/10">
-        {/* Left: Menu Button */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="p-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white hover:bg-white/20 hover:border-yellow-400/50 transition-all duration-300 shadow-lg"
@@ -138,7 +176,6 @@ export default function MainDeshboard() {
           </svg>
         </button>
 
-        {/* Center: Page Icon + Name */}
         <div className="flex-1 flex items-center justify-center gap-2 px-2">
           {currentPage.icon}
           <h1 className="text-white font-bold text-base truncate">
@@ -146,7 +183,6 @@ export default function MainDeshboard() {
           </h1>
         </div>
 
-        {/* Right: Profile Button */}
         <ProfileButton />
       </div>
 
@@ -164,6 +200,9 @@ export default function MainDeshboard() {
           </div>
         </main>
       </div>
+
+      {/* Debug component - shows in development only
+      {import.meta.env.DEV && <CampusDebug />} */}
     </div>
   );
 }

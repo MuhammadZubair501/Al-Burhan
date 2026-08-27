@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { authService } from "../services/authService";
 
 export type TabType =
   | "dashboard"
@@ -40,6 +41,11 @@ export default function Sidebar({
   const [collapsed, setCollapsed] = useState(false);
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserRole(authService.getUserRole());
+  }, []);
 
   useEffect(() => {
     if (
@@ -63,19 +69,47 @@ export default function Sidebar({
     return () => window.removeEventListener("resize", handleResize);
   }, [setMobileOpen]);
 
-  const menus = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "library", label: "Library", icon: BookOpen },
-    { id: "class", label: "Classes", icon: SquareDashedText },
-    { id: "teacher", label: "Teachers", icon: GraduationCap },
-    { id: "student", label: "Students", icon: Users },
-    { id: "configuration", label: "Configuration", icon: Cog },
-  ];
-
   const navigate = useNavigate();
 
+  const getMenus = () => {
+    const baseMenus = [
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { id: "library", label: "Library", icon: BookOpen },
+    ];
+
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      return [
+        ...baseMenus,
+        { id: "class", label: "Classes", icon: SquareDashedText },
+        { id: "teacher", label: "Teachers", icon: GraduationCap },
+        { id: "student", label: "Students", icon: Users },
+        { id: "configuration", label: "Configuration", icon: Cog },
+      ];
+    }
+
+    if (userRole === 'teacher' || userRole === 'naqeeb') {
+      return baseMenus;
+    }
+
+    if (userRole === 'student') {
+      return baseMenus;
+    }
+
+    return baseMenus;
+  };
+
+  const menus = getMenus();
+
+  const canAccessAttendance = userRole === 'teacher' || userRole === 'naqeeb' || userRole === 'admin' || userRole === 'super_admin';
+  const canAccessTeacherAttendance = userRole === 'admin' || userRole === 'super_admin';
+  const canAccessStudentAttendance = userRole === 'teacher' || userRole === 'naqeeb' || userRole === 'admin' || userRole === 'super_admin';
+
   const goToCampusPage = () => {
-    navigate("/Campus");
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      navigate("/Campus");
+    } else {
+      navigate("/MainDeshboard");
+    }
     if (isMobile) {
       setMobileOpen(false);
     }
@@ -133,7 +167,7 @@ export default function Sidebar({
             className="w-full p-3 flex items-center gap-3 border-b border-white/30 hover:bg-white/10 transition-colors text-left cursor-pointer"
             onClick={goToCampusPage}
           >
-            <div className="w-12 h-12 md:w-14 md:h-14 flex-shrink-0">
+            <div className="w-12 h-12 md:w-14 h-14 flex-shrink-0">
               <img src="./logo6.png" alt="Logo" className="h-full w-full object-contain" />
             </div>
             {(!collapsed || isMobile) && (
@@ -168,13 +202,17 @@ export default function Sidebar({
                     {(!collapsed || isMobile) && <span className="truncate">{item.label}</span>}
                   </button>
 
-                  {item.id === "dashboard" && (
+                  {item.id === "dashboard" && canAccessAttendance && (
                     <div className="mt-1 sm:mt-2">
                       <button
                         onClick={() => {
                           if (!attendanceOpen) {
                             setAttendanceOpen(true);
-                            setActiveTab("teacherAttendance");
+                            if (userRole === 'teacher' || userRole === 'naqeeb') {
+                              setActiveTab("studentAttendance");
+                            } else {
+                              setActiveTab("teacherAttendance");
+                            }
                           } else {
                             setAttendanceOpen(false);
                           }
@@ -201,38 +239,43 @@ export default function Sidebar({
 
                       {(!collapsed || isMobile) && attendanceOpen && (
                         <div className="ml-6 sm:ml-8 mt-1 space-y-1">
-                          <button
-                            onClick={() => {
-                              setActiveTab("teacherAttendance");
-                              closeMobileSidebar();
-                            }}
-                            className={`
-                              w-full text-left px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition
-                              ${
-                                activeTab === "teacherAttendance"
-                                  ? "bg-yellow-300 text-green-950 font-medium"
-                                  : "text-gray-300 hover:bg-white/10"
-                              }
-                            `}
-                          >
-                            Teacher Attendance
-                          </button>
-                          <button
-                            onClick={() => {
-                              setActiveTab("studentAttendance");
-                              closeMobileSidebar();
-                            }}
-                            className={`
-                              w-full text-left px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition
-                              ${
-                                activeTab === "studentAttendance"
-                                  ? "bg-yellow-300 text-green-950 font-medium"
-                                  : "text-gray-300 hover:bg-white/10"
-                              }
-                            `}
-                          >
-                            Student Attendance
-                          </button>
+                          {canAccessTeacherAttendance && (
+                            <button
+                              onClick={() => {
+                                setActiveTab("teacherAttendance");
+                                closeMobileSidebar();
+                              }}
+                              className={`
+                                w-full text-left px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition
+                                ${
+                                  activeTab === "teacherAttendance"
+                                    ? "bg-yellow-300 text-green-950 font-medium"
+                                    : "text-gray-300 hover:bg-white/10"
+                                }
+                              `}
+                            >
+                              Teacher Attendance
+                            </button>
+                          )}
+                          
+                          {canAccessStudentAttendance && (
+                            <button
+                              onClick={() => {
+                                setActiveTab("studentAttendance");
+                                closeMobileSidebar();
+                              }}
+                              className={`
+                                w-full text-left px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition
+                                ${
+                                  activeTab === "studentAttendance"
+                                    ? "bg-yellow-300 text-green-950 font-medium"
+                                    : "text-gray-300 hover:bg-white/10"
+                                }
+                              `}
+                            >
+                              Student Attendance
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

@@ -16,12 +16,10 @@ export default function RoleBasedRoute({
   const isAuthenticated = authService.isAuthenticated();
   const userRole = authService.getUserRole();
 
-  // If not authenticated, redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
-  // If user role is not allowed, redirect
   if (!userRole || !allowedRoles.includes(userRole)) {
     return <Navigate to={redirectTo} replace />;
   }

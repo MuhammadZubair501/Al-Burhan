@@ -10,14 +10,16 @@ import ApiRoutes from "../services/ApiRoutes";
 import { studentService } from "../services/studentService";
 import { teacherService } from "../services/teacherService";
 import ProfileButton from "../components/ProfileButton";
+import { useCampus } from "../context/CampusContext";
 
 export default function CampusPage() {
   const navigate = useNavigate();
+  const { setSelectedCampus } = useCampus();
 
   const [campuses, setCampuses] = useState<any[]>([]);
   const [filteredCampuses, setFilteredCampuses] = useState<any[]>([]);
   const [openModal, setOpenModal] = useState(false);
-  const [selectedCampus, setSelectedCampus] = useState<any>(null);
+  const [selectedCampusData, setSelectedCampusData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -70,7 +72,6 @@ export default function CampusPage() {
   useEffect(() => {
     let filtered = [...campuses];
 
-    // Search filter
     if (searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase().trim();
       filtered = filtered.filter((campus) =>
@@ -81,7 +82,6 @@ export default function CampusPage() {
       );
     }
 
-    // Type filter
     if (filterType !== "all") {
       const isMain = filterType === "main";
       filtered = filtered.filter((campus) => 
@@ -101,9 +101,20 @@ export default function CampusPage() {
 
   // ---------------- VIEW DASHBOARD ----------------
   const goToDashboard = (id: number) => {
-    console.log("campus id   " + id);
+    console.log("🎯 Viewing campus with ID:", id);
+    
+    // Set the campus ID in the context
+    setSelectedCampus(id);
+    
+    // Also set it in localStorage and window for backward compatibility
     window.CampusID = id;
-    localStorage.setItem("CampusID", id.toString());
+    localStorage.setItem('selectedCampusId', String(id));
+    localStorage.setItem('selectedCampusName', 'Campus');
+    localStorage.setItem('CampusID', String(id));
+    
+    console.log("✅ Campus ID set to:", window.CampusID);
+    
+    // Navigate to dashboard
     navigate("/MainDeshboard");
   };
 
@@ -114,7 +125,7 @@ export default function CampusPage() {
 
   // ---------------- EDIT CAMPUS ----------------
   const handleEditCampus = (campus: any) => {
-    setSelectedCampus(campus);
+    setSelectedCampusData(campus);
     setOpenModal(true);
   };
 
@@ -223,7 +234,6 @@ export default function CampusPage() {
         {/* Search and Filter Bar */}
         <div className="mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            {/* Search Input */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-green-200/60" size={18} />
               <input
@@ -243,7 +253,6 @@ export default function CampusPage() {
               )}
             </div>
 
-            {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="cursor-pointer flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200 text-sm sm:text-base flex-shrink-0"
@@ -255,7 +264,6 @@ export default function CampusPage() {
               )}
             </button>
 
-            {/* Clear Filters Button */}
             {(searchTerm || filterType !== "all") && (
               <button
                 onClick={clearSearch}
@@ -267,11 +275,9 @@ export default function CampusPage() {
             )}
           </div>
 
-          {/* Filter Options - Expandable */}
           {showFilters && (
             <div className="mt-3 p-3 sm:p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {/* Campus Type Filter */}
                 <div className="min-w-0">
                   <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
                     Campus Type
@@ -280,7 +286,7 @@ export default function CampusPage() {
                     <button
                       onClick={() => setFilterType("all")}
                       className={`
-                        cursor-pointer  px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
+                        cursor-pointer px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
                         ${
                           filterType === "all"
                             ? "bg-yellow-400/20 border-yellow-400 text-yellow-300 border"
@@ -293,7 +299,7 @@ export default function CampusPage() {
                     <button
                       onClick={() => setFilterType("main")}
                       className={`
-                        cursor-pointer  px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
+                        cursor-pointer px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
                         ${
                           filterType === "main"
                             ? "bg-emerald-400/20 border-emerald-400 text-emerald-300 border"
@@ -306,7 +312,7 @@ export default function CampusPage() {
                     <button
                       onClick={() => setFilterType("sub")}
                       className={`
-                        cursor-pointer  px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
+                        cursor-pointer px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
                         ${
                           filterType === "sub"
                             ? "bg-blue-400/20 border-blue-400 text-blue-300 border"
@@ -319,7 +325,6 @@ export default function CampusPage() {
                   </div>
                 </div>
 
-                {/* Results count in filters */}
                 <div className="flex items-center justify-end">
                   <div className="text-green-100/60 text-sm">
                     {filteredCampuses.length} {filteredCampuses.length === 1 ? 'campus' : 'campuses'} found
@@ -330,7 +335,6 @@ export default function CampusPage() {
           )}
         </div>
 
-        {/* Results Count - Always visible */}
         <div className="mb-4">
           <p className="text-green-100/60 text-xs sm:text-sm">
             {filteredCampuses.length} {filteredCampuses.length === 1 ? 'Campus' : 'Campuses'} found
@@ -339,7 +343,6 @@ export default function CampusPage() {
           </p>
         </div>
 
-        {/* Loading State */}
         {loading ? (
           <div className="flex items-center justify-center h-48 sm:h-64">
             <div className="flex flex-col items-center gap-4">
@@ -349,7 +352,6 @@ export default function CampusPage() {
           </div>
         ) : (
           <>
-            {/* CAMPUS GRID - Responsive */}
             {filteredCampuses.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-white/60">
                 <University size={48} className="mb-3 sm:mb-4 opacity-30" />
@@ -392,7 +394,7 @@ export default function CampusPage() {
       {/* FLOATING ADD BUTTON */}
       <button
         onClick={() => {
-          setSelectedCampus(null);
+          setSelectedCampusData(null);
           setOpenModal(true);
         }}
         className="
@@ -416,15 +418,15 @@ export default function CampusPage() {
       {/* CAMPUS MODAL */}
       <CampusModal
         isOpen={openModal}
-        campus={selectedCampus}
+        campus={selectedCampusData}
         onClose={() => {
           setOpenModal(false);
-          setSelectedCampus(null);
+          setSelectedCampusData(null);
         }}
         onSave={() => {
           fetchCampuses();
           setOpenModal(false);
-          setSelectedCampus(null);
+          setSelectedCampusData(null);
         }}
       />
     </div>
