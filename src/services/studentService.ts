@@ -44,7 +44,8 @@ export interface StudentResponse {
   profile_image_path: string | null;
   extra_details: string | null;
   campus_id: number;
-  is_active: boolean | number; // Allow both boolean and number
+  is_active: boolean | number;
+  role?: string; // Added role field
   section_name?: string;
   class_name?: string;
   class_id?: number;

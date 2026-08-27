@@ -15,6 +15,12 @@ import SearchDropdown from '../custom/SearchDropdown';
 import { formatDateForInput } from '../../utils/dateUtils';
 import { TextInput } from './components/TextInput';
 
+// Role options
+const ROLE_OPTIONS = [
+  { id: 1, name: 'Student' },
+  { id: 2, name: 'Naqeeb' }
+];
+
 interface BatchResponse {
   batch_id?: number;
   id?: number;
@@ -44,6 +50,7 @@ interface StudentFormProps {
     sectionId?: number;
     batchId?: number;
     is_active?: boolean;
+    role?: string;
   };
   lastAdmissionNumber?: number;
   campusId?: number;
@@ -68,7 +75,8 @@ const initialFormData: StudentFormData = {
   shift: '',
   joiningDate: '',
   extraDetails: '',
-  is_active: true, // Added is_active with default true
+  is_active: true,
+  role: 'student',
 };
 
 // Shift options with number ids (to match Option type)
@@ -92,6 +100,7 @@ export default function StudentForm({
     admissionNumber: initialData?.admissionNumber || String(lastAdmissionNumber),
     studentPreview: initialData?.studentPreview || '',
     is_active: initialData?.is_active !== undefined ? initialData.is_active : true,
+    role: initialData?.role || 'student',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -113,8 +122,9 @@ export default function StudentForm({
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
 
-  // Shift dropdown state
+  // Shift and Role dropdown states
   const [isShiftDropdownOpen, setIsShiftDropdownOpen] = useState(false);
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
 
   const currentCampusId = campusId || Number(window.CampusID) || 1;
   const isEditMode = !!initialData?.studentId;
@@ -226,6 +236,7 @@ export default function StudentForm({
           studentPreview: initialData.studentPreview || '',
           studentId: initialData.studentId,
           is_active: initialData.is_active !== undefined ? initialData.is_active : true,
+          role: initialData.role || 'student',
         };
 
         // Find matching class
@@ -275,6 +286,7 @@ export default function StudentForm({
           ...prev,
           admissionNumber: String(lastAdmissionNumber),
           is_active: true,
+          role: 'student',
         }));
       }
 
@@ -292,6 +304,7 @@ export default function StudentForm({
         admissionNumber: String(lastAdmissionNumber),
         studentPreview: '',
         is_active: true,
+        role: 'student',
       });
       setErrors({});
       setSubmitError(null);
@@ -335,12 +348,20 @@ export default function StudentForm({
 
   // Shift dropdown handlers
   const handleShiftSelect = (value: string) => {
-    // Find the shift by name
     const shift = SHIFT_OPTIONS.find(s => s.name === value);
     if (shift) {
       updateField('shift', shift.name.toLowerCase());
     }
     setIsShiftDropdownOpen(false);
+  };
+
+  // Role dropdown handlers
+  const handleRoleSelect = (value: string) => {
+    const role = ROLE_OPTIONS.find(r => r.name === value);
+    if (role) {
+      updateField('role', role.name.toLowerCase());
+    }
+    setIsRoleDropdownOpen(false);
   };
 
   const todayDate = new Date().toISOString().split('T')[0];
@@ -349,6 +370,13 @@ export default function StudentForm({
   const selectedShiftName = formData.shift
     ? SHIFT_OPTIONS.find(s => s.name.toLowerCase() === formData.shift.toLowerCase())?.name || ''
     : '';
+
+  // Get display name for selected role
+  const selectedRoleName = (() => {
+    if (!formData.role) return '';
+    const role = ROLE_OPTIONS.find(r => r.name.toLowerCase() === formData.role.toLowerCase());
+    return role?.name || '';
+  })();
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -370,6 +398,7 @@ export default function StudentForm({
     if (!formData.highestQualification) newErrors.highestQualification = 'Please select qualification';
     if (!formData.shift) newErrors.shift = 'Please select shift';
     if (!formData.joiningDate) newErrors.joiningDate = 'Joining date is required';
+    if (!formData.role) newErrors.role = 'Please select a role';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -447,7 +476,7 @@ export default function StudentForm({
         extra_details: formData.extraDetails || '',
         campus_id: currentCampusId,
         password: '123456',
-        role: 'student',
+        role: formData.role || 'student',
         profile_image: formData.studentPicture,
         is_active: formData.is_active !== undefined ? formData.is_active : true,
       };
@@ -670,7 +699,36 @@ export default function StudentForm({
                 </div>
               </div>
 
-              {/* Status Toggle - Added here */}
+              {/* Role Field with SearchDropdown */}
+              <div className="mt-4">
+                <div className="w-full">
+                  <label className="text-emerald-100 text-sm font-medium block mb-1.5">
+                    Role <span className="text-red-400">*</span>
+                  </label>
+                  <SearchDropdown
+                    label=""
+                    placeholder="Select Role"
+                    icon={null}
+                    options={ROLE_OPTIONS}
+                    value={selectedRoleName}
+                    onChange={handleRoleSelect}
+                    isOpen={isRoleDropdownOpen}
+                    onToggle={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                    onClose={() => setIsRoleDropdownOpen(false)}
+                    dropUp={false}
+                    hideSearch={false}
+                    className="w-full"
+                    triggerClassName="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-between cursor-pointer hover:bg-white/15 transition-all text-sm sm:text-base"
+                    dropdownClassName="w-full"
+                    optionClassName="px-3 py-2 text-white hover:bg-yellow-400/20 cursor-pointer text-sm sm:text-base"
+                  />
+                  {errors.role && (
+                    <p className="text-red-300 text-xs mt-1">{errors.role}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Toggle */}
               <div className="mt-4">
                 <label className="text-emerald-100 text-sm font-medium block mb-1.5">
                   Student Status
@@ -756,6 +814,23 @@ export default function StudentForm({
           </div>
         </div>
       </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(251, 191, 36, 0.4);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(251, 191, 36, 0.6);
+        }
+      `}</style>
     </Portal>
   );
 }

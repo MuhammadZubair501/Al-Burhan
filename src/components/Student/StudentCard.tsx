@@ -1,5 +1,5 @@
 // StudentCard.tsx
-import { Pencil, Trash2, Eye, MapPin, BadgeIcon, Power, PowerOff } from "lucide-react";
+import { Pencil, Trash2, Eye, MapPin, BadgeIcon, Power, PowerOff, UserCog } from "lucide-react";
 import type { StudentResponse } from "../../services/studentService";
 
 interface StudentCardProps {
@@ -28,6 +28,11 @@ export default function StudentAndStudentCard({
 }: StudentCardProps) {
   // Explicitly check if is_active is true or 1 (from database)
   const isActive = rawData?.is_active === true || rawData?.is_active === 1;
+  
+  // Format role for display
+  const displayRole = rawData?.role 
+    ? rawData.role.charAt(0).toUpperCase() + rawData.role.slice(1) 
+    : 'Student';
 
   return (
     <div className="group relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 transition-all duration-300 hover:-translate-y-2 hover:border-yellow-400/40 hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
@@ -91,10 +96,19 @@ export default function StudentAndStudentCard({
       {/* Name */}
       <div className="text-center mt-5">
         <h2 className="text-xl font-bold text-white">{name}</h2>
-        <div className="mt-3 flex justify-center">
+        <div className="mt-3 flex justify-center items-center gap-2 flex-wrap">
           <span className="px-4 py-1 rounded-full bg-white/10 border border-white/20 text-yellow-300 text-sm flex items-center gap-2">
             <BadgeIcon size={14} />
             {id}
+          </span>
+          {/* Role Badge - Added after roll number */}
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 ${
+            displayRole === 'Naqeeb' 
+              ? 'bg-purple-500/20 border-purple-500/30 text-purple-300' 
+              : 'bg-blue-500/20 border-blue-500/30 text-blue-300'
+          }`}>
+            <UserCog size={12} />
+            {displayRole}
           </span>
         </div>
       </div>

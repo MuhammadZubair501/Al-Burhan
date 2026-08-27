@@ -43,14 +43,12 @@ export default function StudentPage() {
     setLoading(true);
     setError(null);
     try {
-      // Use the new method that fetches ALL students with no filtering
       const response = await studentService.getAllStudentsByCampusNoFilter(campusId);
       console.log('📊 Fetched students:', response);
       
       if (response.success) {
         setStudents(response.data);
         
-        // Log active/inactive counts for debugging
         const activeCount = response.data.filter(s => s.is_active !== false).length;
         const inactiveCount = response.data.filter(s => s.is_active === false).length;
         console.log(`📊 Students: ${response.data.length} total (${activeCount} active, ${inactiveCount} inactive)`);
@@ -74,52 +72,46 @@ export default function StudentPage() {
     }
   };
 
- const applyFilters = () => {
-  let filtered = [...students];
+  const applyFilters = () => {
+    let filtered = [...students];
 
-  // Search filter
-  if (searchTerm.trim()) {
-    const term = searchTerm.toLowerCase().trim();
-    filtered = filtered.filter(student =>
-      `${student.first_name} ${student.last_name}`.toLowerCase().includes(term) ||
-      student.email_address?.toLowerCase().includes(term) ||
-      student.phone_number?.includes(term) ||
-      student.roll_number?.toLowerCase().includes(term) ||
-      student.class_name?.toLowerCase().includes(term)
-    );
-  }
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(student =>
+        `${student.first_name} ${student.last_name}`.toLowerCase().includes(term) ||
+        student.email_address?.toLowerCase().includes(term) ||
+        student.phone_number?.includes(term) ||
+        student.roll_number?.toLowerCase().includes(term) ||
+        student.class_name?.toLowerCase().includes(term)
+      );
+    }
 
-  // Gender filter
-  if (filterGender !== "all") {
-    filtered = filtered.filter(student => 
-      student.gender?.toLowerCase() === filterGender.toLowerCase()
-    );
-  }
+    if (filterGender !== "all") {
+      filtered = filtered.filter(student => 
+        student.gender?.toLowerCase() === filterGender.toLowerCase()
+      );
+    }
 
-  // Class filter
-  if (filterClass !== "all") {
-    filtered = filtered.filter(student => 
-      student.class_name === filterClass
-    );
-  }
+    if (filterClass !== "all") {
+      filtered = filtered.filter(student => 
+        student.class_name === filterClass
+      );
+    }
 
-  // Shift filter
-  if (filterShift !== "all") {
-    filtered = filtered.filter(student => 
-      student.shift?.toLowerCase() === filterShift.toLowerCase()
-    );
-  }
+    if (filterShift !== "all") {
+      filtered = filtered.filter(student => 
+        student.shift?.toLowerCase() === filterShift.toLowerCase()
+      );
+    }
 
-  // Status filter - Use explicit boolean check
-  if (filterStatus === "active") {
-    filtered = filtered.filter(student => student.is_active === true || student.is_active === 1);
-  } else if (filterStatus === "inactive") {
-    filtered = filtered.filter(student => student.is_active === false || student.is_active === 0);
-  }
-  // If filterStatus is "all", show all students
+    if (filterStatus === "active") {
+      filtered = filtered.filter(student => student.is_active === true || student.is_active === 1);
+    } else if (filterStatus === "inactive") {
+      filtered = filtered.filter(student => student.is_active === false || student.is_active === 0);
+    }
 
-  setFilteredStudents(filtered);
-};
+    setFilteredStudents(filtered);
+  };
 
   const handleViewDetails = (student: StudentResponse) => {
     setSelectedStudent(student);
@@ -180,13 +172,12 @@ export default function StudentPage() {
         admissionNumber: student.roll_number || '',
         highestQualification: student.last_previous_highest_qualification || '',
         is_active: newStatus,
-        role: 'student'
+        role: student.role || 'student',
       };
       
       const response = await studentService.updateStudent(student.student_id, updatedData);
       
       if (response.success) {
-        // Update the students state with the new status
         const updatedStudents = students.map(s => 
           s.student_id === student.student_id 
             ? { ...s, is_active: newStatus }
@@ -194,7 +185,6 @@ export default function StudentPage() {
         );
         setStudents(updatedStudents);
         
-        // Also update filtered students
         const updatedFiltered = filteredStudents.map(s => 
           s.student_id === student.student_id 
             ? { ...s, is_active: newStatus }
@@ -348,11 +338,11 @@ export default function StudentPage() {
       studentPreview: editingStudent.profile_image_path ? 
         `${baseUrl}${editingStudent.profile_image_path}` : '',
       studentPicture: null,
-      is_active: editingStudent.is_active !== false
+      is_active: editingStudent.is_active !== false,
+      role: editingStudent.role || 'student',
     };
   };
 
-  // Get unique classes for filter
   const classes = [...new Set(students.map(s => s.class_name).filter(Boolean))];
 
   const clearFilters = () => {
@@ -396,10 +386,9 @@ export default function StudentPage() {
       <PageHeader title={Heading} description={Description} Icon={Users} />
 
       <div className="relative z-10 p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8">
-        {/* Search and Filter Bar - Responsive */}
+        {/* Search and Filter Bar */}
         <div className="mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            {/* Search Input */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-green-200/60" size={18} />
               <input
@@ -411,7 +400,6 @@ export default function StudentPage() {
               />
             </div>
 
-            {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200 text-sm sm:text-base"
@@ -423,7 +411,6 @@ export default function StudentPage() {
               )}
             </button>
 
-            {/* Clear Filters Button */}
             {(searchTerm || filterGender !== "all" || filterClass !== "all" || filterShift !== "all" || filterStatus !== "all") && (
               <button
                 onClick={clearFilters}
@@ -435,10 +422,8 @@ export default function StudentPage() {
             )}
           </div>
 
-          {/* Filter Options - Expandable */}
           {showFilters && (
             <div className="mt-3 p-3 sm:p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {/* Gender Filter */}
               <div>
                 <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
                   Gender
@@ -454,7 +439,6 @@ export default function StudentPage() {
                 </select>
               </div>
 
-              {/* Class Filter */}
               <div>
                 <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
                   Class
@@ -473,7 +457,6 @@ export default function StudentPage() {
                 </select>
               </div>
 
-              {/* Shift Filter */}
               <div>
                 <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
                   Shift
@@ -489,7 +472,6 @@ export default function StudentPage() {
                 </select>
               </div>
 
-              {/* Status Filter */}
               <div>
                 <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
                   Status
@@ -508,7 +490,6 @@ export default function StudentPage() {
           )}
         </div>
 
-        {/* Results Count with Active/Inactive breakdown */}
         <div className="mb-3 sm:mb-4 flex flex-wrap items-center gap-2 sm:gap-4">
           <p className="text-green-100/60 text-xs sm:text-sm">
             Showing {filteredStudents.length} of {students.length} students
@@ -519,7 +500,6 @@ export default function StudentPage() {
           </div>
         </div>
 
-        {/* Students Grid */}
         {filteredStudents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-white/60">
             <Users size={48} className="mb-3 sm:mb-4 opacity-30" />
@@ -597,7 +577,6 @@ export default function StudentPage() {
           }}
         />
 
-        {/* Floating Action Button - Responsive */}
         <button
           onClick={() => setIsStudentFormOpen(true)}
           className="

@@ -1,5 +1,6 @@
 // types/student.ts
 // types/student.ts
+// services/studentService.ts - Add role to StudentResponse
 export interface StudentResponse {
   student_id: number;
   section_id: number;
@@ -19,26 +20,30 @@ export interface StudentResponse {
   profile_image_path: string | null;
   extra_details: string | null;
   campus_id: number;
-  is_active: boolean; // Add this field
-  // Joined fields
+  is_active: boolean | number;
+  role?: string; // Added
   section_name?: string;
-  class_id?: number;
   class_name?: string;
+  class_id?: number;
   batch_name?: string;
+  department_name?: string;
+  department_id?: number;
   campus_name?: string;
-}
-
-export interface StudentFormData {
-  studentId?: number;
   className?: string;
   sectionName?: string;
   batchName?: string;
+}
+
+// types/student.ts
+// types/student.ts
+export interface StudentFormData {
+  studentId?: number;
   studentPicture: File | null;
   studentPreview: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
-  gender: 'male' | 'female' | 'other' | '';
+  gender: string;
   cnic: string;
   phone: string;
   email: string;
@@ -47,9 +52,10 @@ export interface StudentFormData {
   enrollmentClass: string;
   batch: string;
   highestQualification: string;
-  shift: 'morning' | 'evening' | '';
+  shift: string;
   joiningDate: string;
   extraDetails: string;
-  is_active: boolean; // Add this field
+  is_active: boolean;
+  role: string; // Changed from optional to required
 }
 export const SHIFTS = ['morning', 'evening'] as const;
