@@ -248,4 +248,48 @@ export default class ApiRoutes {
   static deleteClassStudentsAndSections(classId: number | string) {
     return `${API_BASE_URL}/section/class/${classId}/delete-all`;
   }
+
+
+// ApiRoutes.ts - Update student dashboard routes
+
+// ============================================
+// STUDENT DASHBOARD ROUTES
+// ============================================
+static STUDENT_DASHBOARD = `${API_BASE_URL}/student-dashboard`;
+
+static studentDashboardData(studentId: number | string, startDate?: string, endDate?: string) {
+  let url = `${this.STUDENT_DASHBOARD}/data?studentId=${studentId}`;
+  if (startDate) url += `&startDate=${startDate}`;
+  if (endDate) url += `&endDate=${endDate}`;
+  return url;
+}
+
+static studentByUserId(userId: number | string) {
+  return `${this.STUDENT_DASHBOARD}/user/${userId}`;
+}
+
+static studentAttendanceByDateRange(studentId: number | string, startDate: string, endDate: string) {
+  return `${this.STUDENT_DASHBOARD}/attendance-range?studentId=${studentId}&startDate=${startDate}&endDate=${endDate}`;
+}
+
+static studentAttendanceStats(studentId: number | string) {
+  return `${this.STUDENT_DASHBOARD}/stats/${studentId}`;
+}
+
+static studentAttendanceSummary(studentId: number | string, year?: number) {
+  let url = `${this.STUDENT_DASHBOARD}/summary?studentId=${studentId}`;
+  if (year) url += `&year=${year}`;
+  return url;
+}
+
+static studentCurrentMonthAttendance(studentId: number | string, month?: number, year?: number) {
+  let url = `${this.STUDENT_DASHBOARD}/current-month?studentId=${studentId}`;
+  if (month) url += `&month=${month}`;
+  if (year) url += `&year=${year}`;
+  return url;
+}
+
+static studentRecentAttendance(studentId: number | string, limit: number = 10) {
+  return `${this.STUDENT_DASHBOARD}/recent?studentId=${studentId}&limit=${limit}`;
+}
 }

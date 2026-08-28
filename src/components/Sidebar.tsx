@@ -30,22 +30,28 @@ type Props = {
   setActiveTab: (tab: TabType) => void;
   mobileOpen?: boolean;
   setMobileOpen?: (open: boolean) => void;
+  userRole?: string | null;
 };
 
 export default function Sidebar({ 
   activeTab, 
   setActiveTab,
   mobileOpen = false,
-  setMobileOpen = () => {}
+  setMobileOpen = () => {},
+  userRole: propUserRole
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(propUserRole || null);
 
   useEffect(() => {
-    setUserRole(authService.getUserRole());
-  }, []);
+    if (!propUserRole) {
+      setUserRole(authService.getUserRole());
+    } else {
+      setUserRole(propUserRole);
+    }
+  }, [propUserRole]);
 
   useEffect(() => {
     if (
@@ -71,26 +77,32 @@ export default function Sidebar({
 
   const navigate = useNavigate();
 
+  // ============================================
+  // GET MENUS BASED ON ROLE
+  // ============================================
   const getMenus = () => {
     const baseMenus = [
       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
       { id: "library", label: "Library", icon: BookOpen },
     ];
 
+    // Admin gets all menus including Student (management)
     if (userRole === 'admin' || userRole === 'super_admin') {
       return [
         ...baseMenus,
         { id: "class", label: "Classes", icon: SquareDashedText },
         { id: "teacher", label: "Teachers", icon: GraduationCap },
-        { id: "student", label: "Students", icon: Users },
+        { id: "student", label: "Students", icon: Users }, // Student management
         { id: "configuration", label: "Configuration", icon: Cog },
       ];
     }
 
+    // Teacher and Naqeeb get only Dashboard and Library
     if (userRole === 'teacher' || userRole === 'naqeeb') {
       return baseMenus;
     }
 
+    // Student gets only Dashboard and Library
     if (userRole === 'student') {
       return baseMenus;
     }
@@ -100,10 +112,16 @@ export default function Sidebar({
 
   const menus = getMenus();
 
+  // ============================================
+  // ATTENDANCE ACCESS PERMISSIONS
+  // ============================================
   const canAccessAttendance = userRole === 'teacher' || userRole === 'naqeeb' || userRole === 'admin' || userRole === 'super_admin';
   const canAccessTeacherAttendance = userRole === 'admin' || userRole === 'super_admin';
   const canAccessStudentAttendance = userRole === 'teacher' || userRole === 'naqeeb' || userRole === 'admin' || userRole === 'super_admin';
 
+  // ============================================
+  // NAVIGATION HANDLERS
+  // ============================================
   const goToCampusPage = () => {
     if (userRole === 'admin' || userRole === 'super_admin') {
       navigate("/Campus");
@@ -163,6 +181,7 @@ export default function Sidebar({
         )}
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          {/* Logo / Brand */}
           <button
             className="w-full p-3 flex items-center gap-3 border-b border-white/30 hover:bg-white/10 transition-colors text-left cursor-pointer"
             onClick={goToCampusPage}
@@ -177,6 +196,7 @@ export default function Sidebar({
             )}
           </button>
 
+          {/* Menu Items */}
           <div className="px-2 sm:px-3 space-y-1.5 sm:space-y-2 py-4 sm:py-6 md:py-10">
             {menus.map((item) => {
               const Icon = item.icon;
@@ -202,6 +222,7 @@ export default function Sidebar({
                     {(!collapsed || isMobile) && <span className="truncate">{item.label}</span>}
                   </button>
 
+                  {/* Attendance Dropdown - Only under Dashboard for teachers/naqeeb/admin */}
                   {item.id === "dashboard" && canAccessAttendance && (
                     <div className="mt-1 sm:mt-2">
                       <button
@@ -239,6 +260,7 @@ export default function Sidebar({
 
                       {(!collapsed || isMobile) && attendanceOpen && (
                         <div className="ml-6 sm:ml-8 mt-1 space-y-1">
+                          {/* Teacher Attendance - Admin only */}
                           {canAccessTeacherAttendance && (
                             <button
                               onClick={() => {
@@ -258,6 +280,7 @@ export default function Sidebar({
                             </button>
                           )}
                           
+                          {/* Student Attendance - Admin, Teacher, Naqeeb */}
                           {canAccessStudentAttendance && (
                             <button
                               onClick={() => {
@@ -286,6 +309,7 @@ export default function Sidebar({
           </div>
         </div>
 
+        {/* Collapse Toggle - Desktop only */}
         {!isMobile && (
           <div className="p-3 sm:p-4 border-t border-white/10">
             <button

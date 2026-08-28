@@ -4,6 +4,7 @@ import Sidebar, { type TabType } from "./Sidebar";
 import ProfileButton from "./ProfileButton";
 import TeacherContent from "./Teacher/TeacherPage";
 import StudentContent from "./Student/StudentPage";
+import StudentDashboard from "./dashboard/StudentDashboard";
 import LibraryPage from "./LibraryPage";
 import BackgroundRings from "./common/BackgroundRings";
 import SectionPage from "../Section/SectionPage";
@@ -13,6 +14,7 @@ import TeacherAttendancePage from "../Attendance/TeacherAttendance/TeacherAttend
 import StudentAttendancePage from "../Attendance/StudentAttendance/StudentAttendancePage";
 import DashboardPage from "./dashboard/DashboardPage";
 import { useCampus } from "../context/CampusContext";
+import { authService } from "../services/authService";
 import {
   LayoutDashboard,
   GraduationCap,
@@ -40,7 +42,7 @@ const pageConfig: Record<TabType, { name: string; icon: React.ReactNode }> = {
     icon: <GraduationCap size={16} className="text-yellow-400" /> 
   },
   student: { 
-    name: "Student", 
+    name: "Students", 
     icon: <Users size={16} className="text-yellow-400" /> 
   },
   configuration: { 
@@ -60,12 +62,20 @@ const pageConfig: Record<TabType, { name: string; icon: React.ReactNode }> = {
 export default function MainDeshboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { classId } = useParams<{ classId: string }>();
   const { campusId, isLoading, refreshCampusData } = useCampus();
   
   const isSectionPage = location.pathname.includes('/sections/');
+
+  // Get user role
+  useEffect(() => {
+    const role = authService.getUserRole();
+    setUserRole(role);
+    console.log('👤 User Role in MainDeshboard:', role);
+  }, []);
 
   // Force refresh campus data on component mount
   useEffect(() => {
@@ -119,16 +129,35 @@ export default function MainDeshboard() {
     }
   };
 
+  // ============================================
+  // RENDER CONTENT BASED ON ROLE AND TAB
+  // ============================================
   const renderContent = () => {
     if (isSectionPage && classId) {
       return <SectionPage classId={classId} />;
     }
 
+    // For student role: Show StudentDashboard when Dashboard tab is clicked
+    if (userRole === 'student') {
+      // If active tab is dashboard, show StudentDashboard
+      if (activeTab === 'dashboard') {
+        return <StudentDashboard />;
+      }
+      // For other tabs (like library), show the respective content
+      switch (activeTab) {
+        case "library":
+          return <LibraryPage />;
+        default:
+          return <StudentDashboard />;
+      }
+    }
+
+    // For other roles (admin, teacher, naqeeb)
     switch (activeTab) {
       case "teacher":
         return <TeacherContent />;
       case "student":
-        return <StudentContent />;
+        return <StudentContent />; // Student management page for admin
       case "class":
         return <ClassPage />;
       case "library":
@@ -148,6 +177,7 @@ export default function MainDeshboard() {
     if (isSectionPage) {
       return { name: "Sections", icon: <SquareDashedText size={16} className="text-yellow-400" /> };
     }
+    
     return pageConfig[activeTab] || pageConfig.dashboard;
   };
 
@@ -191,6 +221,7 @@ export default function MainDeshboard() {
         setActiveTab={handleTabChange}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
+        userRole={userRole}
       />
 
       <div className="flex-1 flex flex-col relative z-10 w-full min-w-0">
