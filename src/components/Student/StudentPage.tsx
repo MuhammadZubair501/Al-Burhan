@@ -1,4 +1,4 @@
-// StudentPage.tsx - Fully Responsive with Search & Filters
+// StudentPage.tsx - Fully Responsive with Search & Filters - IMAGE FIXED
 import { Plus, Users, Loader2, Search, Filter, X } from "lucide-react";
 import Swal from 'sweetalert2';
 import StudentAndStudentCard from "./StudentCard";
@@ -11,6 +11,36 @@ import { BASE_URL } from '../../config/api';
 
 const Heading = "Student Management";
 const Description = "Manage all Students of Al-Burhan Academy";
+
+// ============================================
+// IMAGE URL HELPER - FIXED
+// ============================================
+const getStudentImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) {
+    return '/avatar.png';
+  }
+
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+
+  // Remove leading slashes
+  let cleanPath = imagePath.replace(/^\/+/, '');
+
+  // If path already contains 'profile_images', use as is
+  if (cleanPath.startsWith('profile_images/')) {
+    return `${import.meta.env.VITE_API_URL || BASE_URL}/api/images/${cleanPath}`;
+  }
+
+  // If path starts with 'students/' or 'teachers/', add profile_images prefix
+  if (cleanPath.startsWith('students/') || cleanPath.startsWith('teachers/')) {
+    return `${import.meta.env.VITE_API_URL || BASE_URL}/api/images/profile_images/${cleanPath}`;
+  }
+
+  // Fallback: assume it's just a filename in students folder
+  return `${import.meta.env.VITE_API_URL || BASE_URL}/api/images/profile_images/students/${cleanPath}`;
+};
 
 export default function StudentPage() {
   const [isStudentFormOpen, setIsStudentFormOpen] = useState(false);
@@ -289,12 +319,14 @@ export default function StudentPage() {
     setEditingStudent(null);
   };
 
+  // ============================================
+  // TRANSFORM STUDENT FOR CARD - FIXED
+  // ============================================
   const transformStudentForCard = (student: StudentResponse) => {
     const fullName = `${student.first_name} ${student.last_name}`;
-    const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
-    const imageUrl = student.profile_image_path 
-      ? `${baseUrl}${student.profile_image_path}` 
-      : '/avatar.png';
+    
+    // FIXED: Use the helper function to get the correct image URL
+    const imageUrl = getStudentImageUrl(student.profile_image_path);
 
     return {
       id: student.roll_number || `STU-${student.student_id}`,
@@ -308,9 +340,11 @@ export default function StudentPage() {
   const getInitialData = () => {
     if (!editingStudent) return undefined;
     
-    const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
     const enrollmentClass = editingStudent.class_name ? 
       `${editingStudent.class_name}${editingStudent.section_name ? ` - ${editingStudent.section_name}` : ''}` : '';
+    
+    // FIXED: Use the helper function for preview image
+    const previewImage = getStudentImageUrl(editingStudent.profile_image_path);
     
     return {
       studentId: editingStudent.student_id,
@@ -335,8 +369,7 @@ export default function StudentPage() {
       shift: editingStudent.shift as any,
       joiningDate: editingStudent.joining_date,
       extraDetails: editingStudent.extra_details || '',
-      studentPreview: editingStudent.profile_image_path ? 
-        `${baseUrl}${editingStudent.profile_image_path}` : '',
+      studentPreview: previewImage, // FIXED: Use the helper function
       studentPicture: null,
       is_active: editingStudent.is_active !== false,
       role: editingStudent.role || 'student',

@@ -1,5 +1,6 @@
 // services/studentService.ts
 import ApiRoutes from "./ApiRoutes";
+import { API_BASE_URL } from "../config/api";
 
 export interface StudentFormData {
   studentId?: number;
@@ -45,7 +46,7 @@ export interface StudentResponse {
   extra_details: string | null;
   campus_id: number;
   is_active: boolean | number;
-  role?: string; // Added role field
+  role?: string;
   section_name?: string;
   class_name?: string;
   class_id?: number;
@@ -56,13 +57,27 @@ export interface StudentResponse {
   className?: string;
   sectionName?: string;
   batchName?: string;
+  // Computed property for image URL
+  image_url?: string;
 }
+
+// Helper function to get full image URL
+const getStudentImageUrl = (student: StudentResponse | null): string => {
+  if (!student || !student.profile_image_path) {
+    return '/default-avatar.png';
+  }
+  return `${API_BASE_URL}/api/images/profile_images/${student.profile_image_path}`;
+};
 
 // Helper function to convert is_active to boolean
 const convertIsActive = (student: any): any => {
   return {
     ...student,
-    is_active: student.is_active === 1 || student.is_active === true
+    is_active: student.is_active === 1 || student.is_active === true,
+    // Add computed image_url
+    image_url: student.profile_image_path 
+      ? `${API_BASE_URL}/api/images/profile_images/${student.profile_image_path}`
+      : '/default-avatar.png'
   };
 };
 
@@ -106,7 +121,7 @@ export const studentService = {
     const result = await response.json();
     console.log('📊 Students response before conversion:', result);
     
-    // Convert is_active to boolean for each student
+    // Convert is_active to boolean and add image_url for each student
     if (result.success && result.data) {
       result.data = result.data.map(convertIsActive);
     }
@@ -123,7 +138,7 @@ export const studentService = {
     const response = await fetch(url);
     const result = await response.json();
     
-    // Convert is_active to boolean for each student
+    // Convert is_active to boolean and add image_url for each student
     if (result.success && result.data) {
       result.data = result.data.map(convertIsActive);
     }
@@ -137,7 +152,7 @@ export const studentService = {
     const result = await response.json();
     console.log('📊 All students response before conversion:', result);
     
-    // Convert is_active to boolean for each student
+    // Convert is_active to boolean and add image_url for each student
     if (result.success && result.data) {
       result.data = result.data.map(convertIsActive);
     }
@@ -149,7 +164,7 @@ export const studentService = {
     const response = await fetch(ApiRoutes.studentById(id));
     const result = await response.json();
     
-    // Convert is_active to boolean
+    // Convert is_active to boolean and add image_url
     if (result.success && result.data) {
       result.data = convertIsActive(result.data);
     }
@@ -222,3 +237,6 @@ export const studentService = {
     return response.json();
   }
 };
+
+// Export the image URL helper
+export { getStudentImageUrl, convertIsActive };

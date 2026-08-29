@@ -6,7 +6,7 @@ import {
   PhoneCall, Venus, Medal, BadgeIcon, Layers3, Power, PowerOff, Circle
 } from 'lucide-react';
 import type { StudentResponse } from '../../services/studentService';
-import { BASE_URL } from '../../config/api';
+import { getImageUrl } from '../../config/api'; // ← FIXED: Use getImageUrl from config
 import Portal from '../../components/common/Portal';
 
 interface StudentDetailModalProps {
@@ -53,10 +53,12 @@ export default function StudentDetailModal({
   if (!isOpen || !student) return null;
 
   const fullName = `${student.first_name} ${student.last_name}`;
-  const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
-  const imageUrl = student.profile_image_path 
-    ? `${baseUrl}${student.profile_image_path}` 
-    : '/avatar.png';
+  
+  // ============================================
+  // FIXED: Use getImageUrl from config
+  // ============================================
+  const imageUrl = getImageUrl(student.profile_image_path, '/avatar.png');
+  
   const isActive = student.is_active !== false;
 
   return (
@@ -224,6 +226,14 @@ export default function StudentDetailModal({
                     </p>
                   </div>
                 )}
+
+                {/* Debug: Image Path */}
+                <div className="col-span-full mt-3 sm:mt-4">
+                  <div className="text-white/40 text-xs bg-white/5 p-2 rounded-lg border border-white/5">
+                    <p>Image Path: {student.profile_image_path || 'No image'}</p>
+                    <p>Image URL: {imageUrl}</p>
+                  </div>
+                </div>
               </div>
             </div>
 

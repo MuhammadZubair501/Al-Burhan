@@ -1,8 +1,9 @@
+// TeacherDetailModal.tsx - FIXED
 import {
   X, User, Mail, Phone, Calendar, Clock, GraduationCap, Building2, 
   BookOpen, Users, FileUser, Pencil, Trash2, PhoneCall, Venus, Medal,
 } from 'lucide-react';
-import { BASE_URL } from '../../config/api';
+import { getImageUrl } from '../../config/api'; // ← FIXED IMPORT
 import Portal from '../../components/common/Portal';
 import React from 'react';
 
@@ -68,10 +69,11 @@ export default function TeacherDetailModal({
   if (!isOpen || !teacher) return null;
 
   const fullName = `${teacher.first_name} ${teacher.last_name}`;
-  const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
-  const imageUrl = teacher.profile_image_path 
-    ? `${baseUrl}${teacher.profile_image_path}` 
-    : '/avatar.png';
+  
+  // ============================================
+  // FIXED: Use getImageUrl from config
+  // ============================================
+  const imageUrl = getImageUrl(teacher.profile_image_path, '/avatar.png');
 
   return (
     <Portal>
@@ -239,10 +241,18 @@ export default function TeacherDetailModal({
                     </p>
                   </div>
                 )}
+
+                {/* Debug: Image Path */}
+                <div className="col-span-full mt-3 sm:mt-4">
+                  <div className="text-white/40 text-xs bg-white/5 p-2 rounded-lg border border-white/5">
+                    <p>Image Path: {teacher.profile_image_path || 'No image'}</p>
+                    <p>Image URL: {imageUrl}</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Footer Actions - Fixed */}
+            {/* Footer Actions */}
             <div className="flex-shrink-0 sticky bottom-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900/95 backdrop-blur-xl px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 border-t border-white/10">
               <button
                 onClick={onDelete}

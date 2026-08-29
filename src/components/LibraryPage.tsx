@@ -26,28 +26,33 @@ import { formatFileSize } from '../utils/formatters';
 import Swal from 'sweetalert2';
 import ProfileButton from '../components/ProfileButton';
 
+// ============================================
+// FOLDERS TO HIDE FROM LIBRARY
+// ============================================
+const HIDDEN_FOLDERS: string[] = ['profile_images'];
+
 export default function LibraryPage() {
-  const [currentPath, setCurrentPath] = useState('');
+  const [currentPath, setCurrentPath] = useState<string>('');
   const [items, setItems] = useState<MegaItem[]>([]);
   const [breadcrumb, setBreadcrumb] = useState<{ name: string; path: string }[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [showNewFolderModal, setShowNewFolderModal] = useState<boolean>(false);
+  const [newFolderName, setNewFolderName] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadFileName, setUploadFileName] = useState('');
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [uploadFileName, setUploadFileName] = useState<string>('');
   const [uploadQueue, setUploadQueue] = useState<{ file: File; relativePath: string }[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [progressJobs, setProgressJobs] = useState<string[]>([]);
   const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
-  const dragCounterRef = useRef(0);
+  const dragCounterRef = useRef<number>(0);
 
   // Load folder contents
   const loadFolder = async (path: string = '') => {
@@ -55,13 +60,77 @@ export default function LibraryPage() {
     setError(null);
     try {
       const folder: MegaFolder = await megaService.getFolder(path);
-      setItems(folder.items || []);
+      
+      // Filter out hidden folders (profile_images)
+      let filteredItems = folder.items || [];
+      
+      // Only filter at root level or when not inside a hidden folder
+      const isRootLevel = path === '' || path === '/';
+      const isInsideHiddenFolder = HIDDEN_FOLDERS.some((hidden: string) => 
+        path.startsWith(hidden) || path.includes(`/${hidden}/`)
+      );
+      
+      // If we're at root level, hide the profile_images folder
+      if (isRootLevel) {
+        filteredItems = filteredItems.filter((item: MegaItem) => 
+          !(item.isFolder && HIDDEN_FOLDERS.includes(item.name))
+        );
+      }
+      
+      // If we're inside a hidden folder, show its contents (but hide sub-folders that are in the list)
+      if (isInsideHiddenFolder) {
+        filteredItems = filteredItems.filter((item: MegaItem) => 
+          !(item.isFolder && HIDDEN_FOLDERS.includes(item.name))
+        );
+      }
+      
+      setItems(filteredItems);
       setBreadcrumb(folder.breadcrumb || []);
       setCurrentPath(path);
     } catch (err: any) {
       setError(err.message || 'Failed to load folder');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Prevent navigation into hidden folders
+  const navigateToFolder = (path: string) => {
+    // Check if trying to navigate into a hidden folder
+    const isHidden = HIDDEN_FOLDERS.some((hidden: string) => 
+      path === hidden || path.startsWith(`${hidden}/`)
+    );
+    
+    if (isHidden) {
+      // Don't navigate into hidden folders
+      setError('This folder is system protected and not accessible.');
+      return;
+    }
+    
+    loadFolder(path);
+  };
+
+  // Navigate up
+  const navigateUp = () => {
+    if (currentPath) {
+      const pathParts = currentPath.split('/').filter(Boolean);
+      pathParts.pop();
+      const parentPath = pathParts.join('/');
+      
+      // Check if parent is a hidden folder
+      const isParentHidden = HIDDEN_FOLDERS.some((hidden: string) => 
+        parentPath === hidden || parentPath.startsWith(`${hidden}/`)
+      );
+      
+      // If parent is hidden, go up one more level
+      if (isParentHidden) {
+        const grandParentParts = parentPath.split('/').filter(Boolean);
+        grandParentParts.pop();
+        const grandParentPath = grandParentParts.join('/');
+        loadFolder(grandParentPath);
+      } else {
+        loadFolder(parentPath);
+      }
     }
   };
 
@@ -75,9 +144,14 @@ export default function LibraryPage() {
     let currentPath = basePath;
     
     for (const part of parts) {
+      // Skip if trying to create a hidden folder
+      if (HIDDEN_FOLDERS.includes(part)) {
+        continue;
+      }
+      
       try {
         const folder = await megaService.getFolder(currentPath);
-        const exists = folder.items?.some(item => item.isFolder && item.name === part);
+        const exists = folder.items?.some((item: MegaItem) => item.isFolder && item.name === part);
         
         if (!exists) {
           await megaService.createFolder(currentPath, part);
@@ -97,70 +171,78 @@ export default function LibraryPage() {
   };
 
   // Process upload queue
-// Process upload queue
-const processUploadQueue = useCallback(async (files: { file: File; relativePath: string }[]) => {
-  if (files.length === 0) return;
+  const processUploadQueue = useCallback(async (files: { file: File; relativePath: string }[]) => {
+    if (files.length === 0) return;
 
-  setUploading(true);
-  setUploadProgress(0);
-  
-  let completed = 0;
-  const total = files.length;
+    setUploading(true);
+    setUploadProgress(0);
+    
+    let completed = 0;
+    const total = files.length;
 
-  // Group files by their parent folder path
-  const filesByFolder = new Map<string, File[]>();
-  
-  for (const { file, relativePath } of files) {
-    let folderPath = '';
+    // Group files by their parent folder path
+    const filesByFolder = new Map<string, File[]>();
     
-    // Extract the folder path from the relative path
-    if (relativePath && relativePath.includes('/')) {
-      const pathParts = relativePath.split('/');
-      // Remove the filename from the path, keep only the folder structure
-      pathParts.pop(); // Remove the filename
-      folderPath = pathParts.join('/');
+    for (const { file, relativePath } of files) {
+      let folderPath = '';
+      
+      // Extract the folder path from the relative path
+      if (relativePath && relativePath.includes('/')) {
+        const pathParts = relativePath.split('/');
+        pathParts.pop(); // Remove the filename
+        folderPath = pathParts.join('/');
+      }
+      
+      const key = folderPath || 'root';
+      if (!filesByFolder.has(key)) {
+        filesByFolder.set(key, []);
+      }
+      filesByFolder.get(key)!.push(file);
     }
-    
-    const key = folderPath || 'root';
-    if (!filesByFolder.has(key)) {
-      filesByFolder.set(key, []);
-    }
-    filesByFolder.get(key)!.push(file);
-  }
 
-  // Process each folder group
-  for (const [folderPath, folderFiles] of filesByFolder) {
-    let targetPath = currentPath;
-    
-    // Only create folder structure if there's a path
-    if (folderPath && folderPath !== 'root') {
-      targetPath = await createFolderStructure(currentPath, folderPath);
-    }
-    
-    // Upload all files in this folder
-    for (const file of folderFiles) {
-      try {
-        setUploadFileName(file.name);
-        await megaService.uploadFileWithProgress(file, targetPath, (progress) => {
-          const overallProgress = Math.round(((completed + progress / 100) / total) * 100);
-          setUploadProgress(overallProgress);
-        });
+    // Process each folder group
+    for (const [folderPath, folderFiles] of filesByFolder) {
+      let targetPath = currentPath;
+      
+      // Only create folder structure if there's a path and it's not hidden
+      if (folderPath && folderPath !== 'root') {
+        // Check if any part of the path is a hidden folder
+        const pathParts = folderPath.split('/');
+        const hasHiddenPart = pathParts.some((part: string) => HIDDEN_FOLDERS.includes(part));
         
-        completed++;
-        setUploadProgress(Math.round((completed / total) * 100));
-      } catch (err: any) {
-        setError(`Failed to upload ${file.name}: ${err.message}`);
+        if (hasHiddenPart) {
+          // Skip creating hidden folders
+          setError(`Cannot upload to system protected folder: ${folderPath}`);
+          continue;
+        }
+        
+        targetPath = await createFolderStructure(currentPath, folderPath);
+      }
+      
+      // Upload all files in this folder
+      for (const file of folderFiles) {
+        try {
+          setUploadFileName(file.name);
+          await megaService.uploadFileWithProgress(file, targetPath, (progress: number) => {
+            const overallProgress = Math.round(((completed + progress / 100) / total) * 100);
+            setUploadProgress(overallProgress);
+          });
+          
+          completed++;
+          setUploadProgress(Math.round((completed / total) * 100));
+        } catch (err: any) {
+          setError(`Failed to upload ${file.name}: ${err.message}`);
+        }
       }
     }
-  }
 
-  await loadFolder(currentPath);
-  
-  setUploading(false);
-  setUploadProgress(null);
-  setUploadFileName('');
-  setUploadQueue([]);
-}, [currentPath]);
+    await loadFolder(currentPath);
+    
+    setUploading(false);
+    setUploadProgress(null);
+    setUploadFileName('');
+    setUploadQueue([]);
+  }, [currentPath]);
 
   // Drag and drop handlers
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -200,6 +282,16 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
       if (entry.isFile) {
         return new Promise((resolve) => {
           entry.file((file: File) => {
+            // Check if any part of the path is a hidden folder
+            const pathParts = path.split('/');
+            const hasHiddenPart = pathParts.some((part: string) => HIDDEN_FOLDERS.includes(part));
+            
+            if (hasHiddenPart) {
+              // Skip files from hidden folders
+              resolve();
+              return;
+            }
+            
             uploadQueue.push({
               file,
               relativePath: path ? `${path}/${file.name}` : file.name,
@@ -210,6 +302,11 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
       }
 
       if (entry.isDirectory) {
+        // Skip if the directory is a hidden folder
+        if (HIDDEN_FOLDERS.includes(entry.name)) {
+          return Promise.resolve();
+        }
+        
         const reader = entry.createReader();
 
         return new Promise((resolve) => {
@@ -253,26 +350,19 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
     }
   }, [processUploadQueue]);
 
-  // Navigate to folder
-  const navigateToFolder = (path: string) => {
-    loadFolder(path);
-  };
-
-  // Navigate up
-  const navigateUp = () => {
-    if (currentPath) {
-      const pathParts = currentPath.split('/').filter(Boolean);
-      pathParts.pop();
-      const parentPath = pathParts.join('/');
-      loadFolder(parentPath);
-    }
-  };
-
-  // Create folder
+  // Create folder - Prevent creating hidden folders
   const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) return;
+    const folderName = newFolderName.trim();
+    if (!folderName) return;
+    
+    // Prevent creating hidden folders
+    if (HIDDEN_FOLDERS.includes(folderName)) {
+      setError(`Cannot create system protected folder: ${folderName}`);
+      return;
+    }
+    
     try {
-      await megaService.createFolder(currentPath, newFolderName.trim());
+      await megaService.createFolder(currentPath, folderName);
       setShowNewFolderModal(false);
       setNewFolderName('');
       loadFolder(currentPath);
@@ -290,7 +380,14 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const relativePath = (file as any).webkitRelativePath || '';
-      fileQueue.push({ file, relativePath });
+      
+      // Check if any part of the path is a hidden folder
+      const pathParts = relativePath.split('/');
+      const hasHiddenPart = pathParts.some((part: string) => HIDDEN_FOLDERS.includes(part));
+      
+      if (!hasHiddenPart) {
+        fileQueue.push({ file, relativePath });
+      }
     }
     
     setUploadQueue(fileQueue);
@@ -314,7 +411,13 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
       if (file.name.startsWith('.')) continue;
       if (file.name === 'Thumbs.db') continue;
       
-      fileQueue.push({ file, relativePath });
+      // Check if any part of the path is a hidden folder
+      const pathParts = relativePath.split('/');
+      const hasHiddenPart = pathParts.some((part: string) => HIDDEN_FOLDERS.includes(part));
+      
+      if (!hasHiddenPart) {
+        fileQueue.push({ file, relativePath });
+      }
     }
     
     if (fileQueue.length > 0) {
@@ -327,8 +430,14 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
     }
   };
 
-  // Delete item
+  // Delete item - Prevent deleting hidden folders
   const handleDelete = async (item: MegaItem) => {
+    // Prevent deleting hidden folders
+    if (item.isFolder && HIDDEN_FOLDERS.includes(item.name)) {
+      setError(`Cannot delete system protected folder: ${item.name}`);
+      return;
+    }
+    
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: `You want to delete "${item.name}"?`,
@@ -377,9 +486,16 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
     }
   };
 
-  // Download folder
+  // Download folder - Prevent downloading hidden folders
   const handleDownloadFolder = async (item: MegaItem) => {
     if (!item.isFolder) return;
+    
+    // Prevent downloading hidden folders
+    if (HIDDEN_FOLDERS.includes(item.name)) {
+      setError(`Cannot download system protected folder: ${item.name}`);
+      return;
+    }
+    
     try {
       const { jobId } = await megaService.downloadFolder(item.path);
       setProgressJobs((prev) => [...prev, jobId]);
@@ -393,13 +509,17 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
     setProgressJobs((prev) => prev.filter((id) => id !== jobId));
   };
 
-  // Filter items based on search
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter items based on search (also exclude hidden folders from search results)
+  const filteredItems = items.filter((item: MegaItem) => {
+    // Hide profile_images folder from search results
+    if (item.isFolder && HIDDEN_FOLDERS.includes(item.name)) {
+      return false;
+    }
+    return item.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   // Sort items: folders first, then files
-  const sortedItems = [...filteredItems].sort((a, b) => {
+  const sortedItems = [...filteredItems].sort((a: MegaItem, b: MegaItem) => {
     if (a.isFolder && !b.isFolder) return -1;
     if (!a.isFolder && b.isFolder) return 1;
     return a.name.localeCompare(b.name);
@@ -468,14 +588,12 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
         </div>
       )}
 
-      {/* Header - Hidden on mobile (already in top bar) */}
-  
-        <PageHeader
-          title="Library"
-          description="Manage your files and folders - Drag & drop to upload"
-          Icon={BookOpen}
-        />
-
+      {/* Header */}
+      <PageHeader
+        title="Library"
+        description="Manage your files and folders - Drag & drop to upload"
+        Icon={BookOpen}
+      />
 
       {/* Toolbar */}
       <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -502,17 +620,23 @@ const processUploadQueue = useCallback(async (files: { file: File; relativePath:
             >
               Root
             </button>
-            {breadcrumb.map((crumb, index) => (
-              <span key={index} className="flex items-center gap-1 whitespace-nowrap flex-shrink-0">
-                <span className="text-green-300">/</span>
-                <button
-                  onClick={() => navigateToFolder(crumb.path)}
-                  className="hover:text-yellow-400 transition-colors truncate max-w-[40px] sm:max-w-[100px] md:max-w-[150px]"
-                >
-                  {crumb.name}
-                </button>
-              </span>
-            ))}
+            {breadcrumb.map((crumb, index) => {
+              // Skip showing hidden folders in breadcrumb
+              if (HIDDEN_FOLDERS.includes(crumb.name)) {
+                return null;
+              }
+              return (
+                <span key={index} className="flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                  <span className="text-green-300">/</span>
+                  <button
+                    onClick={() => navigateToFolder(crumb.path)}
+                    className="hover:text-yellow-400 transition-colors truncate max-w-[40px] sm:max-w-[100px] md:max-w-[150px]"
+                  >
+                    {crumb.name}
+                  </button>
+                </span>
+              );
+            })}
           </div>
         </div>
 

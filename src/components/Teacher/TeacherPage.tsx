@@ -1,3 +1,4 @@
+// TeacherPage.tsx
 import { GraduationCap, Plus, Loader2, Search, Filter, X } from "lucide-react";
 import TeacherAndStudentCard from "./TeacherCard";
 import TeacherModal from "./TeacherModal";
@@ -6,7 +7,7 @@ import { useState, useEffect } from "react";
 import PageHeader from "../PageHeader";
 import { teacherService } from "../../services/teacherService";
 import Swal from "sweetalert2";
-import { BASE_URL } from '../../config/api';
+import { getImageUrl } from '../../config/api'; // ← FIXED IMPORT
 
 const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
   const colors = {
@@ -65,11 +66,12 @@ interface Teacher {
 const Heading = "Teacher Management";
 const Description = "Manage all teachers of Al-Burhan Academy";
 
-const getImageUrl = (imagePath: string | null) => {
-  if (!imagePath) return '';
-  if (imagePath.startsWith('http')) return imagePath;
-  const baseUrl = import.meta.env.VITE_API_URL || BASE_URL;
-  return `${baseUrl}${imagePath}`;
+// ============================================
+// FIXED: Use getImageUrl from config
+// ============================================
+const getTeacherImage = (imagePath: string | null) => {
+  if (!imagePath) return '/avatar.png';
+  return getImageUrl(imagePath);
 };
 
 // Define the type for the initial data that TeacherModal expects
@@ -138,7 +140,6 @@ export default function TeacherPage() {
   const applyFilters = () => {
     let filtered = [...teachers];
 
-    // Search filter
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(teacher =>
@@ -149,14 +150,12 @@ export default function TeacherPage() {
       );
     }
 
-    // Department filter
     if (filterDepartment !== "all") {
       filtered = filtered.filter(teacher => 
         teacher.department_name === filterDepartment
       );
     }
 
-    // Shift filter
     if (filterShift !== "all") {
       filtered = filtered.filter(teacher => 
         teacher.shift === filterShift
@@ -237,7 +236,6 @@ export default function TeacherPage() {
     
     console.log('📊 Getting initial data from teacher:', editingTeacher);
     
-    // Helper to normalize gender - returns specific union type
     const normalizeGender = (gender: string): "" | "male" | "female" | "other" => {
       if (!gender) return '';
       const normalized = gender.toLowerCase().trim();
@@ -247,7 +245,6 @@ export default function TeacherPage() {
       return '';
     };
     
-    // Helper to normalize shift - returns specific union type
     const normalizeShift = (shift: string): "" | "morning" | "evening" => {
       if (!shift) return '';
       const normalized = shift.toLowerCase().trim();
@@ -261,6 +258,11 @@ export default function TeacherPage() {
     ) || [];
     
     const formattedSubjects = editingTeacher.subjects?.map((s: any) => s.subject_name) || [];
+    
+    // ============================================
+    // FIXED: Use getImageUrl for profile preview
+    // ============================================
+    const previewImage = getImageUrl(editingTeacher.profile_image_path);
     
     const initialData: TeacherModalInitialData = {
       firstName: editingTeacher.first_name || '',
@@ -281,14 +283,13 @@ export default function TeacherPage() {
       extraDetail: editingTeacher.extra_details || '',
       teacherId: String(editingTeacher.teacher_id) || '',
       profilePicture: null,
-      profilePreview: getImageUrl(editingTeacher.profile_image_path) || '',
+      profilePreview: previewImage, // ← FIXED: Use getImageUrl
     };
     
     console.log('📤 Initial data prepared for modal:', initialData);
     return initialData;
   };
 
-  // Get unique departments for filter
   const departments = [...new Set(teachers.map(t => t.department_name).filter(Boolean))];
 
   const clearFilters = () => {
@@ -318,10 +319,9 @@ export default function TeacherPage() {
       />
       
       <div className="relative z-10 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 pb-4 sm:pb-6 md:pb-8 overflow-x-hidden">
-        {/* Search and Filter Bar - Responsive */}
+        {/* Search and Filter Bar */}
         <div className="mb-4 sm:mb-6 max-w-full">
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
-            {/* Search Input */}
             <div className="flex-1 min-w-0 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-green-200/60" size={18} />
               <input
@@ -333,7 +333,6 @@ export default function TeacherPage() {
               />
             </div>
 
-            {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200 text-sm sm:text-base whitespace-nowrap flex-shrink-0"
@@ -345,7 +344,6 @@ export default function TeacherPage() {
               )}
             </button>
 
-            {/* Clear Filters Button */}
             {(searchTerm || filterDepartment !== "all" || filterShift !== "all") && (
               <button
                 onClick={clearFilters}
@@ -357,11 +355,9 @@ export default function TeacherPage() {
             )}
           </div>
 
-          {/* Filter Options - Expandable */}
           {showFilters && (
             <div className="mt-3 p-3 sm:p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {/* Department Filter */}
                 <div className="min-w-0">
                   <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
                     Department
@@ -380,7 +376,6 @@ export default function TeacherPage() {
                   </select>
                 </div>
 
-                {/* Shift Filter */}
                 <div className="min-w-0">
                   <label className="text-green-100 text-xs sm:text-sm font-medium block mb-1.5">
                     Shift
@@ -400,14 +395,12 @@ export default function TeacherPage() {
           )}
         </div>
 
-        {/* Results Count */}
         <div className="mb-3 sm:mb-4">
           <p className="text-green-100/60 text-xs sm:text-sm">
             Showing {filteredTeachers.length} of {teachers.length} teachers
           </p>
         </div>
 
-        {/* Teachers Grid - No horizontal scroll */}
         <div className="w-full overflow-x-hidden">
           {filteredTeachers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-white/60">
@@ -436,7 +429,10 @@ export default function TeacherPage() {
                 <div key={teacher.teacher_id} className="w-full min-w-0">
                   <TeacherAndStudentCard
                     id={teacher.teacher_id}
-                    image={getImageUrl(teacher.profile_image_path) || '/avatar.png'}
+                    // ============================================
+                    // FIXED: Use getTeacherImage function
+                    // ============================================
+                    image={getTeacherImage(teacher.profile_image_path)}
                     name={`${teacher.first_name} ${teacher.last_name}`}
                     address={teacher.extra_details || 'No address provided'}
                     phone={teacher.phone_number}
@@ -454,7 +450,6 @@ export default function TeacherPage() {
           )}
         </div>
 
-   {/* Floating Action Button - Responsive */}
         <button
           onClick={() => {
             setEditingTeacher(null);
@@ -498,7 +493,6 @@ export default function TeacherPage() {
           />
           <span>Add Teacher</span>
         </button>
-
       </div>
 
       <TeacherModal
