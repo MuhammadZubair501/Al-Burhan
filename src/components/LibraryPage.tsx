@@ -46,8 +46,18 @@ export default function LibraryPage() {
   const [uploadFileName, setUploadFileName] = useState<string>('');
   const [uploadQueue, setUploadQueue] = useState<{ file: File; relativePath: string }[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [progressJobs, setProgressJobs] = useState<string[]>([]);
-  const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(new Set());
+  
+  // Updated: Track download popup state
+  const [downloadPopup, setDownloadPopup] = useState<{
+    show: boolean;
+    file: { name: string; path: string; size?: number; mime?: string };
+  }>({
+    show: false,
+    file: { name: '', path: '' }
+  });
+  
+  // REMOVED: downloadingFiles state (not needed anymore)
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -442,46 +452,23 @@ export default function LibraryPage() {
     }
   };
 
-  // Download file (only for files, not folders)
-  const handleDownloadFile = async (item: MegaItem) => {
-    if (item.isFolder) return;
-    
-    if (downloadingFiles.has(item.name)) return;
-    
-    setDownloadingFiles(prev => new Set(prev).add(item.name));
-    
-    try {
-      await megaService.downloadFile(currentPath, item.name);
-    } catch (err: any) {
-      setError(err.message || 'Failed to download file');
-    } finally {
-      setDownloadingFiles(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(item.name);
-        return newSet;
-      });
+  // Download file - Updated to use ProgressPopup
+  const handleDownloadFile = (item: MegaItem) => {
+    if (item.isFolder) {
+      setError('Cannot download folders. Please use the share link option.');
+      return;
     }
+    
+    setDownloadPopup({
+      show: true,
+      file: {
+        name: item.name,
+        path: item.path || currentPath,
+        size: item.size,
+        mime: item.type || 'application/octet-stream' // Using type instead of mime
+      }
+    });
   };
-
-  // Handle progress complete
-  const handleProgressComplete = (jobId: string) => {
-    setProgressJobs((prev) => prev.filter((id) => id !== jobId));
-  };
-
-  // Filter items based on search
-  const filteredItems = items.filter((item: MegaItem) => {
-    if (item.isFolder && HIDDEN_FOLDERS.includes(item.name)) {
-      return false;
-    }
-    return item.name.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  // Sort items: folders first, then files
-  const sortedItems = [...filteredItems].sort((a: MegaItem, b: MegaItem) => {
-    if (a.isFolder && !b.isFolder) return -1;
-    if (!a.isFolder && b.isFolder) return 1;
-    return a.name.localeCompare(b.name);
-  });
 
   // Clear search
   const clearSearch = () => {
@@ -508,6 +495,21 @@ export default function LibraryPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchTerm]);
+
+  // Filter items based on search
+  const filteredItems = items.filter((item: MegaItem) => {
+    if (item.isFolder && HIDDEN_FOLDERS.includes(item.name)) {
+      return false;
+    }
+    return item.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  // Sort items: folders first, then files
+  const sortedItems = [...filteredItems].sort((a: MegaItem, b: MegaItem) => {
+    if (a.isFolder && !b.isFolder) return -1;
+    if (!a.isFolder && b.isFolder) return 1;
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <div 
@@ -732,7 +734,7 @@ export default function LibraryPage() {
           <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-yellow-400 border-t-transparent" />
         </div>
       ) : (
-        <div className={`mt-4 sm:mt-6 w-full  ${
+        <div className={`mt-4 sm:mt-6 w-full ${
           viewMode === 'grid'
             ? 'grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4'
             : 'space-y-2'
@@ -793,34 +795,27 @@ export default function LibraryPage() {
                   )}
                 </div>
 
-                {/* Actions - REMOVED FOLDER DOWNLOAD BUTTON */}
+                {/* Actions */}
                 <div className={`${
                   viewMode === 'grid'
                     ? 'absolute top-1 right-1 flex flex-row gap-0.5 bg-black/40 backdrop-blur-sm rounded-lg p-0.5 sm:p-1 sm:bg-transparent sm:backdrop-blur-none sm:p-0 sm:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity'
                     : 'flex-shrink-0 flex gap-1'
                 }`}>
-                  {!item.isFolder ? (
+                  {/* Only show download button for files (not folders) */}
+                  {!item.isFolder && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownloadFile(item);
                       }}
-                      disabled={downloadingFiles.has(item.name)}
-                      className={`p-1.5 rounded-lg transition-all ${
-                        downloadingFiles.has(item.name)
-                          ? 'bg-blue-500/10 text-blue-300/50 cursor-not-allowed'
-                          : 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30'
-                      }`}
+                      className="p-1.5 bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-all"
                       title="Download"
                     >
-                      {downloadingFiles.has(item.name) ? (
-                        <div className="w-3 h-3 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Download size={12} />
-                      )}
+                      <Download size={12} />
                     </button>
-                  ) : null}
+                  )}
                   
+                  {/* Delete button for both files and folders */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -879,18 +874,19 @@ export default function LibraryPage() {
         </div>
       )}
 
-      {/* Progress Popups - Filter out invalid jobIds */}
-      {progressJobs
-        .filter((jobId) => jobId && jobId !== 'undefined' && jobId !== 'null' && jobId !== '')
-        .map((jobId) => (
-          <ProgressPopup
-            key={jobId}
-            jobId={jobId}
-            onClose={() => setProgressJobs((prev) => prev.filter((id) => id !== jobId))}
-            onComplete={handleProgressComplete}
-            autoDownload={true}
-          />
-        ))}
+      {/* Download Progress Popup */}
+      {downloadPopup.show && downloadPopup.file.name && (
+        <ProgressPopup
+          file={downloadPopup.file}
+          onClose={() => {
+            setDownloadPopup({ show: false, file: { name: '', path: '' } });
+          }}
+          onComplete={() => {
+            console.log('✅ Download complete for:', downloadPopup.file.name);
+          }}
+          autoDownload={true}
+        />
+      )}
     </div>
   );
 }
