@@ -13,7 +13,7 @@ import ClassPage from "../Class/ClassPage";
 import TeacherAttendancePage from "../Attendance/TeacherAttendance/TeacherAttendancePage";
 import StudentAttendancePage from "../Attendance/StudentAttendance/StudentAttendancePage";
 import DashboardPage from "./dashboard/DashboardPage";
-import ProgressPopup from "../components/Mega/ProgressPopup";
+// REMOVED: ProgressPopup import - no longer needed
 import { useCampus } from "../context/CampusContext";
 import { authService } from "../services/authService";
 import {
@@ -64,7 +64,7 @@ export default function MainDeshboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [progressJobs, setProgressJobs] = useState<string[]>([]);
+  // REMOVED: progressJobs state - no longer needed
   const location = useLocation();
   const navigate = useNavigate();
   const { classId } = useParams<{ classId: string }>();
@@ -131,9 +131,7 @@ export default function MainDeshboard() {
     }
   };
 
-  const handleProgressComplete = (jobId: string) => {
-    setProgressJobs(prev => prev.filter(id => id !== jobId));
-  };
+  // REMOVED: handleProgressComplete function - no longer needed
 
   // ============================================
   // RENDER CONTENT BASED ON ROLE AND TAB
@@ -238,18 +236,7 @@ export default function MainDeshboard() {
         </main>
       </div>
 
-      {/* Progress Popups - Filter out invalid jobIds */}
-      {progressJobs
-        .filter((jobId) => jobId && jobId !== 'undefined' && jobId !== 'null' && jobId !== '')
-        .map((jobId) => (
-          <ProgressPopup
-            key={jobId}
-            jobId={jobId}
-            onClose={() => setProgressJobs(prev => prev.filter(id => id !== jobId))}
-            onComplete={handleProgressComplete}
-            autoDownload={true}
-          />
-        ))}
+      {/* REMOVED: Progress Popups - ZIP/folder download no longer needed */}
     </div>
   );
 }
