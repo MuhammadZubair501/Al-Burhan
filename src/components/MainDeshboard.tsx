@@ -13,6 +13,7 @@ import ClassPage from "../Class/ClassPage";
 import TeacherAttendancePage from "../Attendance/TeacherAttendance/TeacherAttendancePage";
 import StudentAttendancePage from "../Attendance/StudentAttendance/StudentAttendancePage";
 import DashboardPage from "./dashboard/DashboardPage";
+import ProgressPopup from "../components/Mega/ProgressPopup";
 import { useCampus } from "../context/CampusContext";
 import { authService } from "../services/authService";
 import {
@@ -63,6 +64,7 @@ export default function MainDeshboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [progressJobs, setProgressJobs] = useState<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
   const { classId } = useParams<{ classId: string }>();
@@ -127,6 +129,10 @@ export default function MainDeshboard() {
       setActiveTab(tab);
       setMobileOpen(false);
     }
+  };
+
+  const handleProgressComplete = (jobId: string) => {
+    setProgressJobs(prev => prev.filter(id => id !== jobId));
   };
 
   // ============================================
@@ -232,8 +238,18 @@ export default function MainDeshboard() {
         </main>
       </div>
 
-      {/* Debug component - shows in development only
-      {import.meta.env.DEV && <CampusDebug />} */}
+      {/* Progress Popups - Filter out invalid jobIds */}
+      {progressJobs
+        .filter((jobId) => jobId && jobId !== 'undefined' && jobId !== 'null' && jobId !== '')
+        .map((jobId) => (
+          <ProgressPopup
+            key={jobId}
+            jobId={jobId}
+            onClose={() => setProgressJobs(prev => prev.filter(id => id !== jobId))}
+            onComplete={handleProgressComplete}
+            autoDownload={true}
+          />
+        ))}
     </div>
   );
 }

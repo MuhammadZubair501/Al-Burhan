@@ -5,12 +5,17 @@ import type { MegaFolder } from '../types/mega.types';
 export const megaService = {
   // Get folder contents
   async getFolder(path: string = ''): Promise<MegaFolder> {
-    const response = await fetch(ApiRoutes.megaGetFolder(path));
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to fetch folder contents');
+    try {
+      const response = await fetch(ApiRoutes.megaGetFolder(path));
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch folder contents');
+      }
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching folder:', error);
+      throw new Error(error.message || 'Failed to load folder');
     }
-    return data;
   },
 
   // Upload file
@@ -82,56 +87,71 @@ export const megaService = {
   async downloadFile(path: string, name: string): Promise<void> {
     try {
       const url = ApiRoutes.megaDownloadFile(path, name);
-      console.log('Downloading file from:', url);
+      console.log('📥 Downloading file from:', url);
       
-      // Fetch the file
       const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error(`Download failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Download failed: ${response.statusText}`);
       }
 
-      // Get the filename from Content-Disposition header or use provided name
       const contentDisposition = response.headers.get('Content-Disposition');
       let filename = name;
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
         if (match) {
-          filename = match[1];
+          filename = decodeURIComponent(match[1]);
         }
       }
 
-      // Create blob from response
       const blob = await response.blob();
       
-      // Create download link
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
+      const urlObject = URL.createObjectURL(blob);
+      link.href = urlObject;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      // Revoke the blob URL after a delay
       setTimeout(() => {
-        URL.revokeObjectURL(link.href);
-      }, 1000);
+        URL.revokeObjectURL(urlObject);
+      }, 5000);
       
-      console.log('File downloaded successfully:', filename);
-    } catch (error) {
-      console.error('Download error:', error);
-      throw error;
+      console.log('✅ File downloaded successfully:', filename);
+    } catch (error: any) {
+      console.error('❌ Download error:', error);
+      throw new Error(error.message || 'Failed to download file');
     }
   },
 
-  // Start folder download
+  // Start folder download - FIXED
   async downloadFolder(path: string): Promise<{ jobId: string }> {
-    const response = await fetch(ApiRoutes.megaDownloadFolder(path));
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to start folder download');
+    try {
+      const url = ApiRoutes.megaDownloadFolder(path);
+      console.log('📦 Starting folder download from:', url);
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to start folder download: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('📦 Folder download response:', data);
+      
+      // Validate that jobId exists in the response
+      if (!data.jobId) {
+        throw new Error('Server did not return a job ID');
+      }
+      
+      return { jobId: data.jobId };
+    } catch (error: any) {
+      console.error('❌ Download folder error:', error);
+      throw new Error(error.message || 'Failed to start folder download');
     }
-    return data;
   },
 
   // Get ZIP download URL
@@ -141,8 +161,28 @@ export const megaService = {
 
   // Get progress stream
   getProgressStream(jobId: string): EventSource {
+    if (!jobId || jobId === 'undefined' || jobId === 'null') {
+      console.error('❌ Cannot create EventSource: invalid jobId:', jobId);
+      throw new Error('Invalid job ID');
+    }
     const url = ApiRoutes.megaProgress(jobId);
-    return new EventSource(url);
+    console.log(`📡 Creating EventSource for: ${url}`);
+    
+    const eventSource = new EventSource(url, {
+      withCredentials: true
+    });
+    
+    eventSource.onopen = () => {
+      console.log('✅ EventSource connection opened');
+    };
+    
+    eventSource.onerror = (error) => {
+      console.error('❌ EventSource error:', error);
+      console.error('  - readyState:', eventSource.readyState);
+      console.error('  - url:', url);
+    };
+    
+    return eventSource;
   },
 
   // Upload file with progress
@@ -161,31 +201,122 @@ export const megaService = {
 
       xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
+          const progress = Math.min(Math.round((event.loaded / event.total) * 100), 100);
           onProgress(progress);
         }
       });
 
       xhr.onload = () => {
-        if (xhr.status === 200) {
-          resolve(JSON.parse(xhr.response));
+        if (xhr.status === 200 || xhr.status === 201) {
+          try {
+            resolve(JSON.parse(xhr.response));
+          } catch {
+            resolve({ success: true, message: 'Upload complete' });
+          }
         } else {
-          reject(new Error('Upload failed'));
+          let errorMessage = 'Upload failed';
+          try {
+            const data = JSON.parse(xhr.response);
+            errorMessage = data.error || data.message || 'Upload failed';
+          } catch {
+            errorMessage = `Upload failed with status ${xhr.status}`;
+          }
+          reject(new Error(errorMessage));
         }
       };
 
-      xhr.onerror = () => reject(new Error('Upload failed'));
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.ontimeout = () => reject(new Error('Upload timeout'));
+      xhr.timeout = 600000;
       xhr.send(formData);
     });
   },
 
   // Get job status
   async getJobStatus(jobId: string): Promise<any> {
-    const response = await fetch(`${ApiRoutes.megaProgress}/status/${jobId}`);
+    if (!jobId || jobId === 'undefined' || jobId === 'null') {
+      throw new Error('Invalid job ID');
+    }
+    const response = await fetch(`${ApiRoutes.MEGA_PROGRESS}/status/${jobId}`);
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || 'Failed to get job status');
     }
     return data;
+  },// src/services/megaService.ts - Add these methods
+
+// Get folder info without downloading
+async getFolderInfo(path: string): Promise<{
+  success: boolean;
+  folderName: string;
+  fileCount: number;
+  totalSize: number;
+  files: Array<{
+    name: string;
+    path: string;
+    size: number;
+    mime: string;
+  }>;
+}> {
+  try {
+    const url = ApiRoutes.megaFolderInfo(path);
+    console.log('📁 Getting folder info from:', url);
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to get folder info');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('❌ Get folder info error:', error);
+    throw new Error(error.message || 'Failed to get folder information');
   }
+},
+
+// Download a single file from a folder
+async downloadFileFromFolder(folderPath: string, fileName: string): Promise<void> {
+  try {
+    const url = ApiRoutes.megaDownloadFileFromFolder(folderPath, fileName);
+    console.log('📥 Downloading file from folder:', url);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Download failed: ${response.statusText}`);
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = fileName;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (match) {
+        filename = decodeURIComponent(match[1]);
+      }
+    }
+
+    const blob = await response.blob();
+    
+    const link = document.createElement('a');
+    const urlObject = URL.createObjectURL(blob);
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(() => {
+      URL.revokeObjectURL(urlObject);
+    }, 5000);
+    
+    console.log('✅ File downloaded successfully:', filename);
+  } catch (error: any) {
+    console.error('❌ Download error:', error);
+    throw new Error(error.message || 'Failed to download file');
+  }
+}
+
 };

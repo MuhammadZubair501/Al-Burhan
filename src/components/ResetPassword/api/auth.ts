@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// const BASE = "http://localhost:5000/api";
-const BASE = "https://alburhan-backend-lyart.vercel.app/api";
+const BASE = "http://localhost:5000/api";
+// const BASE = "https://alburhan-backend-lyart.vercel.app/api";
 
 
 

@@ -6,12 +6,12 @@
 
 // Local Development
 
-export const BASE_URL = "https://alburhan-backend-lyart.vercel.app/";
-export const API_BASE_URL = "https://alburhan-backend-lyart.vercel.app/api";
+// export const BASE_URL = "https://alburhan-backend-lyart.vercel.app/";
+// export const API_BASE_URL = "https://alburhan-backend-lyart.vercel.app/api";
 
 
-// export const BASE_URL = "http://localhost:5000";
-// export const API_BASE_URL = "http://localhost:5000/api";
+export const BASE_URL = "http://localhost:5000";
+export const API_BASE_URL = "http://localhost:5000/api";
 
 // Production (Uncomment when deploying)
 // export const BASE_URL = "https://alburhan-backend-production-32a2.up.railway.app";

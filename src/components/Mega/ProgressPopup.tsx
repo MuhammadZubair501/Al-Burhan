@@ -1,300 +1,246 @@
 // src/components/Mega/ProgressPopup.tsx
-import { useEffect, useState } from 'react';
-import { X, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Download, Loader2, AlertCircle } from 'lucide-react';
 import { megaService } from '../../services/megaService';
-import type { MegaProgress } from '../../types/mega.types';
 
 interface ProgressPopupProps {
   jobId: string;
   onClose: () => void;
-  onComplete: (jobId: string) => void;
+  onComplete?: (jobId: string) => void;
   autoDownload?: boolean;
 }
 
-export default function ProgressPopup({ 
-  jobId, 
-  onClose, 
-  onComplete, 
-  autoDownload = false 
-}: ProgressPopupProps) {
-  const [progress, setProgress] = useState<MegaProgress | null>(null);
+export default function ProgressPopup({ jobId, onClose, onComplete, autoDownload = true }: ProgressPopupProps) {
+  const [progress, setProgress] = useState<number>(0);
+  const [status, setStatus] = useState<string>('processing');
   const [error, setError] = useState<string | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadTriggered, setDownloadTriggered] = useState(false);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [totalFiles, setTotalFiles] = useState<number>(0);
+  const [completedFiles, setCompletedFiles] = useState<number>(0);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const retryCountRef = useRef<number>(0);
+  const maxRetries = 3;
+
+  // Validate jobId
+  if (!jobId || jobId === 'undefined' || jobId === 'null' || jobId === '') {
+    console.error('❌ ProgressPopup received invalid jobId:', jobId);
+    return (
+      <div className="fixed bottom-4 right-4 z-50 w-80 bg-red-500/10 backdrop-blur-xl border border-red-500/30 rounded-2xl shadow-2xl p-4 animate-slide-up">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="text-red-400" size={20} />
+            <div>
+              <h4 className="text-white font-medium text-sm">Invalid Job</h4>
+              <p className="text-red-300 text-xs">No valid job ID provided</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-white/60 hover:text-white transition">
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
-    console.log(`Connecting to progress stream for job: ${jobId}`);
-    const es = megaService.getProgressStream(jobId);
-    setEventSource(es);
+    console.log(`📡 ProgressPopup: Connecting to job ${jobId}`);
 
-    es.onmessage = (event) => {
+    // Function to connect to SSE
+    const connectSSE = () => {
       try {
-        const data = JSON.parse(event.data);
-        console.log('Progress update:', data);
-        setProgress(data);
+        // Close existing connection
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+          eventSourceRef.current = null;
+        }
 
-        if (data.status === 'complete') {
-          setIsComplete(true);
-          console.log('Download complete!');
-          
-          // Auto-download if enabled
-          if (autoDownload && !downloadTriggered) {
-            setDownloadTriggered(true);
-            setTimeout(() => {
-              handleDownloadZip();
-            }, 1000);
+        console.log(`📡 Connecting to progress stream for job: ${jobId} (attempt ${retryCountRef.current + 1})`);
+        const eventSource = megaService.getProgressStream(jobId);
+        eventSourceRef.current = eventSource;
+        
+        eventSource.onopen = () => {
+          console.log(`✅ SSE connection established for job: ${jobId}`);
+          retryCountRef.current = 0;
+        };
+
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log(`📊 Progress data for ${jobId}:`, data);
+            
+            if (data.status === 'complete') {
+              setProgress(100);
+              setStatus('complete');
+              setTotalFiles(data.totalFiles || 0);
+              setCompletedFiles(data.completedFiles || 0);
+              if (autoDownload) {
+                handleDownload();
+              }
+              if (onComplete) {
+                onComplete(jobId);
+              }
+              eventSource.close();
+            } else if (data.status === 'failed') {
+              setStatus('failed');
+              setError(data.error || 'Download failed');
+              eventSource.close();
+            } else if (data.status === 'not_found') {
+              setStatus('failed');
+              setError('Job not found. Please try again.');
+              eventSource.close();
+            } else if (data.percentage !== undefined) {
+              setProgress(Math.min(data.percentage, 100));
+              setStatus(data.status || 'processing');
+              setTotalFiles(data.totalFiles || 0);
+              setCompletedFiles(data.completedFiles || 0);
+            }
+          } catch (err) {
+            console.error('Error parsing progress data:', err);
           }
-        }
+        };
 
-        if (data.status === 'failed') {
-          setError(data.error || data.message || 'Download failed');
-          console.error('Download failed:', data.error);
-          es.close();
-        }
-
-        if (data.status === 'not_found') {
-          setError('Job not found');
-          es.close();
-        }
-      } catch (err) {
-        console.error('Error parsing progress:', err);
+        eventSource.onerror = (error) => {
+          console.error(`❌ EventSource error for job ${jobId}:`, error);
+          
+          // Check if the connection was closed intentionally
+          if (eventSourceRef.current?.readyState === EventSource.CLOSED) {
+            console.log('SSE connection closed');
+            return;
+          }
+          
+          // Retry connection
+          retryCountRef.current++;
+          console.log(`🔄 Retrying connection (${retryCountRef.current}/${maxRetries})...`);
+          
+          // Close the old connection
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+          }
+          
+          // Try to reconnect after a delay
+          setTimeout(() => {
+            if (retryCountRef.current < maxRetries && status !== 'complete') {
+              connectSSE();
+            } else {
+              setError('Connection lost. Please try again.');
+              setStatus('failed');
+            }
+          }, 2000);
+        };
+      } catch (err: any) {
+        console.error('Error creating EventSource:', err);
+        setError(err.message || 'Failed to connect');
+        setStatus('failed');
       }
     };
 
-    es.onerror = (event) => {
-      console.error('EventSource error:', event);
-      // Only set error if not complete
-      if (!isComplete) {
-        setError('Connection to progress stream lost. Please try again.');
-      }
-      es.close();
-    };
+    connectSSE();
 
     return () => {
-      console.log('Closing progress stream');
-      es.close();
+      if (eventSourceRef.current) {
+        console.log(`🧹 Closing EventSource for job ${jobId}`);
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
-  }, [jobId, autoDownload, downloadTriggered]);
+  }, [jobId]);
 
-  const handleDownloadZip = async () => {
+  const handleDownload = async () => {
     if (isDownloading) return;
-    
     setIsDownloading(true);
     try {
       const url = megaService.getZipDownloadUrl(jobId);
-      console.log('Downloading ZIP from:', url);
+      console.log('📥 Downloading ZIP from:', url);
       
-      // Fetch the file with proper headers
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/zip, application/octet-stream',
-        },
-      });
-
+      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`Download failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to download ZIP file');
       }
-
-      // Get the filename from Content-Disposition header or use default
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = `folder-${jobId}.zip`;
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (match) {
-          filename = match[1];
-        }
-      }
-
-      // Create blob from response
+      
       const blob = await response.blob();
-      
-      // Check if blob is valid
-      if (blob.size === 0) {
-        throw new Error('Downloaded file is empty');
-      }
-      
-      // Create download link
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
+      const urlObject = URL.createObjectURL(blob);
+      link.href = urlObject;
+      link.download = `folder-${jobId}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      // Revoke the blob URL after a delay
       setTimeout(() => {
-        URL.revokeObjectURL(link.href);
-      }, 1000);
+        URL.revokeObjectURL(urlObject);
+      }, 5000);
       
-      console.log('Download started successfully');
-      
-      // Close after download starts
-      setTimeout(() => {
-        onClose();
-        onComplete(jobId);
-      }, 2000);
-      
-    } catch (err) {
+      console.log('✅ ZIP downloaded successfully');
+    } catch (err: any) {
       console.error('Download error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to download ZIP file');
+      setError(err.message || 'Download failed');
     } finally {
       setIsDownloading(false);
     }
   };
 
-  const handleCancel = () => {
-    if (eventSource) {
-      eventSource.close();
-    }
-    onClose();
-  };
-
-  const handleRetry = () => {
-    setError(null);
-    setProgress(null);
-    setIsComplete(false);
-    setDownloadTriggered(false);
-    // Try to reconnect
-    const es = megaService.getProgressStream(jobId);
-    setEventSource(es);
-  };
-
-  // Format file size
-  const formatSize = (mb: string) => {
-    const num = parseFloat(mb);
-    if (isNaN(num)) return '0 MB';
-    if (num >= 1024) {
-      return `${(num / 1024).toFixed(2)} GB`;
-    }
-    return `${num.toFixed(2)} MB`;
-  };
-
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-96 max-w-full animate-slide-up">
-      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            {error ? (
-              <AlertCircle className="text-red-400" size={24} />
-            ) : isComplete ? (
-              <CheckCircle className="text-green-400" size={24} />
-            ) : progress?.status === 'running' ? (
-              <Loader2 className="text-yellow-400 animate-spin" size={24} />
-            ) : (
-              <Loader2 className="text-yellow-400 animate-spin" size={24} />
-            )}
-            <div>
-              <h3 className="text-white font-semibold">
-                {error ? 'Error' : isComplete ? 'Download Complete' : 'Downloading...'}
-              </h3>
-              <p className="text-green-100 text-sm truncate max-w-[200px]">
-                {progress?.fileName || 'Preparing...'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleCancel}
-            className="text-green-100 hover:text-white transition-colors"
-            disabled={isDownloading}
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Progress Bar */}
-        {!error && progress && progress.status === 'running' && (
-          <div className="space-y-3">
-            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-yellow-400 to-amber-500 h-full transition-all duration-300 rounded-full"
-                style={{ width: `${Math.min(progress.percentage, 100)}%` }}
-              />
-            </div>
-
-            <div className="flex justify-between text-xs text-green-100">
-              <span>{Math.min(progress.percentage, 100)}%</span>
-              <span>
-                {formatSize(progress.loadedMB)} / {formatSize(progress.totalMB)}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs text-green-100">
-              <div>
-                <span className="text-green-300">Speed:</span> {progress.speedMbps || '0'} MB/s
-              </div>
-              <div>
-                <span className="text-green-300">ETA:</span> {progress.etaSeconds || 0}s
-              </div>
-              <div className="col-span-2">
-                <span className="text-green-300">Files:</span> {progress.completedFiles || 0}/{progress.totalFiles || 0}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Complete Message */}
-        {!error && isComplete && progress && (
-          <div className="space-y-3">
-            <div className="text-green-400 text-sm bg-green-400/10 p-3 rounded-xl text-center">
-              <CheckCircle size={20} className="inline mr-2" />
-              Download completed successfully!
-            </div>
-            <div className="text-xs text-green-100 text-center">
-              Total size: {formatSize(progress.totalMB)} | Files: {progress.totalFiles}
-            </div>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <div className="text-red-400 text-sm bg-red-400/10 p-3 rounded-xl">
-            {error}
-            <button
-              onClick={handleRetry}
-              className="ml-2 text-yellow-400 hover:text-yellow-300 underline"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Download Button */}
-        {isComplete && !downloadTriggered && (
-          <button
-            onClick={handleDownloadZip}
-            disabled={isDownloading}
-            className={`mt-4 w-full py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-green-950 font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${
-              isDownloading 
-                ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:scale-105'
-            }`}
-          >
-            {isDownloading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Downloading...
-              </>
-            ) : (
-              <>
-                <Download size={18} />
-                Download ZIP ({formatSize(progress?.totalMB || '0')})
-              </>
-            )}
-          </button>
-        )}
-
-        {/* Auto-download status */}
-        {isComplete && downloadTriggered && isDownloading && (
-          <div className="mt-4 text-center text-green-100 text-sm">
-            <Loader2 size={18} className="inline animate-spin mr-2" />
-            Starting download...
-          </div>
-        )}
+    <div className="fixed bottom-4 right-4 z-50 w-80 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-4 animate-slide-up">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-white font-medium text-sm">
+          {status === 'complete' ? 'Download Complete' : 
+           status === 'failed' ? 'Download Failed' : 
+           'Downloading Folder...'}
+        </h4>
+        <button onClick={onClose} className="text-white/60 hover:text-white transition">
+          <X size={16} />
+        </button>
       </div>
+
+      <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-2">
+        <div
+          className={`h-full transition-all duration-300 ${
+            status === 'complete' ? 'bg-green-500' : 
+            status === 'failed' ? 'bg-red-500' : 
+            'bg-gradient-to-r from-yellow-400 to-amber-500'
+          }`}
+          style={{ width: `${Math.min(progress, 100)}%` }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-white/70">
+        <span>{Math.min(progress, 100)}%</span>
+        <span>
+          {status === 'complete' ? '✅ Done' : 
+           status === 'failed' ? '❌ Failed' : 
+           totalFiles > 0 ? `${completedFiles}/${totalFiles} files` : 
+           '⏳ Processing...'}
+        </span>
+      </div>
+
+      {error && (
+        <div className="mt-2 text-xs text-red-300 bg-red-500/20 p-2 rounded-lg flex items-start gap-2">
+          <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {status === 'complete' && (
+        <button
+          onClick={handleDownload}
+          disabled={isDownloading}
+          className="mt-3 w-full py-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-green-950 font-bold rounded-xl hover:scale-105 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:hover:scale-100"
+        >
+          {isDownloading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Downloading...
+            </>
+          ) : (
+            <>
+              <Download size={16} />
+              Download ZIP
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
 }

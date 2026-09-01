@@ -1,3 +1,4 @@
+// ApiRoutes.ts
 import { API_BASE_URL } from "../config/api";
 
 export default class ApiRoutes {
@@ -106,6 +107,47 @@ export default class ApiRoutes {
   }
 
   // ============================================
+  // STUDENT DASHBOARD ROUTES
+  // ============================================
+  static STUDENT_DASHBOARD = `${API_BASE_URL}/student-dashboard`;
+
+  static studentDashboardData(studentId: number | string, startDate?: string, endDate?: string) {
+    let url = `${this.STUDENT_DASHBOARD}/data?studentId=${studentId}`;
+    if (startDate) url += `&startDate=${startDate}`;
+    if (endDate) url += `&endDate=${endDate}`;
+    return url;
+  }
+
+  static studentByUserId(userId: number | string) {
+    return `${this.STUDENT_DASHBOARD}/user/${userId}`;
+  }
+
+  static studentAttendanceByDateRange(studentId: number | string, startDate: string, endDate: string) {
+    return `${this.STUDENT_DASHBOARD}/attendance-range?studentId=${studentId}&startDate=${startDate}&endDate=${endDate}`;
+  }
+
+  static studentAttendanceStats(studentId: number | string) {
+    return `${this.STUDENT_DASHBOARD}/stats/${studentId}`;
+  }
+
+  static studentAttendanceSummary(studentId: number | string, year?: number) {
+    let url = `${this.STUDENT_DASHBOARD}/summary?studentId=${studentId}`;
+    if (year) url += `&year=${year}`;
+    return url;
+  }
+
+  static studentCurrentMonthAttendance(studentId: number | string, month?: number, year?: number) {
+    let url = `${this.STUDENT_DASHBOARD}/current-month?studentId=${studentId}`;
+    if (month) url += `&month=${month}`;
+    if (year) url += `&year=${year}`;
+    return url;
+  }
+
+  static studentRecentAttendance(studentId: number | string, limit: number = 10) {
+    return `${this.STUDENT_DASHBOARD}/recent?studentId=${studentId}&limit=${limit}`;
+  }
+
+  // ============================================
   // STUDENT ATTENDANCE ROUTES
   // ============================================
   static STUDENT_ATTENDANCE = `${API_BASE_URL}/student-attendance`;
@@ -152,53 +194,62 @@ export default class ApiRoutes {
     return `${API_BASE_URL}/degree/${id}`;
   }
 
-  // ============================================
-  // MEGA FILE MANAGEMENT ROUTES
-  // ============================================
-  static MEGA_FILES = `${API_BASE_URL}/files`;
-  static MEGA_FOLDERS = `${API_BASE_URL}/folders`;
-  static MEGA_PROGRESS = `${API_BASE_URL}/progress`;
-  
-  static megaUploadFile() {
-    return `${this.MEGA_FILES}/upload`;
-  }
-  
-  static megaDeleteFile() {
-    return `${this.MEGA_FILES}/delete`;
-  }
-  
-  static megaDownloadFile(path: string, name: string) {
-    const encodedPath = encodeURIComponent(path);
-    const encodedName = encodeURIComponent(name);
-    return `${this.MEGA_FILES}/download?path=${encodedPath}&name=${encodedName}`;
-  }
-  
-  static megaDownloadFolder(path: string) {
-    const encodedPath = encodeURIComponent(path);
-    return `${this.MEGA_FILES}/download-folder?path=${encodedPath}`;
-  }
-  
-  static megaDownloadZip(jobId: string) {
-    return `${this.MEGA_FILES}/download-zip/${jobId}`;
-  }
-  
-  static megaProgress(jobId: string) {
-    return `${this.MEGA_PROGRESS}/${jobId}`;
-  }
-  
-  static megaGetFolder(path: string = '') {
-    const encodedPath = encodeURIComponent(path);
-    return `${this.MEGA_FOLDERS}?path=${encodedPath}`;
-  }
-  
-  static megaCreateFolder() {
-    return `${this.MEGA_FOLDERS}`;
-  }
-  
-  static megaDeleteFolder() {
-    return `${this.MEGA_FOLDERS}`;
-  }
+// ApiRoutes.ts - Add this method
 
+// ============================================
+// MEGA FILE MANAGEMENT ROUTES
+// ============================================
+static MEGA_FILES = `${API_BASE_URL}/files`;
+static MEGA_FOLDERS = `${API_BASE_URL}/folders`;
+static MEGA_PROGRESS = `${API_BASE_URL}/progress`;
+
+static megaUploadFile() {
+  return `${this.MEGA_FILES}/upload`;
+}
+
+static megaDeleteFile() {
+  return `${this.MEGA_FILES}/delete`;
+}
+
+// Download single file
+static megaDownloadFile(path: string, name: string) {
+  const encodedPath = encodeURIComponent(path);
+  const encodedName = encodeURIComponent(name);
+  return `${this.MEGA_FILES}/download?path=${encodedPath}&name=${encodedName}`;
+}
+
+// Get folder share link - Vercel compatible
+static megaFolderShareLink(path: string) {
+  const encodedPath = encodeURIComponent(path);
+  return `${this.MEGA_FILES}/share-link?path=${encodedPath}`;
+}
+
+// Get folder info
+static megaFolderInfo(path: string) {
+  const encodedPath = encodeURIComponent(path);
+  return `${this.MEGA_FILES}/folder-info?path=${encodedPath}`;
+}
+
+static megaDownloadZip(jobId: string) {
+  return `${this.MEGA_FILES}/download-zip/${jobId}`;
+}
+
+static megaProgress(jobId: string) {
+  return `${this.MEGA_PROGRESS}/${jobId}`;
+}
+
+static megaGetFolder(path: string = '') {
+  const encodedPath = encodeURIComponent(path);
+  return `${this.MEGA_FOLDERS}?path=${encodedPath}`;
+}
+
+static megaCreateFolder() {
+  return `${this.MEGA_FOLDERS}`;
+}
+
+static megaDeleteFolder() {
+  return `${this.MEGA_FOLDERS}`;
+}
   // ============================================
   // AUTH ROUTES
   // ============================================
@@ -241,6 +292,9 @@ export default class ApiRoutes {
     return `${this.OTP}/verify`;
   }
 
+  // ============================================
+  // IMPORT ROUTES
+  // ============================================
   static importStudents() {
     return `${API_BASE_URL}/section/import-students`;
   }
@@ -248,48 +302,4 @@ export default class ApiRoutes {
   static deleteClassStudentsAndSections(classId: number | string) {
     return `${API_BASE_URL}/section/class/${classId}/delete-all`;
   }
-
-
-// ApiRoutes.ts - Update student dashboard routes
-
-// ============================================
-// STUDENT DASHBOARD ROUTES
-// ============================================
-static STUDENT_DASHBOARD = `${API_BASE_URL}/student-dashboard`;
-
-static studentDashboardData(studentId: number | string, startDate?: string, endDate?: string) {
-  let url = `${this.STUDENT_DASHBOARD}/data?studentId=${studentId}`;
-  if (startDate) url += `&startDate=${startDate}`;
-  if (endDate) url += `&endDate=${endDate}`;
-  return url;
-}
-
-static studentByUserId(userId: number | string) {
-  return `${this.STUDENT_DASHBOARD}/user/${userId}`;
-}
-
-static studentAttendanceByDateRange(studentId: number | string, startDate: string, endDate: string) {
-  return `${this.STUDENT_DASHBOARD}/attendance-range?studentId=${studentId}&startDate=${startDate}&endDate=${endDate}`;
-}
-
-static studentAttendanceStats(studentId: number | string) {
-  return `${this.STUDENT_DASHBOARD}/stats/${studentId}`;
-}
-
-static studentAttendanceSummary(studentId: number | string, year?: number) {
-  let url = `${this.STUDENT_DASHBOARD}/summary?studentId=${studentId}`;
-  if (year) url += `&year=${year}`;
-  return url;
-}
-
-static studentCurrentMonthAttendance(studentId: number | string, month?: number, year?: number) {
-  let url = `${this.STUDENT_DASHBOARD}/current-month?studentId=${studentId}`;
-  if (month) url += `&month=${month}`;
-  if (year) url += `&year=${year}`;
-  return url;
-}
-
-static studentRecentAttendance(studentId: number | string, limit: number = 10) {
-  return `${this.STUDENT_DASHBOARD}/recent?studentId=${studentId}&limit=${limit}`;
-}
 }

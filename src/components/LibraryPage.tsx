@@ -61,23 +61,19 @@ export default function LibraryPage() {
     try {
       const folder: MegaFolder = await megaService.getFolder(path);
       
-      // Filter out hidden folders (profile_images)
       let filteredItems = folder.items || [];
       
-      // Only filter at root level or when not inside a hidden folder
       const isRootLevel = path === '' || path === '/';
       const isInsideHiddenFolder = HIDDEN_FOLDERS.some((hidden: string) => 
         path.startsWith(hidden) || path.includes(`/${hidden}/`)
       );
       
-      // If we're at root level, hide the profile_images folder
       if (isRootLevel) {
         filteredItems = filteredItems.filter((item: MegaItem) => 
           !(item.isFolder && HIDDEN_FOLDERS.includes(item.name))
         );
       }
       
-      // If we're inside a hidden folder, show its contents (but hide sub-folders that are in the list)
       if (isInsideHiddenFolder) {
         filteredItems = filteredItems.filter((item: MegaItem) => 
           !(item.isFolder && HIDDEN_FOLDERS.includes(item.name))
@@ -96,13 +92,11 @@ export default function LibraryPage() {
 
   // Prevent navigation into hidden folders
   const navigateToFolder = (path: string) => {
-    // Check if trying to navigate into a hidden folder
     const isHidden = HIDDEN_FOLDERS.some((hidden: string) => 
       path === hidden || path.startsWith(`${hidden}/`)
     );
     
     if (isHidden) {
-      // Don't navigate into hidden folders
       setError('This folder is system protected and not accessible.');
       return;
     }
@@ -117,12 +111,10 @@ export default function LibraryPage() {
       pathParts.pop();
       const parentPath = pathParts.join('/');
       
-      // Check if parent is a hidden folder
       const isParentHidden = HIDDEN_FOLDERS.some((hidden: string) => 
         parentPath === hidden || parentPath.startsWith(`${hidden}/`)
       );
       
-      // If parent is hidden, go up one more level
       if (isParentHidden) {
         const grandParentParts = parentPath.split('/').filter(Boolean);
         grandParentParts.pop();
@@ -144,7 +136,6 @@ export default function LibraryPage() {
     let currentPath = basePath;
     
     for (const part of parts) {
-      // Skip if trying to create a hidden folder
       if (HIDDEN_FOLDERS.includes(part)) {
         continue;
       }
@@ -180,16 +171,14 @@ export default function LibraryPage() {
     let completed = 0;
     const total = files.length;
 
-    // Group files by their parent folder path
     const filesByFolder = new Map<string, File[]>();
     
     for (const { file, relativePath } of files) {
       let folderPath = '';
       
-      // Extract the folder path from the relative path
       if (relativePath && relativePath.includes('/')) {
         const pathParts = relativePath.split('/');
-        pathParts.pop(); // Remove the filename
+        pathParts.pop();
         folderPath = pathParts.join('/');
       }
       
@@ -200,18 +189,14 @@ export default function LibraryPage() {
       filesByFolder.get(key)!.push(file);
     }
 
-    // Process each folder group
     for (const [folderPath, folderFiles] of filesByFolder) {
       let targetPath = currentPath;
       
-      // Only create folder structure if there's a path and it's not hidden
       if (folderPath && folderPath !== 'root') {
-        // Check if any part of the path is a hidden folder
         const pathParts = folderPath.split('/');
         const hasHiddenPart = pathParts.some((part: string) => HIDDEN_FOLDERS.includes(part));
         
         if (hasHiddenPart) {
-          // Skip creating hidden folders
           setError(`Cannot upload to system protected folder: ${folderPath}`);
           continue;
         }
@@ -219,7 +204,6 @@ export default function LibraryPage() {
         targetPath = await createFolderStructure(currentPath, folderPath);
       }
       
-      // Upload all files in this folder
       for (const file of folderFiles) {
         try {
           setUploadFileName(file.name);
@@ -282,12 +266,10 @@ export default function LibraryPage() {
       if (entry.isFile) {
         return new Promise((resolve) => {
           entry.file((file: File) => {
-            // Check if any part of the path is a hidden folder
             const pathParts = path.split('/');
             const hasHiddenPart = pathParts.some((part: string) => HIDDEN_FOLDERS.includes(part));
             
             if (hasHiddenPart) {
-              // Skip files from hidden folders
               resolve();
               return;
             }
@@ -302,7 +284,6 @@ export default function LibraryPage() {
       }
 
       if (entry.isDirectory) {
-        // Skip if the directory is a hidden folder
         if (HIDDEN_FOLDERS.includes(entry.name)) {
           return Promise.resolve();
         }
@@ -350,12 +331,11 @@ export default function LibraryPage() {
     }
   }, [processUploadQueue]);
 
-  // Create folder - Prevent creating hidden folders
+  // Create folder
   const handleCreateFolder = async () => {
     const folderName = newFolderName.trim();
     if (!folderName) return;
     
-    // Prevent creating hidden folders
     if (HIDDEN_FOLDERS.includes(folderName)) {
       setError(`Cannot create system protected folder: ${folderName}`);
       return;
@@ -381,7 +361,6 @@ export default function LibraryPage() {
       const file = files[i];
       const relativePath = (file as any).webkitRelativePath || '';
       
-      // Check if any part of the path is a hidden folder
       const pathParts = relativePath.split('/');
       const hasHiddenPart = pathParts.some((part: string) => HIDDEN_FOLDERS.includes(part));
       
@@ -411,7 +390,6 @@ export default function LibraryPage() {
       if (file.name.startsWith('.')) continue;
       if (file.name === 'Thumbs.db') continue;
       
-      // Check if any part of the path is a hidden folder
       const pathParts = relativePath.split('/');
       const hasHiddenPart = pathParts.some((part: string) => HIDDEN_FOLDERS.includes(part));
       
@@ -430,9 +408,8 @@ export default function LibraryPage() {
     }
   };
 
-  // Delete item - Prevent deleting hidden folders
+  // Delete item
   const handleDelete = async (item: MegaItem) => {
-    // Prevent deleting hidden folders
     if (item.isFolder && HIDDEN_FOLDERS.includes(item.name)) {
       setError(`Cannot delete system protected folder: ${item.name}`);
       return;
@@ -465,7 +442,7 @@ export default function LibraryPage() {
     }
   };
 
-  // Download file
+  // Download file (only for files, not folders)
   const handleDownloadFile = async (item: MegaItem) => {
     if (item.isFolder) return;
     
@@ -486,32 +463,13 @@ export default function LibraryPage() {
     }
   };
 
-  // Download folder - Prevent downloading hidden folders
-  const handleDownloadFolder = async (item: MegaItem) => {
-    if (!item.isFolder) return;
-    
-    // Prevent downloading hidden folders
-    if (HIDDEN_FOLDERS.includes(item.name)) {
-      setError(`Cannot download system protected folder: ${item.name}`);
-      return;
-    }
-    
-    try {
-      const { jobId } = await megaService.downloadFolder(item.path);
-      setProgressJobs((prev) => [...prev, jobId]);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
   // Handle progress complete
   const handleProgressComplete = (jobId: string) => {
     setProgressJobs((prev) => prev.filter((id) => id !== jobId));
   };
 
-  // Filter items based on search (also exclude hidden folders from search results)
+  // Filter items based on search
   const filteredItems = items.filter((item: MegaItem) => {
-    // Hide profile_images folder from search results
     if (item.isFolder && HIDDEN_FOLDERS.includes(item.name)) {
       return false;
     }
@@ -621,7 +579,6 @@ export default function LibraryPage() {
               Root
             </button>
             {breadcrumb.map((crumb, index) => {
-              // Skip showing hidden folders in breadcrumb
               if (HIDDEN_FOLDERS.includes(crumb.name)) {
                 return null;
               }
@@ -836,7 +793,7 @@ export default function LibraryPage() {
                   )}
                 </div>
 
-                {/* Actions */}
+                {/* Actions - REMOVED FOLDER DOWNLOAD BUTTON */}
                 <div className={`${
                   viewMode === 'grid'
                     ? 'absolute top-1 right-1 flex flex-row gap-0.5 bg-black/40 backdrop-blur-sm rounded-lg p-0.5 sm:p-1 sm:bg-transparent sm:backdrop-blur-none sm:p-0 sm:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity'
@@ -862,18 +819,7 @@ export default function LibraryPage() {
                         <Download size={12} />
                       )}
                     </button>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownloadFolder(item);
-                      }}
-                      className="p-1.5 bg-green-500/20 text-green-300 rounded-lg hover:bg-green-500/30 transition-all"
-                      title="Download Folder"
-                    >
-                      <Download size={12} />
-                    </button>
-                  )}
+                  ) : null}
                   
                   <button
                     onClick={(e) => {
@@ -933,16 +879,18 @@ export default function LibraryPage() {
         </div>
       )}
 
-      {/* Progress Popups */}
-      {progressJobs.map((jobId) => (
-        <ProgressPopup
-          key={jobId}
-          jobId={jobId}
-          onClose={() => setProgressJobs((prev) => prev.filter((id) => id !== jobId))}
-          onComplete={handleProgressComplete}
-          autoDownload={true}
-        />
-      ))}
+      {/* Progress Popups - Filter out invalid jobIds */}
+      {progressJobs
+        .filter((jobId) => jobId && jobId !== 'undefined' && jobId !== 'null' && jobId !== '')
+        .map((jobId) => (
+          <ProgressPopup
+            key={jobId}
+            jobId={jobId}
+            onClose={() => setProgressJobs((prev) => prev.filter((id) => id !== jobId))}
+            onComplete={handleProgressComplete}
+            autoDownload={true}
+          />
+        ))}
     </div>
   );
 }
