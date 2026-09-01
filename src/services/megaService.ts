@@ -126,33 +126,7 @@ export const megaService = {
     }
   },
 
-  // Start folder download - FIXED
-  async downloadFolder(path: string): Promise<{ jobId: string }> {
-    try {
-      const url = ApiRoutes.megaDownloadFolder(path);
-      console.log('📦 Starting folder download from:', url);
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed to start folder download: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('📦 Folder download response:', data);
-      
-      // Validate that jobId exists in the response
-      if (!data.jobId) {
-        throw new Error('Server did not return a job ID');
-      }
-      
-      return { jobId: data.jobId };
-    } catch (error: any) {
-      console.error('❌ Download folder error:', error);
-      throw new Error(error.message || 'Failed to start folder download');
-    }
-  },
+
 
   // Get ZIP download URL
   getZipDownloadUrl(jobId: string): string {
@@ -276,47 +250,5 @@ async getFolderInfo(path: string): Promise<{
   }
 },
 
-// Download a single file from a folder
-async downloadFileFromFolder(folderPath: string, fileName: string): Promise<void> {
-  try {
-    const url = ApiRoutes.megaDownloadFileFromFolder(folderPath, fileName);
-    console.log('📥 Downloading file from folder:', url);
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Download failed: ${response.statusText}`);
-    }
-
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = fileName;
-    if (contentDisposition) {
-      const match = contentDisposition.match(/filename="?([^"]+)"?/);
-      if (match) {
-        filename = decodeURIComponent(match[1]);
-      }
-    }
-
-    const blob = await response.blob();
-    
-    const link = document.createElement('a');
-    const urlObject = URL.createObjectURL(blob);
-    link.href = urlObject;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setTimeout(() => {
-      URL.revokeObjectURL(urlObject);
-    }, 5000);
-    
-    console.log('✅ File downloaded successfully:', filename);
-  } catch (error: any) {
-    console.error('❌ Download error:', error);
-    throw new Error(error.message || 'Failed to download file');
-  }
-}
 
 };
