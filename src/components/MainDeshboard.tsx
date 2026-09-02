@@ -5,6 +5,7 @@ import ProfileButton from "./ProfileButton";
 import TeacherContent from "./Teacher/TeacherPage";
 import StudentContent from "./Student/StudentPage";
 import StudentDashboard from "./dashboard/StudentDashboard";
+import TeacherDashboard from "./dashboard/TeacherDashboard";
 import LibraryPage from "./LibraryPage";
 import BackgroundRings from "./common/BackgroundRings";
 import SectionPage from "../Section/SectionPage";
@@ -13,7 +14,6 @@ import ClassPage from "../Class/ClassPage";
 import TeacherAttendancePage from "../Attendance/TeacherAttendance/TeacherAttendancePage";
 import StudentAttendancePage from "../Attendance/StudentAttendance/StudentAttendancePage";
 import DashboardPage from "./dashboard/DashboardPage";
-// REMOVED: ProgressPopup import - no longer needed
 import { useCampus } from "../context/CampusContext";
 import { authService } from "../services/authService";
 import {
@@ -23,12 +23,17 @@ import {
   BookOpen,
   SquareDashedText,
   Cog,
+  UserCog,
 } from "lucide-react";
 
 const pageConfig: Record<TabType, { name: string; icon: React.ReactNode }> = {
   dashboard: { 
     name: "Dashboard", 
     icon: <LayoutDashboard size={16} className="text-yellow-400" /> 
+  },
+  myDashboard: { 
+    name: "My Dashboard", 
+    icon: <UserCog size={16} className="text-yellow-400" /> 
   },
   library: { 
     name: "Library", 
@@ -64,7 +69,6 @@ export default function MainDeshboard() {
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  // REMOVED: progressJobs state - no longer needed
   const location = useLocation();
   const navigate = useNavigate();
   const { classId } = useParams<{ classId: string }>();
@@ -77,6 +81,13 @@ export default function MainDeshboard() {
     const role = authService.getUserRole();
     setUserRole(role);
     console.log('👤 User Role in MainDeshboard:', role);
+    
+    // Set default tab based on role
+    if (role === 'teacher' || role === 'naqeeb') {
+      setActiveTab('myDashboard');
+    } else {
+      setActiveTab('dashboard');
+    }
   }, []);
 
   // Force refresh campus data on component mount
@@ -131,8 +142,6 @@ export default function MainDeshboard() {
     }
   };
 
-  // REMOVED: handleProgressComplete function - no longer needed
-
   // ============================================
   // RENDER CONTENT BASED ON ROLE AND TAB
   // ============================================
@@ -141,14 +150,49 @@ export default function MainDeshboard() {
       return <SectionPage classId={classId} />;
     }
 
-    // For student role: Show StudentDashboard when Dashboard tab is clicked
-    if (userRole === 'student') {
-      // If active tab is dashboard, show StudentDashboard
-      if (activeTab === 'dashboard') {
-        return <StudentDashboard />;
-      }
-      // For other tabs (like library), show the respective content
+    // ============================================
+    // TEACHER ROLE
+    // ============================================
+    if (userRole === 'teacher') {
       switch (activeTab) {
+        case "myDashboard":
+          return <TeacherDashboard />;
+        case "dashboard":
+          return <DashboardPage />;
+        case "library":
+          return <LibraryPage />;
+        case "studentAttendance":
+          return <StudentAttendancePage />;
+        default:
+          return <TeacherDashboard />;
+      }
+    }
+
+    // ============================================
+    // NAQEEB ROLE
+    // ============================================
+    if (userRole === 'naqeeb') {
+      switch (activeTab) {
+        case "myDashboard":
+          return <StudentDashboard />;
+        case "dashboard":
+          return <DashboardPage />;
+        case "library":
+          return <LibraryPage />;
+        case "studentAttendance":
+          return <StudentAttendancePage />;
+        default:
+          return <StudentDashboard />;
+      }
+    }
+
+    // ============================================
+    // STUDENT ROLE
+    // ============================================
+    if (userRole === 'student') {
+      switch (activeTab) {
+        case "dashboard":
+          return <StudentDashboard />;
         case "library":
           return <LibraryPage />;
         default:
@@ -156,25 +200,34 @@ export default function MainDeshboard() {
       }
     }
 
-    // For other roles (admin, teacher, naqeeb)
-    switch (activeTab) {
-      case "teacher":
-        return <TeacherContent />;
-      case "student":
-        return <StudentContent />; // Student management page for admin
-      case "class":
-        return <ClassPage />;
-      case "library":
-        return <LibraryPage />;
-      case "teacherAttendance":
-        return <TeacherAttendancePage />;
-      case "studentAttendance":
-        return <StudentAttendancePage />;
-      case "configuration":
-        return <ConfigurationPage />;
-      default:
-        return <DashboardPage />;
+    // ============================================
+    // ADMIN ROLE
+    // ============================================
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      switch (activeTab) {
+        case "dashboard":
+          return <DashboardPage />;
+        case "teacher":
+          return <TeacherContent />;
+        case "student":
+          return <StudentContent />;
+        case "class":
+          return <ClassPage />;
+        case "library":
+          return <LibraryPage />;
+        case "teacherAttendance":
+          return <TeacherAttendancePage />;
+        case "studentAttendance":
+          return <StudentAttendancePage />;
+        case "configuration":
+          return <ConfigurationPage />;
+        default:
+          return <DashboardPage />;
+      }
     }
+
+    // Default fallback
+    return <DashboardPage />;
   };
 
   const getCurrentPageConfig = () => {
@@ -235,8 +288,6 @@ export default function MainDeshboard() {
           </div>
         </main>
       </div>
-
-      {/* REMOVED: Progress Popups - ZIP/folder download no longer needed */}
     </div>
   );
 }

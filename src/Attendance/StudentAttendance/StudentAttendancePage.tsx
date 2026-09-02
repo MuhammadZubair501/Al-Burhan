@@ -9,6 +9,8 @@ import Swal from "sweetalert2";
 import AttendanceStatusModal, { type AttendanceStatus } from "../AttendanceStatusModal";
 import SearchDropdown from "../../components/custom/SearchDropdown";
 import ImportAttendanceModal from "./ImportAttendanceModal";
+import { getCampusId } from "../../components/ResetPassword/api/auth";
+
 
 type AttendanceRecord = {
   attendance_id: number;
@@ -30,7 +32,8 @@ type FilterState = {
 };
 
 export default function StudentAttendancePage() {
-  const campusId = (window as any).CampusID || 1;
+  // Use getCampusId() to get the campus ID consistently
+  const campusId = getCampusId();
 
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -92,6 +95,30 @@ export default function StudentAttendancePage() {
       setSections(data);
     } catch (error) {
       console.error('Error fetching sections:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch sections';
+      
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || 
+          errorMessage.includes('token') || errorMessage.includes('No token')) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Please login again to continue.",
+          icon: "warning",
+          confirmButtonColor: "#fbbf24",
+          background: "#1a2e2a",
+          color: "#ffffff",
+        }).then(() => {
+          window.location.href = '/login';
+        });
+      } else {
+        Swal.fire({
+          title: "Error!",
+          text: errorMessage,
+          icon: "error",
+          confirmButtonColor: "#fbbf24",
+          background: "#1a2e2a",
+          color: "#ffffff",
+        });
+      }
     }
   };
 
@@ -109,14 +136,30 @@ export default function StudentAttendancePage() {
       setCurrentPage(1);
     } catch (error) {
       console.error('Error fetching attendance:', error);
-      Swal.fire({
-        title: "Error!",
-        text: "Failed to fetch attendance records",
-        icon: "error",
-        confirmButtonColor: "#fbbf24",
-        background: "#1a2e2a",
-        color: "#ffffff",
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch attendance records';
+      
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || 
+          errorMessage.includes('token') || errorMessage.includes('No token')) {
+        Swal.fire({
+          title: "Session Expired",
+          text: "Please login again to continue.",
+          icon: "warning",
+          confirmButtonColor: "#fbbf24",
+          background: "#1a2e2a",
+          color: "#ffffff",
+        }).then(() => {
+          window.location.href = '/login';
+        });
+      } else {
+        Swal.fire({
+          title: "Error!",
+          text: errorMessage,
+          icon: "error",
+          confirmButtonColor: "#fbbf24",
+          background: "#1a2e2a",
+          color: "#ffffff",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -244,9 +287,6 @@ export default function StudentAttendancePage() {
       </span>
     );
   };
-
-  // For grid, we can use a smaller version if needed, but here we use the same full badge.
-  // It will adapt to the cell width; if too wide, we can shorten but the user asked for full.
 
   const getStatusCount = (status: string) => {
     return filteredRecords.filter(r => r.attendance_status === status).length;

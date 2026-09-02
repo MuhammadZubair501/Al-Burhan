@@ -21,10 +21,17 @@ export const dashboardService = {
 
       const response = await fetch(url, {
         headers: getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        // Handle token expiration
+        if (response.status === 401) {
+          // Redirect to login or refresh token
+          window.location.href = '/login';
+        }
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();

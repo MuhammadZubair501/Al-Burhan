@@ -1,6 +1,6 @@
 // services/StudentAttendanceService.ts
 
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL, getAuthHeaders, getFormDataHeaders } from "../config/api";
 
 export interface Student {
   student_id: number;
@@ -38,8 +38,13 @@ export interface SaveAttendancePayload {
 export const studentAttendanceService = {
   // Get sections with class names by campus
   async getSectionsByCampus(campusId: number): Promise<any[]> {
-    const response = await fetch(`${API_BASE_URL}/student-attendance/sections/campus/${campusId}`);
-    if (!response.ok) throw new Error('Failed to fetch sections');
+    const response = await fetch(`${API_BASE_URL}/student-attendance/sections/campus/${campusId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch sections');
+    }
     const result = await response.json();
     if (result.success) return result.data;
     throw new Error(result.message || 'Failed to fetch sections');
@@ -47,8 +52,13 @@ export const studentAttendanceService = {
 
   // Get students by section (only active)
   async getStudentsBySection(sectionId: number): Promise<Student[]> {
-    const response = await fetch(`${API_BASE_URL}/student-attendance/students/section/${sectionId}`);
-    if (!response.ok) throw new Error('Failed to fetch students for this section');
+    const response = await fetch(`${API_BASE_URL}/student-attendance/students/section/${sectionId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch students for this section');
+    }
     const result = await response.json();
     if (result.success) return result.data;
     throw new Error(result.message || 'Failed to fetch students');
@@ -58,7 +68,7 @@ export const studentAttendanceService = {
   async saveAttendance(payload: SaveAttendancePayload) {
     const response = await fetch(`${API_BASE_URL}/student-attendance`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
     const result = await response.json();
@@ -70,7 +80,7 @@ export const studentAttendanceService = {
   async updateAttendance(attendanceId: number, status: 'present' | 'absent' | 'leave', comments?: string) {
     const response = await fetch(`${API_BASE_URL}/student-attendance/${attendanceId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ status, comments }),
     });
     const result = await response.json();
@@ -87,8 +97,13 @@ export const studentAttendanceService = {
   ): Promise<AttendanceRecord[]> {
     let url = `${API_BASE_URL}/student-attendance/range?start_date=${startDate}&end_date=${endDate}&campusId=${campusId}`;
     if (sectionId) url += `&sectionId=${sectionId}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch attendance');
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch attendance');
+    }
     const result = await response.json();
     if (result.success) return result.data;
     throw new Error(result.message || 'Failed to fetch attendance');
@@ -98,8 +113,13 @@ export const studentAttendanceService = {
   async getAttendanceByDateAndCampus(date: string, campusId: number, sectionId?: number) {
     let url = `${API_BASE_URL}/student-attendance?date=${date}&campusId=${campusId}`;
     if (sectionId) url += `&sectionId=${sectionId}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch attendance');
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch attendance');
+    }
     const result = await response.json();
     if (result.success) return result.data;
     throw new Error(result.message || 'Failed to fetch attendance');
@@ -114,8 +134,13 @@ export const studentAttendanceService = {
   ): Promise<{ total_students: number; students: any[] }> {
     let url = `${API_BASE_URL}/student-attendance/summary?campusId=${campusId}&month=${month}&year=${year}`;
     if (sectionId) url += `&sectionId=${sectionId}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch attendance summary');
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch attendance summary');
+    }
     const result = await response.json();
     if (result.success) return result.data;
     throw new Error(result.message || 'Failed to fetch attendance summary');
@@ -124,9 +149,15 @@ export const studentAttendanceService = {
   // Get attendance for a specific student
   async getStudentAttendance(studentId: number, limit: number = 30, offset: number = 0) {
     const response = await fetch(
-      `${API_BASE_URL}/student-attendance/student/${studentId}?limit=${limit}&offset=${offset}`
+      `${API_BASE_URL}/student-attendance/student/${studentId}?limit=${limit}&offset=${offset}`,
+      {
+        headers: getAuthHeaders(),
+      }
     );
-    if (!response.ok) throw new Error('Failed to fetch student attendance');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch student attendance');
+    }
     const result = await response.json();
     if (result.success) return result.data;
     throw new Error(result.message || 'Failed to fetch student attendance');
@@ -136,6 +167,7 @@ export const studentAttendanceService = {
   async deleteAttendance(attendanceId: number) {
     const response = await fetch(`${API_BASE_URL}/student-attendance/${attendanceId}`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Failed to delete attendance');
@@ -146,6 +178,7 @@ export const studentAttendanceService = {
   async importAttendance(formData: FormData): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/student-attendance/import`, {
       method: 'POST',
+      headers: getFormDataHeaders(),
       body: formData,
     });
     const result = await response.json();

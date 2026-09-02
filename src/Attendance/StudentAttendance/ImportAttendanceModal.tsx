@@ -37,14 +37,27 @@ const ImportAttendanceModal: React.FC<ImportAttendanceModalProps> = ({
       setSections(data);
     } catch (error) {
       console.error('Error fetching sections:', error);
-      Swal.fire({
-        title: 'Error',
-        text: 'Failed to load sections',
-        icon: 'error',
-        confirmButtonColor: '#fbbf24',
-        background: '#1a2e2a',
-        color: '#fff',
-      });
+      // Check if error is due to authentication
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load sections';
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+        Swal.fire({
+          title: 'Authentication Error',
+          text: 'Please login again to continue.',
+          icon: 'error',
+          confirmButtonColor: '#fbbf24',
+          background: '#1a2e2a',
+          color: '#fff',
+        });
+      } else {
+        Swal.fire({
+          title: 'Error',
+          text: errorMessage,
+          icon: 'error',
+          confirmButtonColor: '#fbbf24',
+          background: '#1a2e2a',
+          color: '#fff',
+        });
+      }
     } finally {
       setFetchingSections(false);
     }
@@ -131,14 +144,28 @@ const ImportAttendanceModal: React.FC<ImportAttendanceModalProps> = ({
       (document.getElementById('fileInput') as HTMLInputElement).value = '';
     } catch (error) {
       console.error('Import error:', error);
-      Swal.fire({
-        title: 'Import Failed',
-        text: error instanceof Error ? error.message : 'Unknown error',
-        icon: 'error',
-        confirmButtonColor: '#fbbf24',
-        background: '#1a2e2a',
-        color: '#fff',
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Check if error is due to authentication
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+        Swal.fire({
+          title: 'Authentication Error',
+          text: 'Please login again to continue.',
+          icon: 'error',
+          confirmButtonColor: '#fbbf24',
+          background: '#1a2e2a',
+          color: '#fff',
+        });
+      } else {
+        Swal.fire({
+          title: 'Import Failed',
+          text: errorMessage,
+          icon: 'error',
+          confirmButtonColor: '#fbbf24',
+          background: '#1a2e2a',
+          color: '#fff',
+        });
+      }
     } finally {
       setLoading(false);
     }

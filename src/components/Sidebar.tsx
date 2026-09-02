@@ -11,12 +11,14 @@ import {
   ChevronDown,
   ChevronRight,
   X,
+  UserCog,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 
 export type TabType =
   | "dashboard"
+  | "myDashboard"
   | "library"
   | "class"
   | "teacher"
@@ -92,14 +94,25 @@ export default function Sidebar({
         ...baseMenus,
         { id: "class", label: "Classes", icon: SquareDashedText },
         { id: "teacher", label: "Teachers", icon: GraduationCap },
-        { id: "student", label: "Students", icon: Users }, // Student management
+        { id: "student", label: "Students", icon: Users },
         { id: "configuration", label: "Configuration", icon: Cog },
       ];
     }
 
-    // Teacher and Naqeeb get only Dashboard and Library
-    if (userRole === 'teacher' || userRole === 'naqeeb') {
-      return baseMenus;
+    // Teacher gets Dashboard, Library, and My Dashboard
+    if (userRole === 'teacher') {
+      return [
+        { id: "myDashboard", label: "My Dashboard", icon: UserCog },
+        ...baseMenus,
+      ];
+    }
+
+    // Naqeeb gets Dashboard, Library, and My Dashboard
+    if (userRole === 'naqeeb') {
+      return [
+        { id: "myDashboard", label: "My Dashboard", icon: UserCog },
+        ...baseMenus,
+      ];
     }
 
     // Student gets only Dashboard and Library
