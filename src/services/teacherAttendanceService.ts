@@ -1,6 +1,6 @@
 // services/teacherAttendanceService.ts
 
-import { API_BASE_URL, getAuthHeaders, getFormDataHeaders } from "../config/api";
+import { API_BASE_URL, getAuthHeaders } from "../config/api";
 
 export interface Teacher {
   teacher_id: number;
