@@ -11,8 +11,13 @@ export function FilterBar({
   filters, 
   onFilterChange
 }: FilterBarProps) {
+  // Prevent form submission and page reload
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+  };
+
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {/* Single Date Filter */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-wrap">
         <div className="w-full sm:w-56">
@@ -28,6 +33,6 @@ export function FilterBar({
           />
         </div>
       </div>
-    </div>
+    </form>
   );
 }
